@@ -1,0 +1,21 @@
+# Python & Django
+venv/
+*.pyc
+__pycache__/
+*.sqlite3
+*.log
+.env
+
+# Flutter
+health_platform/build/
+health_platform/.dart_tool/
+health_platform/.flutter-plugins
+health_platform/.flutter-plugins-dependencies
+health_platform/.pub-cache/
+health_platform/.pub/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
