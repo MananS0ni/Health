@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../mock_data/mock_lab_data.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_badge.dart';
 
 const Color kLabAccent = Color(0xFF059669);
 
-class LabIntegrationStatusScreen extends StatelessWidget {
+class LabIntegrationStatusScreen extends ConsumerWidget {
   const LabIntegrationStatusScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final stats = MockLabData.getLabStats();
-    final logs = MockLabData.getLimsSyncLogs();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingReports = ref.watch(labPendingReportsProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -48,18 +49,18 @@ class LabIntegrationStatusScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
+                          children: [
                             Text(
-                              'LIMS Auto-Push Gateway',
-                              style: TextStyle(
+                              user?.orgProfile?.orgName ?? 'LIMS Auto-Push Gateway',
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            AppBadge(
-                              text: 'CONNECTED',
+                            const SizedBox(width: 8),
+                            const AppBadge(
+                              text: 'ONLINE',
                               type: AppBadgeType.success,
                               isSmall: true,
                             ),
@@ -67,7 +68,7 @@ class LabIntegrationStatusScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Uptime: ${stats['lims_uptime']} • Last Sync: ${stats['lims_last_sync']} • Queue: 0 pending',
+                          'Queue: ${pendingReports.length} pending • Gateway Ready • Protocol: HL7 v2.5 / FHIR',
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -90,53 +91,40 @@ class LabIntegrationStatusScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
 
-            // Transmission Logs
-            ...logs.map((log) => Container(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: AppCard(
-                    child: Row(
-                      children: [
-                        Text(
-                          log['time'],
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                log['event'],
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                'Order Ref: ${log['order_id']} • Code: ${log['response_code']}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        AppBadge(
-                          text: log['status'],
-                          type: AppBadgeType.success,
-                          isSmall: true,
-                        ),
-                      ],
+            // Empty State for Transmission Logs
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.receipt_long_outlined,
+                      size: 40, color: Colors.grey.shade400),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'No Transmission Logs',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                )),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Real-time HL7 ORU_R01 and REST auto-push events will appear here as test reports are submitted.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

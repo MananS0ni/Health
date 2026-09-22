@@ -194,55 +194,7 @@ class ListStatusSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.tune_rounded, size: 13, color: AppColors.textSecondary),
-          const SizedBox(width: 6),
-          const Text(
-            'State View:',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-          ),
-          const SizedBox(width: 8),
-          ...ListStatus.values.map((s) {
-            final selected = currentStatus == s;
-            final label = s.name[0].toUpperCase() + s.name.substring(1);
-            return Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: InkWell(
-                onTap: () => onStatusChanged(s),
-                borderRadius: BorderRadius.circular(4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: selected ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(4),
-                    boxShadow: selected
-                        ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
-                        : null,
-                  ),
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                      color: selected ? AppColors.primary : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
+

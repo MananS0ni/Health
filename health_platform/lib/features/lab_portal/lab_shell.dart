@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/config/providers.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../shared/widgets/role_context_switcher.dart';
 import '../../shared/widgets/app_badge.dart';
@@ -49,6 +50,11 @@ class _LabShellState extends ConsumerState<LabShell> {
   @override
   Widget build(BuildContext context) {
     final isWideScreen = MediaQuery.of(context).size.width > 768;
+    final user = ref.watch(userProvider);
+    final labName = (user.orgProfile != null && user.orgProfile!.organizationName.isNotEmpty)
+        ? user.orgProfile!.organizationName
+        : (user.fullName.isNotEmpty ? user.fullName : 'Diagnostic Lab');
+    final displayLabel = '$labName Staff';
 
     final appBar = AppBar(
       backgroundColor: Colors.white,
@@ -89,9 +95,9 @@ class _LabShellState extends ConsumerState<LabShell> {
           padding: const EdgeInsets.only(right: 16, left: 4),
           child: Chip(
             avatar: const Icon(Icons.science, size: 14, color: kLabAccent),
-            label: const Text(
-              'Metropolis Lab Staff',
-              style: TextStyle(
+            label: Text(
+              displayLabel,
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: kLabAccent,

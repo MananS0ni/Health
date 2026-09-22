@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../mock_data/mock_lab_data.dart';
+import '../../../core/config/providers.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_badge.dart';
 import '../../../shared/widgets/app_list_state.dart';
 
 const Color kLabAccent = Color(0xFF059669);
 
-class PendingReportsScreen extends StatefulWidget {
+class PendingReportsScreen extends ConsumerStatefulWidget {
   const PendingReportsScreen({super.key});
 
   @override
-  State<PendingReportsScreen> createState() => _PendingReportsScreenState();
+  ConsumerState<PendingReportsScreen> createState() => _PendingReportsScreenState();
 }
 
-class _PendingReportsScreenState extends State<PendingReportsScreen> {
+class _PendingReportsScreenState extends ConsumerState<PendingReportsScreen> {
   String _selectedCategory = 'All';
   ListStatus _viewStatus = ListStatus.content;
 
@@ -28,9 +29,134 @@ class _PendingReportsScreenState extends State<PendingReportsScreen> {
     return fullName;
   }
 
+  void _showAddTestModal(BuildContext context) {
+    final nameController = TextEditingController();
+    final patientController = TextEditingController();
+    final doctorController = TextEditingController();
+    String category = 'Biochemistry';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Queue New Diagnostic Test',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: patientController,
+                    decoration: const InputDecoration(
+                      labelText: 'Patient Full Name *',
+                      hintText: 'e.g. Meera Desai',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Test Name *',
+                      hintText: 'e.g. Lipid Profile, Serum Creatinine',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: category,
+                    decoration: const InputDecoration(
+                      labelText: 'Test Category',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Biochemistry', child: Text('Biochemistry')),
+                      DropdownMenuItem(value: 'Endocrinology', child: Text('Endocrinology')),
+                      DropdownMenuItem(value: 'Cardiology', child: Text('Cardiology')),
+                      DropdownMenuItem(value: 'Diabetology', child: Text('Diabetology')),
+                      DropdownMenuItem(value: 'Nephrology', child: Text('Nephrology')),
+                    ],
+                    onChanged: (v) => setModalState(() => category = v!),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: doctorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Referring Doctor',
+                      hintText: 'e.g. Dr. Verma',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (nameController.text.trim().isEmpty || patientController.text.trim().isEmpty) return;
+                      final now = DateTime.now();
+                      final test = {
+                        'order_id': 'ORD-${now.millisecondsSinceEpoch.toString().substring(8)}',
+                        'test_id': 'TST-${now.millisecondsSinceEpoch.toString().substring(9)}',
+                        'patient_name': patientController.text.trim(),
+                        'test_name': nameController.text.trim(),
+                        'category': category,
+                        'ordered_by': doctorController.text.trim().isNotEmpty
+                            ? doctorController.text.trim()
+                            : 'OPD Physician',
+                        'sample_time': '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}',
+                        'status': 'Sample Collected',
+                        'urgency': 'Routine',
+                      };
+                      ref.read(labPendingReportsProvider.notifier).addPendingTest(test);
+                      Navigator.pop(modalContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Test queued for ${test['patient_name']}.')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kLabAccent,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 46),
+                    ),
+                    child: const Text('Add Test to Queue'),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final pendingReports = MockLabData.getPendingReports();
+    final pendingReports = ref.watch(labPendingReportsProvider);
     final categories = [
       'All',
       'Biochemistry',
@@ -57,6 +183,20 @@ class _PendingReportsScreenState extends State<PendingReportsScreen> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_task_rounded, color: kLabAccent),
+            tooltip: 'Queue Test Order',
+            onPressed: () => _showAddTestModal(context),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddTestModal(context),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Queue Test'),
+        backgroundColor: kLabAccent,
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),

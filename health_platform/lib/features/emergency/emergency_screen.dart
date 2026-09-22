@@ -9,6 +9,140 @@ import '../../core/config/providers.dart';
 class EmergencyScreen extends ConsumerWidget {
   const EmergencyScreen({super.key});
 
+  void _showEditEmergencyModal(BuildContext context, WidgetRef ref, dynamic user) {
+    final bloodGroupController = TextEditingController(text: user.bloodGroup ?? '');
+    final allergyController = TextEditingController(text: (user.allergies as List<String>).join(', '));
+    final conditionController = TextEditingController(text: (user.medicalConditions as List<String>).join(', '));
+    final contactNameController = TextEditingController(text: user.emergencyContactName ?? '');
+    final contactPhoneController = TextEditingController(text: user.emergencyContactPhone ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Edit Emergency Medical Info',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: bloodGroupController,
+                  decoration: const InputDecoration(
+                    labelText: 'Blood Group (e.g. O+, A+, B-, AB+)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: allergyController,
+                  decoration: const InputDecoration(
+                    labelText: 'Allergies (comma separated)',
+                    hintText: 'e.g. Penicillin, Peanuts, Sulfa',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: conditionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Medical Conditions (comma separated)',
+                    hintText: 'e.g. Asthma, Hypertension, Diabetes',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: contactNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Primary Emergency Contact Name',
+                    hintText: 'e.g. Spouse / Parent name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: contactPhoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Emergency Contact Phone Number',
+                    hintText: 'e.g. 98765 43210',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                AppButton(
+                  text: 'Save Emergency Details',
+                  onPressed: () {
+                    final allergiesList = allergyController.text
+                        .split(',')
+                        .map((s) => s.trim())
+                        .where((s) => s.isNotEmpty)
+                        .toList();
+                    final conditionsList = conditionController.text
+                        .split(',')
+                        .map((s) => s.trim())
+                        .where((s) => s.isNotEmpty)
+                        .toList();
+
+                    final updatedUser = user.copyWith(
+                      bloodGroup: bloodGroupController.text.trim().isNotEmpty
+                          ? bloodGroupController.text.trim()
+                          : user.bloodGroup,
+                      allergies: allergiesList,
+                      medicalConditions: conditionsList,
+                      emergencyContactName: contactNameController.text.trim().isNotEmpty
+                          ? contactNameController.text.trim()
+                          : user.emergencyContactName,
+                      emergencyContactPhone: contactPhoneController.text.trim().isNotEmpty
+                          ? contactPhoneController.text.trim()
+                          : user.emergencyContactPhone,
+                    );
+                    ref.read(authStateProvider.notifier).updateCurrentUser(updatedUser);
+                    Navigator.pop(modalContext);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Emergency info updated successfully.'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  isFullWidth: true,
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(userProvider);
@@ -20,6 +154,13 @@ class EmergencyScreen extends ConsumerWidget {
         backgroundColor: AppColors.emergency,
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_note_rounded, color: Colors.white),
+            tooltip: 'Edit Emergency Details',
+            onPressed: () => _showEditEmergencyModal(context, ref, user),
+          ),
+        ],
       ),
       body: Container(
         color: AppColors.emergencyLight,
@@ -175,12 +316,8 @@ class EmergencyScreen extends ConsumerWidget {
                 icon: Icons.warning,
                 color: AppColors.emergencyDark,
                 child: _AllergyList(
-                  allergies: [
-                    'Penicillin',
-                    'Sulfa drugs',
-                    'Peanuts',
-                  ],
-                  severity: 'Severe',
+                  allergies: user.allergies,
+                  severity: user.allergies.isNotEmpty ? 'Active' : 'None',
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -191,26 +328,26 @@ class EmergencyScreen extends ConsumerWidget {
                 icon: Icons.medical_information,
                 color: AppColors.emergencyDark,
                 child: _ConditionList(
-                  conditions: [
-                    'Hypertension (Stage 1)',
-                    'Type 2 Diabetes',
-                    'Previous Appendix Surgery (2023)',
-                  ],
+                  conditions: user.medicalConditions,
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
               
-              // Current Medications
+              // Current Medications (Derived dynamically from active prescriptions)
               _EmergencySection(
                 title: 'CURRENT MEDICATIONS',
                 icon: Icons.medication,
                 color: AppColors.emergencyDark,
                 child: _MedicationList(
-                  medications: [
-                    {'name': 'Metformin', 'dosage': '500mg', 'frequency': 'Twice daily'},
-                    {'name': 'Amlodipine', 'dosage': '5mg', 'frequency': 'Once daily'},
-                    {'name': 'Vitamin D3', 'dosage': '1000 IU', 'frequency': 'Once daily'},
-                  ],
+                  medications: ref
+                      .watch(recordsProvider)
+                      .where((r) => r.recordType == 'prescription')
+                      .map((r) => {
+                            'name': r.title,
+                            'dosage': r.description ?? 'As prescribed',
+                            'frequency': r.doctorName ?? 'Verified Rx',
+                          })
+                      .toList(),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -220,21 +357,32 @@ class EmergencyScreen extends ConsumerWidget {
                 title: 'EMERGENCY CONTACTS',
                 icon: Icons.contacts,
                 color: AppColors.emergencyDark,
-                child: Column(
-                  children: [
-                    _EmergencyContactCard(
-                      name: 'Sunita Sharma',
-                      relationship: 'Spouse',
-                      phone: '+91 98765 43211',
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _EmergencyContactCard(
-                      name: 'Dr. Priya Patel',
-                      relationship: 'Primary Physician',
-                      phone: '+91 98765 43212',
-                    ),
-                  ],
-                ),
+                child: user.emergencyContactName != null && user.emergencyContactName!.isNotEmpty
+                    ? _EmergencyContactCard(
+                        name: user.emergencyContactName!,
+                        relationship: 'Primary Emergency Contact',
+                        phone: user.emergencyContactPhone ?? 'Not specified',
+                      )
+                    : Container(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.info_outline, color: AppColors.textSecondary, size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'No emergency contact listed. Tap the Edit button on top to add.',
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
               const SizedBox(height: AppSpacing.xl),
               
@@ -440,6 +588,16 @@ class _AllergyList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (allergies.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          'No known medical or drug allergies recorded.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+      );
+    }
+
     return Column(
       children: [
         Container(
@@ -493,6 +651,16 @@ class _ConditionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (conditions.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          'No chronic medical conditions recorded.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+      );
+    }
+
     return Column(
       children: conditions.map((condition) => Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -525,6 +693,15 @@ class _MedicationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (medications.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          'No active medications or prescriptions recorded.',
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+      );
+    }
     return Column(
       children: medications.map((med) => Container(
             margin: const EdgeInsets.only(bottom: AppSpacing.sm),

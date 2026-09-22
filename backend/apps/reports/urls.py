@@ -1,8 +1,13 @@
 from django.urls import path
-from .views import LabReportListCreateView, LabReportDetailView, AISummarizeReportView
+from .views import (
+    MedicalRecordListCreateView,
+    LabReportListCreateView,
+    TimelineView
+)
 
 urlpatterns = [
-    path('', LabReportListCreateView.as_view(), name='report_list_create'),
-    path('ai-explain/', AISummarizeReportView.as_view(), name='report_ai_explain'),
-    path('<str:report_id>/', LabReportDetailView.as_view(), name='report_detail'),
+    path('records/', MedicalRecordListCreateView.as_view(), name='record-list-create'),
+    path('lab/', LabReportListCreateView.as_view(), name='lab-list-create'),
+    path('lab-reports/', LabReportListCreateView.as_view(), name='lab-reports-list-create'),
+    path('timeline/', TimelineView.as_view(), name='health-timeline'),
 ]

@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/config/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../mock_data/mock_hospital_data.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_badge.dart';
 
 const Color kHospitalAccent = Color(0xFFD97706); // Warm Amber / Orange
 
-class HospitalDashboardScreen extends StatelessWidget {
+class HospitalDashboardScreen extends ConsumerWidget {
   const HospitalDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final admissions = MockHospitalData.getAdmissions();
-    final stats = MockHospitalData.getHospitalStats();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final admissions = ref.watch(hospitalAdmissionsProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -48,9 +49,9 @@ class HospitalDashboardScreen extends StatelessWidget {
                             color: AppColors.textPrimary,
                           ),
                     ),
-                    const Text(
-                      'Apollo Multi-Specialty Hospital • HIS Engine Active',
-                      style: TextStyle(
+                    Text(
+                      '${user?.orgProfile?.orgName ?? "Hospital Care Facility"} • HIS Engine Active',
+                      style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                       ),
@@ -67,8 +68,8 @@ class HospitalDashboardScreen extends StatelessWidget {
                 Expanded(
                   child: _HospStatCard(
                     title: 'Current Admissions',
-                    value: '${stats['occupied_beds']} / ${stats['total_beds']}',
-                    subtitle: 'Occupancy: ${stats['occupancy_rate']}',
+                    value: '${admissions.length}',
+                    subtitle: admissions.isEmpty ? 'All beds available' : '${admissions.length} active patients',
                     icon: Icons.hotel_rounded,
                     accentColor: kHospitalAccent,
                   ),
@@ -77,8 +78,8 @@ class HospitalDashboardScreen extends StatelessWidget {
                 Expanded(
                   child: _HospStatCard(
                     title: 'Discharges Today',
-                    value: '${stats['discharges_pending']}',
-                    subtitle: 'Summaries pending',
+                    value: '0',
+                    subtitle: 'Summaries finalized',
                     icon: Icons.output_rounded,
                     accentColor: const Color(0xFF059669),
                   ),
@@ -87,8 +88,8 @@ class HospitalDashboardScreen extends StatelessWidget {
                 Expanded(
                   child: _HospStatCard(
                     title: 'Integration Status',
-                    value: stats['his_sync_status'] ?? 'Active',
-                    subtitle: 'Last sync: ${stats['his_last_sync']}',
+                    value: 'Online',
+                    subtitle: 'HL7 ADT Engine ready',
                     icon: Icons.sync_rounded,
                     accentColor: const Color(0xFF2563EB),
                     isStatus: true,
@@ -176,62 +177,97 @@ class HospitalDashboardScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            ...admissions.take(3).map((adm) => Container(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: AppCard(
-                    onTap: () => context.go('/hospital/admissions'),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: kHospitalAccent.withValues(alpha: 0.08),
-                            borderRadius:
-                                BorderRadius.circular(AppSpacing.radiusMd),
-                          ),
-                          child: const Icon(Icons.bed_rounded,
-                              color: kHospitalAccent, size: 20),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    adm['patient_name'],
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  AppBadge(
-                                    text: adm['bed_no'],
-                                    type: AppBadgeType.info,
-                                    isSmall: true,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${adm['ward']} • Diagnosis: ${adm['diagnosis']}',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.arrow_forward_ios_rounded,
-                            size: 14, color: AppColors.textSecondary),
-                      ],
+            if (admissions.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.hotel_outlined,
+                        size: 40, color: Colors.grey.shade400),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'No current inpatient admissions',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                )),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Admit a patient to a ward to monitor bed occupancy and clinical charts.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...admissions.take(3).map((adm) => Container(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: AppCard(
+                      onTap: () => context.go('/hospital/admissions'),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: kHospitalAccent.withValues(alpha: 0.08),
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.radiusMd),
+                            ),
+                            child: const Icon(Icons.bed_rounded,
+                                color: kHospitalAccent, size: 20),
+                          ),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      adm['patient_name'] ?? 'Inpatient',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    AppBadge(
+                                      text: adm['bed_no'] ?? 'Bed',
+                                      type: AppBadgeType.info,
+                                      isSmall: true,
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${adm['ward'] ?? "General Ward"} • Diagnosis: ${adm['diagnosis'] ?? "Observation"}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded,
+                              size: 14, color: AppColors.textSecondary),
+                        ],
+                      ),
+                    ),
+                  )),
           ],
         ),
       ),

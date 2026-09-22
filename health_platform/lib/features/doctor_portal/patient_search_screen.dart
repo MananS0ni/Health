@@ -1,50 +1,198 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../mock_data/mock_doctor_data.dart';
+import '../../core/config/providers.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_list_state.dart';
 
 const Color kDoctorAccent = Color(0xFF1E40AF);
 
-class PatientSearchScreen extends StatefulWidget {
+class PatientSearchScreen extends ConsumerStatefulWidget {
   final String? initialQuery;
 
   const PatientSearchScreen({super.key, this.initialQuery});
 
   @override
-  State<PatientSearchScreen> createState() => _PatientSearchScreenState();
+  ConsumerState<PatientSearchScreen> createState() => _PatientSearchScreenState();
 }
 
-class _PatientSearchScreenState extends State<PatientSearchScreen> {
+class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
   late TextEditingController _searchController;
-  late List<Map<String, dynamic>> _allPatients;
-  late List<Map<String, dynamic>> _filteredPatients;
   ListStatus _viewStatus = ListStatus.content;
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: widget.initialQuery ?? '');
-    _allPatients = MockDoctorData.getRecentPatients();
-    _filterPatients(_searchController.text);
   }
 
-  void _filterPatients(String query) {
-    setState(() {
-      if (query.trim().isEmpty) {
-        _filteredPatients = List.from(_allPatients);
-      } else {
-        final q = query.toLowerCase();
-        _filteredPatients = _allPatients.where((p) {
-          final name = p['full_name'].toString().toLowerCase();
-          final phone = p['phone_number'].toString();
-          final pid = p['patient_id'].toString().toLowerCase();
-          return name.contains(q) || phone.contains(q) || pid.contains(q);
-        }).toList();
-      }
-    });
+  void _showAddPatientModal(BuildContext context) {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final phoneController = TextEditingController();
+    final ageController = TextEditingController(); // Dynamic, not prefilled to 30
+    final bloodGroupController = TextEditingController();
+    final diagnosisController = TextEditingController();
+    String selectedGender = 'Male';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(modalContext).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Register New Patient',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Patient Full Name *',
+                      hintText: 'e.g. Ramesh Kumar',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Patient Email Address *',
+                      hintText: 'e.g. patient@example.com',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: 'Mobile Phone Number *',
+                      hintText: 'e.g. 98765 43210',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: ageController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Age (Years)',
+                            hintText: 'e.g. 28',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedGender,
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'Male', child: Text('Male')),
+                            DropdownMenuItem(value: 'Female', child: Text('Female')),
+                            DropdownMenuItem(value: 'Other', child: Text('Other')),
+                          ],
+                          onChanged: (v) => setModalState(() => selectedGender = v!),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: bloodGroupController,
+                    decoration: const InputDecoration(
+                      labelText: 'Blood Group',
+                      hintText: 'e.g. O+, A+, B+, AB-',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: diagnosisController,
+                    decoration: const InputDecoration(
+                      labelText: 'Clinical Diagnosis / Chief Complaint',
+                      hintText: 'e.g. Chronic seasonal allergies',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (nameController.text.trim().isEmpty) return;
+                      final ageParsed = int.tryParse(ageController.text.trim());
+                      final newPatient = {
+                        'full_name': nameController.text.trim(),
+                        'email': emailController.text.trim().toLowerCase(),
+                        'phone_number': phoneController.text.trim(),
+                        'age': ageParsed != null ? '$ageParsed' : 'Not specified',
+                        'gender': selectedGender,
+                        'blood_group': bloodGroupController.text.trim().isNotEmpty
+                            ? bloodGroupController.text.trim().toUpperCase()
+                            : '--',
+                        'last_diagnosis': diagnosisController.text.trim().isNotEmpty
+                            ? diagnosisController.text.trim()
+                            : 'General Consultation',
+                        'vitals': {'bp': '120/80', 'hr': '72 bpm', 'spo2': '99%', 'temp': '98.6°F'},
+                      };
+                      await ref.read(doctorPatientsProvider.notifier).addPatient(newPatient);
+                      if (context.mounted) {
+                        Navigator.pop(modalContext);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('${newPatient['full_name']} registered with full 24-hr clinical access!')),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kDoctorAccent,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 46),
+                    ),
+                    child: const Text('Add Patient to Directory'),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -55,7 +203,18 @@ class _PatientSearchScreenState extends State<PatientSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeStatus = (_viewStatus == ListStatus.content && _filteredPatients.isEmpty)
+    final allPatients = ref.watch(doctorPatientsProvider);
+    final query = _searchController.text.toLowerCase().trim();
+    final filteredPatients = query.isEmpty
+        ? allPatients
+        : allPatients.where((p) {
+            final name = p['full_name'].toString().toLowerCase();
+            final phone = p['phone_number'].toString();
+            final pid = p['patient_id'].toString().toLowerCase();
+            return name.contains(query) || phone.contains(query) || pid.contains(query);
+          }).toList();
+
+    final activeStatus = (_viewStatus == ListStatus.content && filteredPatients.isEmpty)
         ? ListStatus.empty
         : _viewStatus;
 
@@ -67,6 +226,20 @@ class _PatientSearchScreenState extends State<PatientSearchScreen> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_alt_1_rounded, color: kDoctorAccent),
+            tooltip: 'Add Patient',
+            onPressed: () => _showAddPatientModal(context),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddPatientModal(context),
+        icon: const Icon(Icons.person_add_rounded),
+        label: const Text('Add Patient'),
+        backgroundColor: kDoctorAccent,
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -78,7 +251,7 @@ class _PatientSearchScreenState extends State<PatientSearchScreen> {
             ),
             TextField(
               controller: _searchController,
-              onChanged: _filterPatients,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: 'Search patient by name, phone, or ID...',
                 prefixIcon: const Icon(Icons.search_rounded, color: kDoctorAccent),
@@ -87,7 +260,7 @@ class _PatientSearchScreenState extends State<PatientSearchScreen> {
                         icon: const Icon(Icons.clear_rounded),
                         onPressed: () {
                           _searchController.clear();
-                          _filterPatients('');
+                          setState(() {});
                         },
                       )
                     : null,
@@ -114,9 +287,9 @@ class _PatientSearchScreenState extends State<PatientSearchScreen> {
                 accentColor: kDoctorAccent,
                 onRetry: () => setState(() => _viewStatus = ListStatus.content),
                 child: ListView.builder(
-                  itemCount: _filteredPatients.length,
+                  itemCount: filteredPatients.length,
                   itemBuilder: (context, index) {
-                    final patient = _filteredPatients[index];
+                    final patient = filteredPatients[index];
                     return _PatientSearchResultCard(patient: patient);
                   },
                 ),

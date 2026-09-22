@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Digital Health Record Platform - Architecture & Role Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  @page {
+    size: A4;
+    margin: 20mm 18mm 20mm 18mm;
+    @bottom-right {
+      content: counter(page);
+      font-family: 'Inter', sans-serif;
+      font-size: 9pt;
+      color: #94a3b8;
+    }
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1e293b;
+    background-color: #ffffff;
+    line-height: 1.55;
+    font-size: 10pt;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* Header Cover Banner */
+  .cover {
+    border-bottom: 2px solid #0f766e;
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+  }
+
+  .badge-tag {
+    display: inline-block;
+    background: #ccfbf1;
+    color: #0f766e;
+    font-weight: 700;
+    font-size: 8pt;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 24pt;
+    font-weight: 800;
+    color: #042f2e;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 12pt;
+    color: #475569;
+    font-weight: 400;
+    margin-bottom: 16px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    background: #f8fafc;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .meta-item {
+    font-size: 8.5pt;
+  }
+  .meta-item span {
+    display: block;
+    color: #64748b;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .meta-item strong {
+    color: #0f172a;
+  }
+
+  /* Headings */
+  h2 {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #0f766e;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-top: 14px;
+    margin-bottom: 6px;
+  }
+
+  p {
+    margin-bottom: 10px;
+    color: #334155;
+  }
+
+  /* Table styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 20px 0;
+    font-size: 9pt;
+  }
+
+  th {
+    background: #f1f5f9;
+    color: #0f172a;
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    font-size: 8.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  td {
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) {
+    background: #f8fafc;
+  }
+
+  .role-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 8pt;
+    font-weight: 700;
+  }
+
+  .badge-patient { background: #e0f2fe; color: #0369a1; }
+  .badge-doctor { background: #ede9fe; color: #6d28d9; }
+  .badge-lab { background: #d1fae5; color: #047857; }
+  .badge-hospital { background: #fef3c7; color: #b45309; }
+
+  /* Architecture Box / Card */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 14px 0;
+  }
+
+  .card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    font-weight: 700;
+    font-size: 10.5pt;
+    color: #0f172a;
+  }
+
+  .card ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  .card li {
+    font-size: 8.8pt;
+    color: #475569;
+    margin-bottom: 5px;
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .card li::before {
+    content: "•";
+    color: #0f766e;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+  }
+
+  /* Flow Diagram Box */
+  .flow-box {
+    background: #042f2e;
+    color: #f0fdfa;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 16px 0;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 8.5pt;
+    line-height: 1.45;
+  }
+
+  .flow-box pre {
+    white-space: pre-wrap;
+  }
+
+  /* Key Callout Alert */
+  .alert {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 14px;
+    border-radius: 0 8px 8px 0;
+    margin: 14px 0;
+    font-size: 9pt;
+    color: #1e3a8a;
+  }
+
+  .alert-warning {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    color: #78350f;
+  }
+
+  .alert-success {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+    color: #064e3b;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Cover Header -->
+  <div class="cover">
+    <div class="badge-tag">Technical Architecture Document</div>
+    <h1>Digital Health Record Platform</h1>
+    <div class="subtitle">System Architecture, Multi-Role Login Workflow & Access Model</div>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span>Prepared For</span>
+        <strong>Manan Soni & Team</strong>
+      </div>
+      <div class="meta-item">
+        <span>Backend Tech Stack</span>
+        <strong>Django · DRF · PostgreSQL</strong>
+      </div>
+      <div class="meta-item">
+        <span>Auth Architecture</span>
+        <strong>Free SMTP Email OTP (No SMS API)</strong>
+      </div>
+      <div class="meta-item">
+        <span>External Dependencies</span>
+        <strong>Zero ABHA · No Docker</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Executive Summary -->
+  <h2>1. Platform Overview & Architectural Decisions</h2>
+  <p>
+    This platform is designed as an all-in-one, patient-owned, multi-portal digital healthcare system. 
+    Unlike rigid government systems or legacy hospital software, it brings <strong>Patients, Doctors, Diagnostic Labs, and Hospitals</strong> 
+    into a single synchronized ecosystem.
+  </p>
+  <div class="alert alert-success">
+    <strong>Key Architectural Principles Agreed:</strong>
+    <br>• <strong>100% Standalone & Private:</strong> Zero dependency on ABHA / ABDM or government registries.
+    <br>• <strong>Free SMTP Email OTP Authentication:</strong> Replaces costly third-party SMS gateways with instant 6-digit OTP delivery to the user's email inbox.
+    <br>• <strong>Direct Local Native Execution:</strong> Runs directly via Python virtual environment (<code>venv</code>) and local database — no Docker containers required.
+    <br>• <strong>Frontend-First Architecture:</strong> Django data models and API endpoints are mapped directly to match the live Flutter client screens.
+  </div>
+
+  <!-- Role Comparison Table -->
+  <h2>2. Multi-Role Comparison & Differentiation</h2>
+  <p>
+    All users access the platform through a <strong>single unified login portal</strong>, but their role strictly dictates their 
+    data permissions, signup requirements, and post-login interface:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 16%;">Role</th>
+        <th style="width: 25%;">Primary Purpose</th>
+        <th style="width: 32%;">Signup Credentials Collected</th>
+        <th style="width: 27%;">Destination Landing Page</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="role-badge badge-patient">Patient</span></td>
+        <td>Personal & family health locker, view lab results, monitor vitals, review chronological timeline, emergency card access.</td>
+        <td>Full Name, Email, Gender, Blood Group (optional).</td>
+        <td><strong>Patient Dashboard</strong><br><code>/dashboard</code></td>
+      </tr>
+      <tr>
+        <td><span class="role-badge badge-doctor">Doctor</span></td>
+        <td>Search patient directory, review past clinical charts, add primary diagnoses, issue electronic prescriptions (Rx).</td>
+        <td>Full Name, Email, <strong>Medical Registration No.</strong>, <strong>Specialization</strong>, Clinic/Hospital Name.</td>
+        <td><strong>Doctor Clinical Portal</strong><br><code>/doctor</code></td>
+      </tr>
+      <tr>
+        <td><span class="role-badge badge-lab">Diagnostic Lab</span></td>
+        <td>Receive test requests, manage pending order queues, enter test parameter results, publish official digital reports.</td>
+        <td>Lab Facility Name, Email, <strong>Lab License / Reg No.</strong>, Facility Address, Contact Person.</td>
+        <td><strong>Lab Portal Dashboard</strong><br><code>/lab</code></td>
+      </tr>
+      <tr>
+        <td><span class="role-badge badge-hospital">Hospital Care</span></td>
+        <td>Monitor inpatient ward & bed occupancy, admit patients, manage emergency triage, draft & finalize discharge summaries.</td>
+        <td>Hospital Name, Email, <strong>Hospital Reg Number</strong>, Departments / Wards, Attending Staff Name.</td>
+        <td><strong>Hospital Inpatient Portal</strong><br><code>/hospital</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Page Break -->
+  <div class="page-break"></div>
+
+  <!-- Detailed Dashboard Portals -->
+  <h2>3. How Each Dashboard Works & Functions</h2>
+
+  <div class="card-grid">
+    <!-- Patient Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">👤 Patient Portal</span>
+        <span class="role-badge badge-patient">PATIENT</span>
+      </div>
+      <ul>
+        <li><strong>Health Vitals:</strong> Real-time tracking of Blood Pressure, Heart Rate, Glucose, and BMI.</li>
+        <li><strong>Medical Records:</strong> Central repository for previous doctor notes and prescriptions.</li>
+        <li><strong>Lab Reports:</strong> Interactive parameter tables (e.g. HbA1c, CBC counts) with normal/abnormal badges.</li>
+        <li><strong>Unified Timeline:</strong> Chronological feed of every healthcare event across all doctors and hospitals.</li>
+        <li><strong>Family Switcher:</strong> Manage dependents (children, elderly parents) from a single account.</li>
+        <li><strong>Emergency Info Card:</strong> Quick-action card showing blood type, allergies, and emergency contacts.</li>
+      </ul>
+    </div>
+
+    <!-- Doctor Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🩺 Doctor Portal</span>
+        <span class="role-badge badge-doctor">DOCTOR</span>
+      </div>
+      <ul>
+        <li><strong>Today's Appointments:</strong> Live schedule of patients booked for OPD or consultations.</li>
+        <li><strong>Patient Directory:</strong> Fast search by patient name, email, or generated patient ID.</li>
+        <li><strong>Clinical Chart:</strong> Review comprehensive past medical history, previous diagnoses, and vitals.</li>
+        <li><strong>Allergy & Condition Warning Chips:</strong> Prominent alerts for drug allergies (e.g. Penicillin) before prescribing.</li>
+        <li><strong>E-Prescription & Diagnosis Form:</strong> Prescribe medicines with dosage (e.g. 1-0-1) and instructions.</li>
+        <li><strong>Instant Patient Locker Sync:</strong> Issued prescriptions instantly reflect in the patient's personal locker.</li>
+      </ul>
+    </div>
+
+    <!-- Lab Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🧪 Diagnostic Lab Portal</span>
+        <span class="role-badge badge-lab">LAB</span>
+      </div>
+      <ul>
+        <li><strong>Pending Queue:</strong> Categorized test orders (Biochemistry, Endocrinology, Cardiology, Diabetology).</li>
+        <li><strong>Parameter Entry:</strong> Technician enters observed values alongside biological reference intervals.</li>
+        <li><strong>PDF Attachment:</strong> Option to attach official lab report documents.</li>
+        <li><strong>Auto-Publish:</strong> Submitting a test result updates the patient's app and dispatches an alert.</li>
+        <li><strong>LIMS Integration Gateway:</strong> Ready for real-time automated data-push from existing lab machines.</li>
+      </ul>
+    </div>
+
+    <!-- Hospital Card -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🏥 Hospital Care Portal</span>
+        <span class="role-badge badge-hospital">HOSPITAL</span>
+      </div>
+      <ul>
+        <li><strong>Inpatient Bed Occupancy:</strong> Live stats across General Wards, ICU, Private, and Semi-Private rooms.</li>
+        <li><strong>Admission Intake:</strong> Admit patient, assign ward, bed number, attending physician, and initial diagnosis.</li>
+        <li><strong>Active Ward Management:</strong> Filter and track inpatient stability and length of stay.</li>
+        <li><strong>Discharge Summary:</strong> Final diagnosis, treatments administered, home care advice, and follow-up date.</li>
+        <li><strong>HIS Gateway:</strong> HL7 ADT protocol-ready connection monitor.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Auth Workflow -->
+  <h2>4. Authentication Workflow: Free Email SMTP OTP</h2>
+  <p>
+    To eliminate costly SMS gateway APIs, the authentication engine uses direct <strong>SMTP Email OTP</strong>.
+    Both Login and Signup follow a clean, unified flow:
+  </p>
+
+  <div class="flow-box">
+<pre>
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       STEP 1: USER ENTERS EMAIL                             │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│         STEP 2: BACKEND SENDS 6-DIGIT OTP VIA FREE GMAIL/CUSTOM SMTP        │
+│          (OTP is generated securely in memory with a 5-minute expiry)       │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                 STEP 3: USER ENTERS OTP IN FLUTTER APP                      │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+                     Is user already registered in PostgreSQL?
+                                ├───► YES: Issue JWT ──► Route to User's Role Dashboard
+                                └───► NO:  Prompt Role Selection (Patient / Doctor / Lab / Hospital)
+                                           Collect details ──► Save Profile ──► Route to Dashboard
+</pre>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-title" style="margin-bottom: 6px;">Why Unified Login is Best</div>
+      <p style="font-size: 8.8pt; color: #475569; margin: 0;">
+        Users never have to guess which login URL to use. One simple screen accepts any valid email. 
+        The backend automatically detects whether the user is a patient, doctor, or lab manager and launches 
+        the exact corresponding dashboard.
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom: 6px;">Hybrid Role Switching</div>
+      <p style="font-size: 8.8pt; color: #475569; margin: 0;">
+        Healthcare professionals are patients too. Doctors can seamlessly switch between treating patients 
+        in the Doctor Portal and managing their own personal and family health records with a 1-tap role switcher.
+      </p>
+    </div>
+  </div>
+
+  <!-- Page Break -->
+  <div class="page-break"></div>
+
+  <!-- Real-World Benchmarks -->
+  <h2>5. Real-World Benchmarks & References</h2>
+  <p>
+    How top healthcare companies structure their user portals:
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Platform</th>
+        <th>Patient Interface</th>
+        <th>Doctor / Clinic Interface</th>
+        <th>Diagnostic & Hospital Interface</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Practo</strong><br><em>(practo.com)</em></td>
+        <td>Main consumer website & app for finding doctors, storing medical records, and booking diagnostics.</td>
+        <td><strong>Practo Pro / Ray:</strong> Dedicated SaaS for clinics to manage EMR, write prescriptions, and review queues.</td>
+        <td>Separate partner portals for diagnostic centers to upload reports.</td>
+      </tr>
+      <tr>
+        <td><strong>Eka Care</strong><br><em>(eka.care)</em></td>
+        <td>Mobile health locker for patients to upload medical files and track vitals.</td>
+        <td><strong>Eka Doctor Portal:</strong> Web and mobile workspace for clinicians to manage digital appointments and charts.</td>
+        <td>Connected LIMS webhooks for pathology lab sync.</td>
+      </tr>
+      <tr>
+        <td><strong>Apollo 24|7</strong><br><em>(apollo247.com)</em></td>
+        <td>Consumer app to buy medicines, book lab tests, and view Apollo health summaries.</td>
+        <td>Apollo Doctors log into internal Apollo HIS/EMR systems to view clinical histories.</td>
+        <td>Full Hospital Information System (HIS) with dedicated ward and bed allocation.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Planned API Endpoints -->
+  <h2>6. Django REST Backend API Endpoints (Sprint 1 & 2)</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 12%;">Method</th>
+        <th style="width: 38%;">Endpoint</th>
+        <th style="width: 50%;">Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/auth/request-otp/</code></td>
+        <td>Generates 6-digit OTP and sends it via SMTP email to the user.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/auth/verify-otp/</code></td>
+        <td>Verifies email OTP, checks registration status, issues JWT tokens.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/auth/register-profile/</code></td>
+        <td>Completes profile registration with selected role and license/facility info.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/patients/me/</code></td>
+        <td>Fetches logged-in patient vitals, emergency card, and profile metadata.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/records/</code></td>
+        <td>Lists all medical records, prescriptions, and timeline events for the patient.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/records/add/</code></td>
+        <td>Creates a new clinical record / prescription entry.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/reports/</code></td>
+        <td>Lists diagnostic and lab reports with structured test parameters.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/doctor/diagnose/</code></td>
+        <td>Doctor endpoint to save primary diagnosis and dispatch e-prescription to patient.</td>
+      </tr>
+      <tr>
+        <td><code>GET</code></td>
+        <td><code>/api/hospital/admissions/</code></td>
+        <td>Lists active inpatient ward admissions and bed occupancy states.</td>
+      </tr>
+      <tr>
+        <td><code>POST</code></td>
+        <td><code>/api/hospital/admissions/new/</code></td>
+        <td>Admits a new patient to a specified hospital ward and bed.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="alert alert-warning" style="margin-top: 24px;">
+    <strong>Next Action Steps:</strong>
+    <br>1. Supply sender email address & app password for SMTP configuration.
+    <br>2. Proceed with Django project initialization in <code>d:\Health\backend</code> with Python virtual environment.
+    <br>3. Connect Flutter <code>health_platform</code> authentication directly to the live backend.
+  </div>
+
+</body>
+</html>

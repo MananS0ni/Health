@@ -23,15 +23,15 @@ class TimelineEvent {
 
   factory TimelineEvent.fromJson(Map<String, dynamic> json) {
     return TimelineEvent(
-      eventId: json['event_id'] ?? '',
-      patientId: json['patient_id'] ?? '',
-      eventType: json['event_type'] ?? '',
+      eventId: json['event_id']?.toString() ?? json['id']?.toString() ?? '',
+      patientId: json['patient_id']?.toString() ?? '',
+      eventType: json['event_type']?.toString() ?? json['type']?.toString() ?? '',
       title: json['title'] ?? '',
       description: json['description'],
-      eventDate: json['event_date'] ?? '',
-      facilityName: json['facility_name'],
-      doctorName: json['doctor_name'],
-      metadata: json['metadata'],
+      eventDate: json['event_date']?.toString() ?? json['date']?.toString() ?? '',
+      facilityName: json['facility_name'] ?? json['facility'],
+      doctorName: json['doctor_name'] ?? json['doctor'],
+      metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }
 

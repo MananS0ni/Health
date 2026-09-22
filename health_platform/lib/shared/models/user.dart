@@ -39,6 +39,8 @@ class OrgProfile {
         employeeId: json['employee_id'],
       );
 
+  String get orgName => organizationName;
+
   Map<String, dynamic> toJson() => {
         'organization_name': organizationName,
         'employee_id': employeeId,
@@ -62,6 +64,10 @@ class User {
   final String? dateOfBirth;
   final String? gender;
   final String? address;
+  final List<String> allergies;
+  final List<String> medicalConditions;
+  final String? emergencyContactName;
+  final String? emergencyContactPhone;
 
   const User({
     required this.id,
@@ -76,6 +82,10 @@ class User {
     this.dateOfBirth,
     this.gender,
     this.address,
+    this.allergies = const [],
+    this.medicalConditions = const [],
+    this.emergencyContactName,
+    this.emergencyContactPhone,
   });
 
   bool get isDoctor => roles.contains('doctor');
@@ -91,11 +101,59 @@ class User {
     return null;
   }
 
+  User copyWith({
+    String? id,
+    String? fullName,
+    String? email,
+    String? phoneNumber,
+    List<String>? roles,
+    bool? isVerified,
+    DoctorProfile? doctorProfile,
+    OrgProfile? orgProfile,
+    String? bloodGroup,
+    String? dateOfBirth,
+    String? gender,
+    String? address,
+    List<String>? allergies,
+    List<String>? medicalConditions,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
+  }) {
+    return User(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      email: email ?? this.email,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      roles: roles ?? this.roles,
+      isVerified: isVerified ?? this.isVerified,
+      doctorProfile: doctorProfile ?? this.doctorProfile,
+      orgProfile: orgProfile ?? this.orgProfile,
+      bloodGroup: bloodGroup ?? this.bloodGroup,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      address: address ?? this.address,
+      allergies: allergies ?? this.allergies,
+      medicalConditions: medicalConditions ?? this.medicalConditions,
+      emergencyContactName: emergencyContactName ?? this.emergencyContactName,
+      emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
+    );
+  }
+
   factory User.fromJson(Map<String, dynamic> json) {
-    final rolesRaw = json['roles'];
+    final rolesRaw = json['roles'] ?? (json['role'] != null ? [json['role']] : null);
     final roles = rolesRaw is List
         ? List<String>.from(rolesRaw)
         : <String>['patient'];
+
+    final allergiesRaw = json['allergies'];
+    final allergies = allergiesRaw is List
+        ? List<String>.from(allergiesRaw)
+        : <String>[];
+
+    final conditionsRaw = json['medical_conditions'];
+    final conditions = conditionsRaw is List
+        ? List<String>.from(conditionsRaw)
+        : <String>[];
 
     return User(
       id: json['id'] ?? json['patient_id'] ?? '',
@@ -114,6 +172,10 @@ class User {
       dateOfBirth: json['date_of_birth'],
       gender: json['gender'],
       address: json['address'],
+      allergies: allergies,
+      medicalConditions: conditions,
+      emergencyContactName: json['emergency_contact_name'],
+      emergencyContactPhone: json['emergency_contact_phone'],
     );
   }
 
@@ -130,5 +192,9 @@ class User {
         'date_of_birth': dateOfBirth,
         'gender': gender,
         'address': address,
+        'allergies': allergies,
+        'medical_conditions': medicalConditions,
+        'emergency_contact_name': emergencyContactName,
+        'emergency_contact_phone': emergencyContactPhone,
       };
 }

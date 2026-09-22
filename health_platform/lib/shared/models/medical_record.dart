@@ -23,17 +23,19 @@ class MedicalRecord {
 
   factory MedicalRecord.fromJson(Map<String, dynamic> json) {
     return MedicalRecord(
-      recordId: json['record_id'] ?? '',
-      patientId: json['patient_id'] ?? '',
+      recordId: json['record_id']?.toString() ?? json['id']?.toString() ?? '',
+      patientId: json['patient_id']?.toString() ?? json['patient']?.toString() ?? '',
       recordType: json['record_type'] ?? '',
       title: json['title'] ?? '',
       description: json['description'],
-      recordDate: json['record_date'] ?? '',
+      recordDate: json['record_date']?.toString() ?? '',
       facilityName: json['facility_name'],
       doctorName: json['doctor_name'],
       attachments: json['attachments'] != null 
           ? List<String>.from(json['attachments']) 
-          : null,
+          : (json['file_url'] != null && json['file_url'].toString().isNotEmpty
+              ? [json['file_url'].toString()]
+              : null),
     );
   }
 

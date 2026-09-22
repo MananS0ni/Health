@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../mock_data/mock_hospital_data.dart';
 import '../../../shared/widgets/app_avatar.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_badge.dart';
@@ -9,23 +10,16 @@ import '../../../shared/widgets/app_list_state.dart';
 
 const Color kHospitalAccent = Color(0xFFD97706);
 
-class AdmissionsScreen extends StatefulWidget {
+class AdmissionsScreen extends ConsumerStatefulWidget {
   const AdmissionsScreen({super.key});
 
   @override
-  State<AdmissionsScreen> createState() => _AdmissionsScreenState();
+  ConsumerState<AdmissionsScreen> createState() => _AdmissionsScreenState();
 }
 
-class _AdmissionsScreenState extends State<AdmissionsScreen> {
+class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
   String _selectedWard = 'All Wards';
-  late List<Map<String, dynamic>> _admissionsList;
   ListStatus _viewStatus = ListStatus.content;
-
-  @override
-  void initState() {
-    super.initState();
-    _admissionsList = List.from(MockHospitalData.getAdmissions());
-  }
 
   void _showNewAdmissionDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
@@ -192,9 +186,7 @@ class _AdmissionsScreenState extends State<AdmissionsScreen> {
                   'status': status,
                 };
 
-                setState(() {
-                  _admissionsList.insert(0, newAdmission);
-                });
+                ref.read(hospitalAdmissionsProvider.notifier).addAdmission(newAdmission);
 
                 Navigator.pop(dialogContext);
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -290,7 +282,8 @@ class _AdmissionsScreenState extends State<AdmissionsScreen> {
       'Semi-Private Ward B'
     ];
 
-    final filtered = _admissionsList.where((adm) {
+    final admissionsList = ref.watch(hospitalAdmissionsProvider);
+    final filtered = admissionsList.where((adm) {
       if (_selectedWard == 'All Wards') return true;
       return adm['ward'] == _selectedWard;
     }).toList();

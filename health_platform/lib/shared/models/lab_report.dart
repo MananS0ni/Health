@@ -22,16 +22,17 @@ class LabReport {
   });
 
   factory LabReport.fromJson(Map<String, dynamic> json) {
+    final rawParams = json['test_parameters'] ?? json['parameters'];
     return LabReport(
-      reportId: json['report_id'] ?? '',
-      patientId: json['patient_id'] ?? '',
+      reportId: json['report_id']?.toString() ?? json['id']?.toString() ?? '',
+      patientId: json['patient_id']?.toString() ?? json['patient']?.toString() ?? '',
       reportName: json['report_name'] ?? '',
-      reportDate: json['report_date'] ?? '',
+      reportDate: json['report_date']?.toString() ?? '',
       facilityName: json['facility_name'],
       doctorName: json['doctor_name'],
-      testParameters: json['test_parameters'] != null
-          ? (json['test_parameters'] as List)
-              .map((e) => TestParameter.fromJson(e))
+      testParameters: rawParams != null
+          ? (rawParams as List)
+              .map((e) => TestParameter.fromJson(e as Map<String, dynamic>))
               .toList()
           : [],
       summary: json['summary'],
@@ -40,6 +41,7 @@ class LabReport {
   }
 
   Map<String, dynamic> toJson() {
+    final paramsList = testParameters.map((e) => e.toJson()).toList();
     return {
       'report_id': reportId,
       'patient_id': patientId,
@@ -47,7 +49,8 @@ class LabReport {
       'report_date': reportDate,
       'facility_name': facilityName,
       'doctor_name': doctorName,
-      'test_parameters': testParameters.map((e) => e.toJson()).toList(),
+      'parameters': paramsList,
+      'test_parameters': paramsList,
       'summary': summary,
       'status': status,
     };
@@ -70,12 +73,20 @@ class TestParameter {
   });
 
   factory TestParameter.fromJson(Map<String, dynamic> json) {
+    String flag = json['flag']?.toString() ?? '';
+    if (flag.isEmpty) {
+      if (json['is_abnormal'] == true) {
+        flag = 'abnormal';
+      } else {
+        flag = 'normal';
+      }
+    }
     return TestParameter(
       parameterName: json['parameter_name'] ?? '',
-      value: json['value'] ?? '',
+      value: json['value']?.toString() ?? '',
       unit: json['unit'],
       referenceRange: json['reference_range'],
-      flag: json['flag'] ?? 'normal',
+      flag: flag,
     );
   }
 
@@ -86,6 +97,7 @@ class TestParameter {
       'unit': unit,
       'reference_range': referenceRange,
       'flag': flag,
+      'is_abnormal': flag.toLowerCase() == 'abnormal' || flag.toLowerCase() == 'critical',
     };
   }
 }

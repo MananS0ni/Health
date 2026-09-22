@@ -8,6 +8,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
+import '../../shared/models/medical_record.dart';
 
 class RecordsScreen extends ConsumerStatefulWidget {
   const RecordsScreen({super.key});
@@ -29,8 +30,146 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
     'vaccination',
   ];
 
+  void _showAddRecordModal(BuildContext context) {
+    final titleController = TextEditingController();
+    final facilityController = TextEditingController();
+    final doctorController = TextEditingController();
+    final notesController = TextEditingController();
+    String selectedType = 'prescription';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Add New Medical Record',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Record Title *',
+                      hintText: 'e.g. Health Checkup Consultation',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedType,
+                    decoration: const InputDecoration(
+                      labelText: 'Record Type',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'prescription', child: Text('Prescription')),
+                      DropdownMenuItem(value: 'discharge_summary', child: Text('Discharge Summary')),
+                      DropdownMenuItem(value: 'imaging', child: Text('Diagnostic Imaging')),
+                      DropdownMenuItem(value: 'vaccination', child: Text('Vaccination Record')),
+                    ],
+                    onChanged: (val) => setModalState(() => selectedType = val!),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: facilityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Health Facility / Hospital',
+                      hintText: 'e.g. City Health Clinic',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: doctorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Attending Doctor Name',
+                      hintText: 'e.g. Dr. Rajesh Verma',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Clinical Notes / Instructions',
+                      hintText: 'Enter clinical observations or medicine advice...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  AppButton(
+                    text: 'Save Record',
+                    onPressed: () {
+                      if (titleController.text.trim().isEmpty) return;
+                      final now = DateTime.now();
+                      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                      final newRecord = MedicalRecord(
+                        recordId: 'rec_${now.millisecondsSinceEpoch}',
+                        patientId: 'patient_self',
+                        title: titleController.text.trim(),
+                        recordType: selectedType,
+                        recordDate: dateStr,
+                        facilityName: facilityController.text.trim().isNotEmpty
+                            ? facilityController.text.trim()
+                            : null,
+                        doctorName: doctorController.text.trim().isNotEmpty
+                            ? doctorController.text.trim()
+                            : null,
+                        description: notesController.text.trim().isNotEmpty
+                            ? notesController.text.trim()
+                            : null,
+                      );
+                      ref.read(recordsProvider.notifier).addRecord(newRecord);
+                      Navigator.pop(modalContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Medical record added successfully.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    isFullWidth: true,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showShareDoctorModal(BuildContext context, dynamic record) {
-    String selectedDoctor = 'Dr. Max Patel (General Medicine)';
+    String selectedDoctor = 'Attending Physician';
     String accessDuration = '7 Days';
 
     showModalBottomSheet(
@@ -154,6 +293,20 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+            tooltip: 'Add Record',
+            onPressed: () => _showAddRecordModal(context),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddRecordModal(context),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Record'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: WebConstraint(
         maxWidth: 720,

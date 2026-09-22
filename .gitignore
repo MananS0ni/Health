@@ -19,3 +19,10 @@ health_platform/.pub/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Test & Capture Artifacts
+proof_*.png
+test_*.png
+test_pw.png
+capture_*.js
+capture_all.ps1

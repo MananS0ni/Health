@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/config/providers.dart';
+import '../../shared/models/user.dart';
 
 const _kSpecializations = [
   'General Physician',
@@ -41,7 +42,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
-  LoginMode _mode = LoginMode.phone;
 
   // Roles — patient is always selected
   final Set<String> _selectedRoles = {'patient'};
@@ -89,20 +89,35 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
     setState(() => _isLoading = true);
 
-    // Simulate registration → OTP flow
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      if (_mode == LoginMode.phone) {
-        ref
-            .read(authStateProvider.notifier)
-            .sendOtpByPhone(_phoneController.text.trim());
-      } else {
-        ref
-            .read(authStateProvider.notifier)
-            .sendOtpByEmail(_emailController.text.trim());
-      }
-    });
+    final isDoc = _selectedRoles.contains('doctor');
+    final isOrg = _selectedRoles.contains('lab_staff') || _selectedRoles.contains('hospital_staff');
+
+    DoctorProfile? docProfile;
+    if (isDoc) {
+      docProfile = DoctorProfile(
+        registrationNumber: _regNoController.text.trim(),
+        specialization: _specialization,
+        clinicName: _clinicController.text.trim().isNotEmpty ? _clinicController.text.trim() : null,
+      );
+    }
+
+    OrgProfile? orgProfile;
+    if (isOrg) {
+      orgProfile = OrgProfile(
+        organizationName: _orgNameController.text.trim(),
+        employeeId: _empIdController.text.trim().isNotEmpty ? _empIdController.text.trim() : null,
+      );
+    }
+
+    ref.read(authStateProvider.notifier).setRegistrationDetails(
+          fullName: _nameController.text.trim(),
+          contact: _emailController.text.trim(),
+          isPhone: false,
+          phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
+          roles: _selectedRoles.toList(),
+          doctorProfile: docProfile,
+          orgProfile: orgProfile,
+        );
   }
 
   @override
@@ -211,21 +226,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                         const SizedBox(height: 14),
 
-                        // ── Phone / Email toggle ──────────────────────────
-                        _FormLabel('Sign-in Method'),
+                        // ── Email Address ─────────────────────────────────
+                        const _FormLabel('Email Address (for Verification OTP) *'),
                         const SizedBox(height: 7),
-                        _ModeToggle(
-                          mode: _mode,
-                          onChanged: (m) => setState(() {
-                            _mode = m;
-                            _formKey.currentState?.reset();
-                          }),
-                        ),
-                        const SizedBox(height: 10),
-                        if (_mode == LoginMode.phone)
-                          _PhoneInput(controller: _phoneController)
-                        else
-                          _EmailInput(controller: _emailController),
+                        _EmailInput(controller: _emailController),
+                        const SizedBox(height: 14),
+
+                        // ── Phone Number (Optional) ────────────────────────
+                        const _FormLabel('Phone Number (Optional)'),
+                        const SizedBox(height: 7),
+                        _PhoneInput(controller: _phoneController, isRequired: false),
                         const SizedBox(height: 22),
 
                         // ── Role chips ────────────────────────────────────
@@ -605,91 +615,10 @@ class _RoleChip extends StatelessWidget {
   }
 }
 
-// Re-use the mode toggle and input widgets from login screen
-class _ModeToggle extends StatelessWidget {
-  final LoginMode mode;
-  final ValueChanged<LoginMode> onChanged;
-  const _ModeToggle({required this.mode, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Row(
-        children: [
-          _Tab('Phone', Icons.phone_outlined, mode == LoginMode.phone,
-              () => onChanged(LoginMode.phone)),
-          _Tab('Email', Icons.email_outlined, mode == LoginMode.email,
-              () => onChanged(LoginMode.email)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Tab extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-  const _Tab(this.label, this.icon, this.selected, this.onTap);
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(7),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon,
-                  size: 14,
-                  color: selected
-                      ? AppColors.primary
-                      : AppColors.textSecondary),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected
-                      ? AppColors.primary
-                      : AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _PhoneInput extends StatelessWidget {
   final TextEditingController controller;
-  const _PhoneInput({required this.controller});
+  final bool isRequired;
+  const _PhoneInput({required this.controller, this.isRequired = true});
 
   @override
   Widget build(BuildContext context) {
@@ -701,7 +630,7 @@ class _PhoneInput extends StatelessWidget {
       style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
       decoration: InputDecoration(
         counterText: '',
-        hintText: '98765 43210',
+        hintText: isRequired ? '98765 43210' : '98765 43210 (Optional)',
         hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 14),
         filled: true,
         fillColor: const Color(0xFFF9FAFB),
@@ -732,6 +661,7 @@ class _PhoneInput extends StatelessWidget {
         ),
       ),
       validator: (v) {
+        if (!isRequired && (v == null || v.trim().isEmpty)) return null;
         if (v == null || v.isEmpty) return 'Enter your mobile number';
         if (v.length < 10) return 'Enter a valid 10-digit number';
         return null;

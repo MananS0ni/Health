@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/config/providers.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../shared/widgets/role_context_switcher.dart';
 import '../../shared/widgets/app_badge.dart';
+import '../../shared/widgets/global_search_dialog.dart';
 import '../notifications/notifications_provider.dart';
 import 'doctor_dashboard_screen.dart';
 import 'patient_search_screen.dart';
@@ -39,6 +41,9 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(activeRoleProvider.notifier).setRole('doctor');
+    });
   }
 
   void _onTabSelected(int index) {
@@ -48,6 +53,9 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
   @override
   Widget build(BuildContext context) {
     final isWideScreen = MediaQuery.of(context).size.width > 768;
+    final user = ref.watch(userProvider);
+    final cleanName = user.fullName.trim();
+    final displayName = cleanName.toLowerCase().startsWith('dr.') ? cleanName : 'Dr. $cleanName';
 
     final appBar = AppBar(
       backgroundColor: Colors.white,
@@ -57,6 +65,36 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
       titleSpacing: 16,
       title: const RoleContextSwitcher(accentColor: kDoctorAccent),
       actions: [
+        // Global Instant Search
+        if (isWideScreen)
+          GestureDetector(
+            onTap: () => showGlobalSearchDialog(context),
+            child: Container(
+              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.search_rounded, size: 16, color: AppColors.textSecondary),
+                  SizedBox(width: 8),
+                  Text(
+                    'Search records, patients, tests...',
+                    style: TextStyle(fontSize: 12, color: AppColors.textTertiary),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          IconButton(
+            icon: const Icon(Icons.search_rounded, color: AppColors.textPrimary),
+            tooltip: 'Search Records & Doctors',
+            onPressed: () => showGlobalSearchDialog(context),
+          ),
         Stack(
           alignment: Alignment.center,
           children: [
@@ -88,9 +126,9 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
           padding: const EdgeInsets.only(right: 16, left: 4),
           child: Chip(
             avatar: const Icon(Icons.verified, size: 14, color: kDoctorAccent),
-            label: const Text(
-              'Dr. Max Patel',
-              style: TextStyle(
+            label: Text(
+              displayName,
+              style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: kDoctorAccent,

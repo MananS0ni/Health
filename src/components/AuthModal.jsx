@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Smartphone, HeartPulse, ArrowRight, CheckCircle2, Lock, MessageSquare, User } from 'lucide-react';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
-  const [fullName, setFullName] = useState('Manan Soni');
-  const [phoneNumber, setPhoneNumber] = useState('9876543210');
-  const [otpCode, setOtpCode] = useState('482910');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpCode, setOtpCode] = useState('');
   const [step, setStep] = useState(1); // 1: Enter details, 2: Enter OTP
   const [isLoading, setIsLoading] = useState(false);
 
@@ -12,22 +12,24 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
   const handleSendOtp = (e) => {
     e.preventDefault();
+    if (!phoneNumber || phoneNumber.trim().length < 10) return;
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
       setStep(2);
-      setOtpCode('482910');
+      setOtpCode('');
     }, 600);
   };
 
   const handleVerifyOtp = (e) => {
     e.preventDefault();
+    if (!otpCode || otpCode.trim().length !== 6) return;
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
       onLoginSuccess({
-        name: fullName || 'Patient',
-        phone: `+91 ${phoneNumber}`,
+        name: fullName.trim() || 'Patient',
+        phone: `+91 ${phoneNumber.trim()}`,
         status: 'VERIFIED'
       });
       onClose();
@@ -87,14 +89,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                 </div>
               </div>
 
-              {/* Demo Hint Banner */}
-              <div style={{ padding: '0.75rem', backgroundColor: '#F0FDF4', borderRadius: '10px', border: '1px solid #BBF7D0', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <MessageSquare size={18} style={{ color: '#0F766E' }} />
-                <div>
-                  <strong>Demo Mode OTP Code:</strong> <code>482910</code>
-                </div>
-              </div>
-
               <button
                 type="submit"
                 className="btn-primary"
@@ -107,17 +101,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp}>
-              {/* Demo OTP Alert Box */}
-              <div style={{ padding: '0.85rem', backgroundColor: '#ECFDF5', borderRadius: '10px', border: '1px solid #86EFAC', marginBottom: '1.25rem', fontSize: '0.85rem', color: '#166534' }}>
-                <div style={{ fontWeight: 800, marginBottom: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <MessageSquare size={16} />
-                  <span>Demo OTP Code: 482910</span>
-                </div>
-                <p style={{ fontSize: '0.8rem', color: '#15803D' }}>
-                  Verifying patient account for <strong>{fullName}</strong> (+91 {phoneNumber}). Use test code <strong>482910</strong>.
-                </p>
-              </div>
-
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
                   <label style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>
@@ -131,7 +114,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   maxLength={6}
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value)}
-                  placeholder="482910"
+                  placeholder="Enter 6 digits"
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '2px solid #0F766E', fontSize: '1.2rem', fontWeight: 800, textAlign: 'center', letterSpacing: '8px', outline: 'none', backgroundColor: '#F0FDF4' }}
                 />
               </div>

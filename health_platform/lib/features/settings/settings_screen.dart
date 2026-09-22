@@ -272,6 +272,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       );
                     }).toList(),
                   ),
+                  if (user.doctorProfile != null) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.medical_services_outlined, size: 16, color: Color(0xFF1E40AF)),
+                              SizedBox(width: 6),
+                              Text('Doctor Credentials', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text('Reg No: ${user.doctorProfile!.registrationNumber}', style: const TextStyle(fontSize: 12, color: Color(0xFF1E3A8A))),
+                          Text('Specialization: ${user.doctorProfile!.specialization}', style: const TextStyle(fontSize: 12, color: Color(0xFF1E3A8A))),
+                          if (user.doctorProfile!.clinicName != null)
+                            Text('Clinic: ${user.doctorProfile!.clinicName}', style: const TextStyle(fontSize: 12, color: Color(0xFF1E3A8A))),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (user.orgProfile != null) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Icon(Icons.business_outlined, size: 16, color: Color(0xFF047857)),
+                              SizedBox(width: 6),
+                              Text('Organization Affiliation', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF047857))),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text('Organization: ${user.orgProfile!.organizationName}', style: const TextStyle(fontSize: 12, color: Color(0xFF065F46))),
+                          if (user.orgProfile!.employeeId != null)
+                            Text('License / ID: ${user.orgProfile!.employeeId}', style: const TextStyle(fontSize: 12, color: Color(0xFF065F46))),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

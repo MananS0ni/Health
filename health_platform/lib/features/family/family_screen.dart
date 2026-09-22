@@ -9,6 +9,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
+import '../../shared/models/family_member.dart';
 
 class FamilyScreen extends ConsumerStatefulWidget {
   const FamilyScreen({super.key});
@@ -23,42 +24,77 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
   void _showAddMemberDialog(BuildContext context) {
     final nameController = TextEditingController();
     final relController = TextEditingController(text: 'Spouse');
+    final bloodGroupController = TextEditingController(text: 'B+');
+    String selectedGender = 'Male';
 
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Add Family Member Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text('Add Family Member Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Full Name *', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: relController,
+                  decoration: const InputDecoration(labelText: 'Relationship (e.g. Spouse, Child, Parent)', border: OutlineInputBorder()),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedGender,
+                  decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
+                  items: const [
+                    DropdownMenuItem(value: 'Male', child: Text('Male')),
+                    DropdownMenuItem(value: 'Female', child: Text('Female')),
+                    DropdownMenuItem(value: 'Other', child: Text('Other')),
+                  ],
+                  onChanged: (val) => setDialogState(() => selectedGender = val!),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: bloodGroupController,
+                  decoration: const InputDecoration(labelText: 'Blood Group', hintText: 'e.g. O+, A+, B-', border: OutlineInputBorder()),
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: relController,
-              decoration: const InputDecoration(labelText: 'Relationship (e.g. Spouse, Child, Parent)', border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.trim().isEmpty) return;
+                final now = DateTime.now();
+                final newMember = FamilyMember(
+                  memberId: 'mem_${now.millisecondsSinceEpoch}',
+                  patientId: 'pat_${now.millisecondsSinceEpoch}',
+                  fullName: nameController.text.trim(),
+                  relationship: relController.text.trim().isNotEmpty ? relController.text.trim() : 'Family',
+                  dateOfBirth: 'Not specified',
+                  gender: selectedGender,
+                  bloodGroup: bloodGroupController.text.trim().isNotEmpty ? bloodGroupController.text.trim() : 'Unknown',
+                  totalRecords: 0,
+                );
+                ref.read(familyMembersProvider.notifier).addMember(newMember);
+                Navigator.pop(dialogContext);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('${newMember.fullName} added to family profiles.')),
+                );
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              child: const Text('Save Member'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Family member added.')),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            child: const Text('Save Member'),
-          ),
-        ],
       ),
     );
   }

@@ -21,14 +21,16 @@ class FamilyMember {
 
   factory FamilyMember.fromJson(Map<String, dynamic> json) {
     return FamilyMember(
-      memberId: json['member_id'] ?? '',
-      patientId: json['patient_id'] ?? '',
+      memberId: json['member_id']?.toString() ?? json['id']?.toString() ?? '',
+      patientId: json['patient_id']?.toString() ?? '',
       fullName: json['full_name'] ?? '',
       relationship: json['relationship'] ?? '',
-      dateOfBirth: json['date_of_birth'] ?? '',
+      dateOfBirth: json['date_of_birth']?.toString() ?? '',
       gender: json['gender'] ?? '',
       bloodGroup: json['blood_group'] ?? '',
-      totalRecords: json['total_records'] ?? 0,
+      totalRecords: json['total_records'] is int
+          ? json['total_records'] as int
+          : int.tryParse(json['total_records']?.toString() ?? '0') ?? 0,
     );
   }
 

@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/config/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../mock_data/mock_hospital_data.dart';
 import '../../../shared/widgets/app_card.dart';
 import '../../../shared/widgets/app_badge.dart';
 
 const Color kHospitalAccent = Color(0xFFD97706);
 
-class HospitalIntegrationStatusScreen extends StatelessWidget {
+class HospitalIntegrationStatusScreen extends ConsumerWidget {
   const HospitalIntegrationStatusScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final stats = MockHospitalData.getHospitalStats();
-    final logs = MockHospitalData.getHisIntegrationLogs();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final admissions = ref.watch(hospitalAdmissionsProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -48,18 +49,18 @@ class HospitalIntegrationStatusScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          children: const [
+                          children: [
                             Text(
-                              'HIS Auto-Push Gateway',
-                              style: TextStyle(
+                              user?.orgProfile?.orgName ?? 'HIS Auto-Push Gateway',
+                              style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                               ),
                             ),
-                            SizedBox(width: 8),
-                            AppBadge(
-                              text: 'CONNECTED',
+                            const SizedBox(width: 8),
+                            const AppBadge(
+                              text: 'ONLINE',
                               type: AppBadgeType.success,
                               isSmall: true,
                             ),
@@ -67,7 +68,7 @@ class HospitalIntegrationStatusScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'HL7 ADT Engine • Last Sync: ${stats['his_last_sync']} • Gateway v3.1',
+                          'HL7 ADT Engine • Active Patients: ${admissions.length} • Gateway v3.1 Ready',
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,
@@ -90,53 +91,40 @@ class HospitalIntegrationStatusScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
 
-            // Transmission Logs
-            ...logs.map((log) => Container(
-                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: AppCard(
-                    child: Row(
-                      children: [
-                        Text(
-                          log['timestamp'],
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                log['event'],
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                'System: ${log['system']} • Patient Ref: ${log['patient_id']}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        AppBadge(
-                          text: log['status'],
-                          type: AppBadgeType.success,
-                          isSmall: true,
-                        ),
-                      ],
+            // Empty State for Sync Logs
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                children: [
+                  Icon(Icons.sync_alt_outlined,
+                      size: 40, color: Colors.grey.shade400),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'No Transmission Logs',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                )),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Real-time HL7 ADT transmission and EHR sync events will appear here as admissions and discharges are processed.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

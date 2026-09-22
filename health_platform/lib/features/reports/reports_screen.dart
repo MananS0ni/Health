@@ -8,6 +8,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
+import '../../shared/models/lab_report.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -18,6 +19,140 @@ class ReportsScreen extends ConsumerStatefulWidget {
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   ListStatus _viewStatus = ListStatus.content;
+
+  void _showUploadReportModal(BuildContext context) {
+    final nameController = TextEditingController();
+    final labController = TextEditingController();
+    final doctorController = TextEditingController();
+    final notesController = TextEditingController();
+    String selectedStatus = 'completed';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (modalContext) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Upload / Add Lab Diagnostic Report',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Report / Test Name *',
+                      hintText: 'e.g. Complete Blood Count (CBC)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: labController,
+                    decoration: const InputDecoration(
+                      labelText: 'Diagnostic Laboratory',
+                      hintText: 'e.g. Metro Path Labs',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: doctorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Prescribing Doctor',
+                      hintText: 'e.g. Dr. Verma',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedStatus,
+                    decoration: const InputDecoration(
+                      labelText: 'Test Status',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'completed', child: Text('Completed')),
+                      DropdownMenuItem(value: 'pending', child: Text('Pending Review')),
+                    ],
+                    onChanged: (v) => setModalState(() => selectedStatus = v!),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Key Findings / Values',
+                      hintText: 'e.g. Hemoglobin 14.2 g/dL, Platelets normal...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  AppButton(
+                    text: 'Save Report',
+                    onPressed: () {
+                      if (nameController.text.trim().isEmpty) return;
+                      final now = DateTime.now();
+                      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+                      final newReport = LabReport(
+                        reportId: 'rep_${now.millisecondsSinceEpoch}',
+                        patientId: 'patient_self',
+                        reportName: nameController.text.trim(),
+                        facilityName: labController.text.trim().isNotEmpty
+                            ? labController.text.trim()
+                            : 'Direct Upload',
+                        reportDate: dateStr,
+                        status: selectedStatus,
+                        doctorName: doctorController.text.trim().isNotEmpty
+                            ? doctorController.text.trim()
+                            : null,
+                        testParameters: [],
+                      );
+                      ref.read(reportsProvider.notifier).addReport(newReport);
+                      Navigator.pop(modalContext);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Lab report saved successfully.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                    isFullWidth: true,
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +169,20 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file_rounded, color: AppColors.primary),
+            tooltip: 'Upload Report',
+            onPressed: () => _showUploadReportModal(context),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showUploadReportModal(context),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Add Report'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
       body: WebConstraint(
         maxWidth: 720,

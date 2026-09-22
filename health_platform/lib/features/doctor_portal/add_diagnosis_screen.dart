@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/config/providers.dart';
+import '../../core/network/api_client.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../mock_data/mock_doctor_data.dart';
 
 const Color kDoctorAccent = Color(0xFF1E40AF);
 
-class AddDiagnosisScreen extends StatefulWidget {
+class AddDiagnosisScreen extends ConsumerStatefulWidget {
   final String? patientId;
 
   const AddDiagnosisScreen({
@@ -15,32 +17,23 @@ class AddDiagnosisScreen extends StatefulWidget {
   });
 
   @override
-  State<AddDiagnosisScreen> createState() => _AddDiagnosisScreenState();
+  ConsumerState<AddDiagnosisScreen> createState() => _AddDiagnosisScreenState();
 }
 
-class _AddDiagnosisScreenState extends State<AddDiagnosisScreen> {
+class _AddDiagnosisScreenState extends ConsumerState<AddDiagnosisScreen> {
   final _formKey = GlobalKey<FormState>();
   final _diagnosisController = TextEditingController();
   final _notesController = TextEditingController();
   final _medNameController = TextEditingController();
   final _dosageController = TextEditingController();
 
+  final List<Map<String, String>> _addedMedicines = [];
   DateTime _followUpDate = DateTime.now().add(const Duration(days: 14));
   bool _isSubmitted = false;
-
-  final List<Map<String, String>> _addedMedicines = [];
 
   @override
   void initState() {
     super.initState();
-    // Default pre-fill for demo
-    _diagnosisController.text = 'Essential Hypertension Stage 1';
-    _notesController.text = 'Patient advised low-salt diet and 30-min daily walk.';
-    _addedMedicines.add({
-      'name': 'Telmisartan 40mg',
-      'dosage': '1-0-0 (Morning)',
-      'duration': '30 Days',
-    });
   }
 
   void _addMedicine() {
@@ -59,9 +52,39 @@ class _AddDiagnosisScreenState extends State<AddDiagnosisScreen> {
     }
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isSubmitted = true);
+      try {
+        final user = ref.read(userProvider);
+        final payload = {
+          'patient_id': widget.patientId,
+          'doctor_email': (user.email != null && user.email!.isNotEmpty) ? user.email : 'sonimanan2905@gmail.com',
+          'doctor_name': user.fullName.isNotEmpty ? user.fullName : 'Dhruv Patel',
+          'diagnosis': _diagnosisController.text.trim(),
+          'clinical_notes': _notesController.text.trim(),
+          'medicines': _addedMedicines.map((m) => {
+            'medicine_name': m['name'] ?? '',
+            'dosage': m['dosage'] ?? '1-0-1',
+            'duration': m['duration'] ?? '14 Days',
+            'instructions': 'As prescribed',
+          }).toList(),
+        };
+        await ApiClient().createPrescription(payload);
+        ref.read(recordsProvider.notifier).fetchRecords();
+        ref.read(timelineProvider.notifier).fetchTimeline();
+        if (mounted) {
+          setState(() => _isSubmitted = true);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to save diagnosis: ${e.toString().replaceAll('Exception: ', '')}'),
+              backgroundColor: AppColors.emergency,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -76,7 +99,17 @@ class _AddDiagnosisScreenState extends State<AddDiagnosisScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final patientRecord = MockDoctorData.getPatientDetailRecord(widget.patientId ?? 'PAT001');
+    final patients = ref.watch(doctorPatientsProvider);
+    final patientRecord = patients.firstWhere(
+      (p) => (p['id'] != null && p['id'] == widget.patientId) ||
+             (p['patient_id'] != null && p['patient_id'] == widget.patientId),
+      orElse: () => {
+        'patient_id': widget.patientId ?? 'PAT-001',
+        'full_name': widget.patientId != null ? 'Patient (${widget.patientId})' : 'Patient',
+        'gender': 'Not specified',
+        'age': '--',
+      },
+    );
 
     return Scaffold(
       appBar: AppBar(

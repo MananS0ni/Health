@@ -1,21 +1,69 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../mock_data/mock_doctor_data.dart';
+import '../../core/config/providers.dart';
 import '../../shared/widgets/app_avatar.dart';
 
 const Color kDoctorAccent = Color(0xFF1E40AF);
 
-class DoctorDashboardScreen extends StatefulWidget {
+class DoctorDashboardScreen extends ConsumerStatefulWidget {
   const DoctorDashboardScreen({super.key});
 
   @override
-  State<DoctorDashboardScreen> createState() => _DoctorDashboardScreenState();
+  ConsumerState<DoctorDashboardScreen> createState() => _DoctorDashboardScreenState();
 }
 
-class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
+class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
   final _searchController = TextEditingController();
+
+  Future<void> _handleAcceptRequest(Map<String, dynamic> req) async {
+    final consentId = req['id']?.toString() ?? '';
+    final patientName = req['patient_name'] ?? 'Patient';
+    final patientCode = req['patient_code'] ?? req['patient'] ?? '';
+
+    final res = await ref.read(doctorIncomingRequestsProvider.notifier).actionRequest(consentId, 'accept');
+
+    if (mounted) {
+      if (res['success'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('✅ Connection accepted! 24h access granted for $patientName.'),
+            backgroundColor: const Color(0xFF059669),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        ref.read(doctorPatientsProvider.notifier).fetchPatients();
+        context.go('/doctor/patient-detail?id=$patientCode');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${res['error'] ?? 'Could not accept request'}'),
+            backgroundColor: const Color(0xFFDC2626),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleDeclineRequest(Map<String, dynamic> req) async {
+    final consentId = req['id']?.toString() ?? '';
+    final patientName = req['patient_name'] ?? 'Patient';
+
+    await ref.read(doctorIncomingRequestsProvider.notifier).actionRequest(consentId, 'decline');
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Request from $patientName was declined.'),
+          backgroundColor: const Color(0xFF475569),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -25,8 +73,25 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appointments = MockDoctorData.getAppointments();
-    final recentPatients = MockDoctorData.getRecentPatients();
+    final appointments = ref.watch(doctorAppointmentsProvider);
+    final recentPatients = ref.watch(doctorPatientsProvider);
+    final incomingRequests = ref.watch(doctorIncomingRequestsProvider);
+    final pendingRequests = incomingRequests.where((r) => r['status'] == 'pending').toList();
+
+    final user = ref.watch(userProvider);
+    final cleanName = user.fullName.trim();
+    final displayName = cleanName.toLowerCase().startsWith('dr.') ? cleanName : 'Dr. $cleanName';
+    final docProfile = user.doctorProfile;
+    final spec = (docProfile != null && docProfile.specialization.isNotEmpty)
+        ? docProfile.specialization
+        : 'Specialist';
+    final reg = (docProfile != null && docProfile.registrationNumber.isNotEmpty)
+        ? 'Reg. ${docProfile.registrationNumber}'
+        : 'Reg. Verified';
+    final clinic = (docProfile != null && docProfile.clinicName != null && docProfile.clinicName!.isNotEmpty)
+        ? ' • ${docProfile.clinicName}'
+        : '';
+    final subText = '$spec • $reg$clinic';
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -81,9 +146,9 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Welcome, Dr. Max Patel',
-                    style: TextStyle(
+                  Text(
+                    'Welcome, $displayName',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
@@ -91,7 +156,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'General Physician • Reg. MH-12345 • Apollo Clinic',
+                    subText,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 12,
@@ -158,7 +223,7 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                 Expanded(
                   child: _StatCard(
                     title: 'Completed',
-                    value: '1',
+                    value: '${appointments.where((a) => a['status'] == 'Completed').length}',
                     icon: Icons.check_circle_outline_rounded,
                     color: const Color(0xFF059669),
                   ),
@@ -167,13 +232,107 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
                 Expanded(
                   child: _StatCard(
                     title: 'In Queue',
-                    value: '4',
+                    value: '${appointments.where((a) => a['status'] != 'Completed').length}',
                     icon: Icons.hourglass_top_rounded,
                     color: const Color(0xFFD97706),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.lg),
+
+            // ── Incoming Patient Link & Access Requests Section ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Incoming Patient Requests',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (pendingRequests.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFF59E0B)),
+                        ),
+                        child: Text(
+                          '${pendingRequests.length} Pending Approval',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFB45309),
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: const Text(
+                          '0 Pending',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                TextButton.icon(
+                  onPressed: () => ref.read(doctorIncomingRequestsProvider.notifier).fetchRequests(),
+                  icon: const Icon(Icons.refresh_rounded, size: 16, color: kDoctorAccent),
+                  label: const Text('Refresh', style: TextStyle(color: kDoctorAccent, fontWeight: FontWeight.w600, fontSize: 12)),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (incomingRequests.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(top: 4, bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.link_rounded, color: AppColors.textSecondary, size: 22),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No incoming patient requests. When patients connect with you via "+ Link Doctor/Lab", their requests will appear here for you to accept.',
+                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...incomingRequests.map((req) => _IncomingPatientRequestCard(
+                    request: req,
+                    onAccept: () => _handleAcceptRequest(req),
+                    onDecline: () => _handleDeclineRequest(req),
+                    onOpenChart: () {
+                      final pCode = req['patient_code'] ?? req['patient'] ?? '';
+                      context.go('/doctor/patient-detail?id=$pCode');
+                    },
+                  )),
             const SizedBox(height: AppSpacing.lg),
 
             // Today's Appointments Section
@@ -198,7 +357,31 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            ...appointments.map((apt) => _AppointmentTile(appointment: apt)),
+            if (appointments.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.only(top: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No appointments scheduled for today.',
+                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...appointments.map((apt) => _AppointmentTile(appointment: apt)),
 
             const SizedBox(height: AppSpacing.lg),
 
@@ -212,7 +395,30 @@ class _DoctorDashboardScreenState extends State<DoctorDashboardScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            ...recentPatients.map((patient) => _RecentPatientCard(patient: patient)),
+            if (recentPatients.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.people_outline_rounded, color: AppColors.textSecondary, size: 24),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No recent patient consultations yet. Search for a patient by phone or name above.',
+                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...recentPatients.map((patient) => _RecentPatientCard(patient: patient)),
           ],
         ),
       ),
@@ -325,15 +531,26 @@ class _AppointmentTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  '${appointment['age']} yrs • ${appointment['gender']} • ${appointment['chief_complaint']}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Builder(builder: (context) {
+                  final ageStr = (appointment['age'] != null && appointment['age'] != 'null' && appointment['age'] != 'Not specified')
+                      ? (appointment['age'].toString().endsWith('yrs') ? appointment['age'].toString() : '${appointment['age']} yrs')
+                      : 'Age not specified';
+                  final genderStr = (appointment['gender'] != null && appointment['gender'] != 'null' && appointment['gender'] != '--')
+                      ? appointment['gender']
+                      : 'Not specified';
+                  final complaintStr = (appointment['chief_complaint'] != null && appointment['chief_complaint'] != 'null')
+                      ? appointment['chief_complaint']
+                      : (appointment['consultation_type'] ?? 'Consultation');
+                  return Text(
+                    '$ageStr • $genderStr • $complaintStr',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  );
+                }),
               ],
             ),
           ),
@@ -376,6 +593,16 @@ class _RecentPatientCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final gender = (patient['gender'] != null && patient['gender'] != 'null' && patient['gender'] != '--')
+        ? patient['gender']
+        : 'Patient';
+    final lastVisit = (patient['last_visit'] != null && patient['last_visit'] != 'null' && patient['last_visit'] != '--')
+        ? patient['last_visit']
+        : 'First Consultation (New Patient)';
+    final bloodGroup = (patient['blood_group'] != null && patient['blood_group'] != 'null' && patient['blood_group'] != '--')
+        ? ' • Blood: ${patient['blood_group']}'
+        : '';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -402,7 +629,7 @@ class _RecentPatientCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${patient['gender']} • Last Visit: ${patient['last_visit']}',
+                  '$gender$bloodGroup • Last Visit: $lastVisit',
                   style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
@@ -422,6 +649,203 @@ class _RecentPatientCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             ),
             child: const Text('View Record', style: TextStyle(fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IncomingPatientRequestCard extends StatelessWidget {
+  final Map<String, dynamic> request;
+  final VoidCallback onAccept;
+  final VoidCallback onDecline;
+  final VoidCallback onOpenChart;
+
+  const _IncomingPatientRequestCard({
+    required this.request,
+    required this.onAccept,
+    required this.onDecline,
+    required this.onOpenChart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final status = request['status'] ?? 'pending';
+    final isPending = status == 'pending';
+    final isApproved = status == 'approved';
+    final patientName = (request['patient_name'] != null && request['patient_name'].toString().isNotEmpty)
+        ? request['patient_name']
+        : 'Patient';
+    final patientCode = request['patient_code'] ?? 'PAT-NEW';
+    final patientPhone = (request['patient_phone'] != null && request['patient_phone'].toString().isNotEmpty)
+        ? request['patient_phone']
+        : (request['patient_email'] ?? '--');
+    final purpose = request['purpose'] ?? 'Patient Link & Record Access Request';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isPending ? const Color(0xFFFEFCE8) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isPending ? const Color(0xFFFDE047) : AppColors.border,
+          width: isPending ? 1.5 : 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isPending ? 0.04 : 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppAvatar(name: patientName, size: AppAvatarSize.md),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            patientName,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                          ),
+                          child: Text(
+                            patientCode,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      'Contact: $patientPhone',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          isPending ? Icons.pending_actions_rounded : Icons.verified_user_rounded,
+                          size: 14,
+                          color: isPending ? const Color(0xFFB45309) : const Color(0xFF059669),
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            isPending ? 'Request: $purpose' : 'Status: Connected (24-Hour Access Active)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: isPending ? const Color(0xFF92400E) : const Color(0xFF065F46),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (isPending) ...[
+                OutlinedButton.icon(
+                  onPressed: onDecline,
+                  icon: const Icon(Icons.close_rounded, size: 15),
+                  label: const Text('Decline', style: TextStyle(fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFDC2626),
+                    side: const BorderSide(color: Color(0xFFFCA5A5)),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: onAccept,
+                  icon: const Icon(Icons.check_circle_rounded, size: 16, color: Colors.white),
+                  label: const Text(
+                    'Accept & Open Chart',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ] else if (isApproved) ...[
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle_rounded, size: 14, color: Color(0xFF059669)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Connected & Authorized',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF065F46)),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: onOpenChart,
+                  icon: const Icon(Icons.folder_shared_rounded, size: 15, color: Colors.white),
+                  label: const Text('Open Chart', style: TextStyle(fontSize: 12, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kDoctorAccent,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),

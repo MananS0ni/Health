@@ -1,8 +1,14 @@
 import React from 'react';
 import { X, AlertTriangle, PhoneCall, ShieldAlert, Heart, Activity } from 'lucide-react';
 
-export default function EmergencyCardModal({ isOpen, onClose }) {
+export default function EmergencyCardModal({ isOpen, onClose, userData = {} }) {
   if (!isOpen) return null;
+
+  const bloodGroup = userData.bloodGroup || 'Not set';
+  const phoneNumber = userData.phone || userData.phoneNumber || 'Not set';
+  const allergies = userData.allergies && userData.allergies.length > 0 ? userData.allergies : [];
+  const contactName = userData.emergencyContactName || 'None listed';
+  const contactPhone = userData.emergencyContactPhone || '';
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -28,11 +34,13 @@ export default function EmergencyCardModal({ isOpen, onClose }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>Blood Group</span>
-              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#B91C1C', marginTop: '0.2rem' }}>O +ve</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: bloodGroup === 'Not set' ? '#94A3B8' : '#B91C1C', marginTop: '0.2rem' }}>
+                {bloodGroup}
+              </div>
             </div>
             <div style={{ padding: '1rem', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase' }}>Patient Mobile</span>
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F766E', marginTop: '0.4rem' }}>+91 98765 43210</div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F766E', marginTop: '0.4rem' }}>{phoneNumber}</div>
             </div>
           </div>
 
@@ -42,25 +50,36 @@ export default function EmergencyCardModal({ isOpen, onClose }) {
               <AlertTriangle size={18} />
               <span>Known Medical Allergies</span>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <span className="badge badge-amber" style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem' }}>Penicillin</span>
-              <span className="badge badge-amber" style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem' }}>Sulfa Antibiotics</span>
-            </div>
+            {allergies.length > 0 ? (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {allergies.map((allergy, idx) => (
+                  <span key={idx} className="badge badge-amber" style={{ fontSize: '0.82rem', padding: '0.35rem 0.75rem' }}>
+                    {allergy}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p style={{ fontSize: '0.82rem', color: '#92400E', margin: 0 }}>No known drug allergies reported.</p>
+            )}
           </div>
 
           {/* Emergency Contact */}
           <div style={{ padding: '1rem', backgroundColor: '#F0F9FF', borderRadius: '12px', border: '1px solid #BAE6FD', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <span style={{ fontSize: '0.78rem', color: '#0369A1', fontWeight: 600 }}>PRIMARY EMERGENCY CONTACT</span>
-              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>Pooja Soni (Kin / Spouse)</div>
-              <div style={{ fontSize: '0.9rem', color: '#0284C7', fontWeight: 600 }}>+91 98765 43210</div>
+              <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem' }}>{contactName}</div>
+              {contactPhone && (
+                <div style={{ fontSize: '0.9rem', color: '#0284C7', fontWeight: 600 }}>{contactPhone}</div>
+              )}
             </div>
-            <a href="tel:+919876543210" style={{ textDecoration: 'none' }}>
-              <button className="btn-primary" style={{ backgroundColor: '#0284C7' }}>
-                <PhoneCall size={16} />
-                <span>Call</span>
-              </button>
-            </a>
+            {contactPhone ? (
+              <a href={`tel:${contactPhone}`} style={{ textDecoration: 'none' }}>
+                <button className="btn-primary" style={{ backgroundColor: '#0284C7' }}>
+                  <PhoneCall size={16} />
+                  <span>Call</span>
+                </button>
+              </a>
+            ) : null}
           </div>
 
           {/* QR Code Container */}

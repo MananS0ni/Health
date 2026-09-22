@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -13,25 +12,18 @@ class PhoneEntryScreen extends ConsumerStatefulWidget {
 }
 
 class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
-  final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  LoginMode _mode = LoginMode.phone;
 
   @override
   void dispose() {
-    _phoneController.dispose();
     _emailController.dispose();
     super.dispose();
   }
 
   void _handleSendOtp() {
     if (!_formKey.currentState!.validate()) return;
-    if (_mode == LoginMode.phone) {
-      ref.read(authStateProvider.notifier).sendOtpByPhone(_phoneController.text.trim());
-    } else {
-      ref.read(authStateProvider.notifier).sendOtpByEmail(_emailController.text.trim());
-    }
+    ref.read(authStateProvider.notifier).sendOtpByEmail(_emailController.text.trim());
   }
 
   @override
@@ -137,22 +129,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-
-                        // ── Phone / Email segmented toggle ────────────────
-                        _ModeToggle(
-                          mode: _mode,
-                          onChanged: (m) => setState(() {
-                            _mode = m;
-                            _formKey.currentState?.reset();
-                          }),
-                        ),
-                        const SizedBox(height: 16),
-
-                        // ── Input field (changes with mode) ───────────────
-                        if (_mode == LoginMode.phone)
-                          _PhoneField(controller: _phoneController)
-                        else
-                          _EmailField(controller: _emailController),
+                        _EmailField(controller: _emailController),
 
                         const SizedBox(height: 18),
 
@@ -274,139 +251,6 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
 // Sub-widgets
 // ─────────────────────────────────────────────────────────────
 
-class _ModeToggle extends StatelessWidget {
-  final LoginMode mode;
-  final ValueChanged<LoginMode> onChanged;
-
-  const _ModeToggle({required this.mode, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(9),
-      ),
-      child: Row(
-        children: [
-          _Tab(
-            label: 'Phone',
-            icon: Icons.phone_outlined,
-            selected: mode == LoginMode.phone,
-            onTap: () => onChanged(LoginMode.phone),
-          ),
-          _Tab(
-            label: 'Email',
-            icon: Icons.email_outlined,
-            selected: mode == LoginMode.email,
-            onTap: () => onChanged(LoginMode.email),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Tab extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _Tab({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          margin: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.transparent,
-            borderRadius: BorderRadius.circular(7),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 15,
-                color: selected ? AppColors.primary : AppColors.textSecondary,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight:
-                      selected ? FontWeight.w600 : FontWeight.w400,
-                  color:
-                      selected ? AppColors.primary : AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PhoneField extends StatelessWidget {
-  final TextEditingController controller;
-  const _PhoneField({required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Mobile Number',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 7),
-        TextFormField(
-          controller: controller,
-          keyboardType: TextInputType.phone,
-          maxLength: 10,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-          decoration: _inputDecoration(
-            hint: '98765 43210',
-            prefix: _CountryPrefix(),
-          ),
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'Enter your mobile number';
-            if (v.length < 10) return 'Enter a valid 10-digit number';
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-}
 
 class _EmailField extends StatelessWidget {
   final TextEditingController controller;
@@ -445,38 +289,6 @@ class _EmailField extends StatelessWidget {
   }
 }
 
-class _CountryPrefix extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 1),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(8),
-          bottomLeft: Radius.circular(8),
-        ),
-        border: Border(right: BorderSide(color: AppColors.border)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Text('🇮🇳', style: TextStyle(fontSize: 15)),
-          SizedBox(width: 5),
-          Text(
-            '+91',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 InputDecoration _inputDecoration({
   required String hint,

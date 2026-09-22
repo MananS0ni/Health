@@ -30,10 +30,6 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
   void initState() {
     super.initState();
     _startResendTimer();
-    const demoOtp = '482910';
-    for (int i = 0; i < 6; i++) {
-      _otpControllers[i].text = demoOtp[i];
-    }
   }
 
   void _startResendTimer() {
@@ -79,9 +75,11 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
   void _handleResendOtp() {
     if (_canResend) {
       final authState = ref.read(authStateProvider);
-      ref
-          .read(authStateProvider.notifier)
-          .sendOtp(authState.phoneNumber ?? '');
+      if (authState.loginMode == LoginMode.email && authState.email != null) {
+        ref.read(authStateProvider.notifier).sendOtpByEmail(authState.email!);
+      } else {
+        ref.read(authStateProvider.notifier).sendOtpByPhone(authState.phoneNumber ?? '');
+      }
       setState(() {
         _resendTimer = 30;
         _canResend = false;
@@ -219,7 +217,7 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
                           children: [
                             const TextSpan(text: 'We sent a 6-digit code to '),
                             TextSpan(
-                              text: '+91 ${authState.phoneNumber ?? ''}',
+                              text: authState.contactDisplay,
                               style: const TextStyle(
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
@@ -228,28 +226,55 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFECFDF5),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFA7F3D0)),
-                        ),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.mark_chat_read_rounded, size: 16, color: Color(0xFF0F766E)),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Demo Code: 482910 (Auto-filled for testing)',
-                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F766E)),
+                      const SizedBox(height: 16),
+
+                      if (authState.devOtp != null) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.info_outline, size: 18, color: Color(0xFF1D4ED8)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Dev code: ${authState.devOtp}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1D4ED8),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () {
+                                  final code = authState.devOtp!;
+                                  for (int i = 0; i < 6 && i < code.length; i++) {
+                                    _otpControllers[i].text = code[i];
+                                  }
+                                  _verifyOtp(code);
+                                },
+                                child: const Text(
+                                  'Auto-fill',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 20),
+                      ],
+
+
 
                       // ── OTP boxes ───────────────────────────────────────
                       Row(
