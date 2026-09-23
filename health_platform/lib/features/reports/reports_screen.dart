@@ -178,6 +178,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => _showUploadReportModal(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Report'),

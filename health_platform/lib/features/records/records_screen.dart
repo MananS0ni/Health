@@ -302,6 +302,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => _showAddRecordModal(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Record'),

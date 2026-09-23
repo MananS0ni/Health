@@ -318,6 +318,7 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => _showNewAdmissionDialog(context),
         backgroundColor: kHospitalAccent,
         foregroundColor: Colors.white,

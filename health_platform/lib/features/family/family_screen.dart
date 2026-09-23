@@ -181,6 +181,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => _showAddMemberDialog(context),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,

@@ -291,6 +291,7 @@ class _DoctorAppointmentsScreenState extends ConsumerState<DoctorAppointmentsScr
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => _showBookAppointmentModal(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('New Appointment'),

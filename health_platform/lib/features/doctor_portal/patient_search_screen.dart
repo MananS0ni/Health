@@ -235,6 +235,7 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: () => _showAddPatientModal(context),
         icon: const Icon(Icons.person_add_rounded),
         label: const Text('Add Patient'),
