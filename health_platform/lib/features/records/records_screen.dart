@@ -169,7 +169,22 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
   }
 
   void _showShareDoctorModal(BuildContext context, dynamic record) {
-    String selectedDoctor = 'Attending Physician';
+    final availableDoctors = [
+      'Dr. Max Patel (General Medicine)',
+      'Dr. Rana Parthil (General Medicine)',
+      'Dr. Dhruv Patel (General Medicine)',
+      'Dr. S. K. Gupta (Cardiology)',
+      'Dr. R. Mehta (Ortho)',
+    ];
+    String selectedDoctor = availableDoctors.first;
+    final docName = record.attendingDoctor?.toString() ?? '';
+    if (docName.isNotEmpty && !availableDoctors.contains(docName)) {
+      availableDoctors.insert(0, docName);
+      selectedDoctor = docName;
+    } else if (docName.isNotEmpty) {
+      selectedDoctor = docName;
+    }
+
     String accessDuration = '7 Days';
 
     showModalBottomSheet(
@@ -217,12 +232,15 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'Dr. Max Patel (General Medicine)', child: Text('Dr. Max Patel (General Medicine)', style: TextStyle(fontSize: 13))),
-                  DropdownMenuItem(value: 'Dr. S. K. Gupta (Cardiology)', child: Text('Dr. S. K. Gupta (Cardiology)', style: TextStyle(fontSize: 13))),
-                  DropdownMenuItem(value: 'Dr. R. Mehta (Ortho)', child: Text('Dr. R. Mehta (Ortho)', style: TextStyle(fontSize: 13))),
-                ],
-                onChanged: (v) => setModalState(() => selectedDoctor = v!),
+                items: availableDoctors
+                    .map((doc) => DropdownMenuItem(
+                          value: doc,
+                          child: Text(doc, style: const TextStyle(fontSize: 13)),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setModalState(() => selectedDoctor = v);
+                },
               ),
               const SizedBox(height: 14),
 

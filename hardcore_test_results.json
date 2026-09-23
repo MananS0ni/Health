@@ -1,0 +1,218 @@
+[
+  {
+    "test_id": "TC-AUTH-01",
+    "category": "Auth",
+    "name": "Request OTP with valid email",
+    "status": "PASS",
+    "details": "Status: 200",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-AUTH-02",
+    "category": "Auth",
+    "name": "Request OTP with invalid email format",
+    "status": "PASS",
+    "details": "Response: {'email': [ErrorDetail(string='Enter a valid email address.', code='invalid')]}",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-AUTH-03",
+    "category": "Auth",
+    "name": "Verify OTP with valid 6-digit code",
+    "status": "PASS",
+    "details": "Returned user ID: 0000d726-4a63-4b20-9c65-b60ebfc42a0c",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-AUTH-04",
+    "category": "Auth",
+    "name": "Verify OTP with invalid 6-digit code",
+    "status": "PASS",
+    "details": "Response: {'success': False, 'error': 'Invalid or expired OTP code. Please request a new code.'}",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-PAT-01",
+    "category": "Patient Portal",
+    "name": "Retrieve patient profile & emergency card data",
+    "status": "PASS",
+    "details": "Blood Group: None",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-PAT-02",
+    "category": "Patient Portal",
+    "name": "Update emergency card, allergies & blood group",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-PAT-03",
+    "category": "Patient Portal",
+    "name": "Add dependent family member",
+    "status": "PASS",
+    "details": "Member ID: 6f535cc9-d3e1-41e3-89a9-3d9a202c21c4",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-PAT-04",
+    "category": "Patient Portal",
+    "name": "List all linked family members",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-PAT-05",
+    "category": "Patient Portal",
+    "name": "Remove linked family member",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-PAT-06",
+    "category": "Patient Portal",
+    "name": "Record new health vital metric",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-DOC-01",
+    "category": "Doctor Portal",
+    "name": "Search patient directory by name",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-DOC-02",
+    "category": "Doctor Portal",
+    "name": "Register new walk-in patient on-the-fly (Auto-grants 24h consent)",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-DOC-03",
+    "category": "Doctor Portal & Security",
+    "name": "Verify patient chart is LOCKED by default without active consent",
+    "status": "PASS",
+    "details": "has_consent: False",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-DOC-04",
+    "category": "Doctor Portal & Security",
+    "name": "Doctor submits 24h access consent request",
+    "status": "PASS",
+    "details": "Consent ID: 2d9084d0-fb89-41c9-ab46-8ef7b0739cd7",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-DOC-05",
+    "category": "Doctor Portal & Security",
+    "name": "Patient approves doctor 24h access request",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-DOC-06",
+    "category": "Doctor Portal & Security",
+    "name": "Verify patient chart is UNLOCKED after patient approval",
+    "status": "PASS",
+    "details": "has_consent: True",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-DOC-07",
+    "category": "Doctor Portal & Auto-Sync",
+    "name": "Issue prescription and verify auto-sync trigger",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-LAB-01",
+    "category": "Lab Portal",
+    "name": "Queue new lab test order",
+    "status": "PASS",
+    "details": "Order ID: efedde98-0bd0-4ce7-b58b-67dcae030e01",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-LAB-02",
+    "category": "Lab Portal & Auto-Sync",
+    "name": "Publish verified test report & auto-inject into patient locker",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-LAB-03",
+    "category": "Lab Portal & Automation",
+    "name": "Batch CSV processing (Multi-row ingestion & auto-account provision)",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-LAB-04",
+    "category": "Lab Portal & Validation",
+    "name": "Reject malformed CSV missing required headers",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-HOSP-01",
+    "category": "Hospital Portal",
+    "name": "Admit inpatient to ward bed",
+    "status": "PASS",
+    "details": "Admission ID: 01045113-c897-4f90-8785-5bf494af4186",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-HOSP-02",
+    "category": "Hospital Portal & Auto-Sync",
+    "name": "Discharge patient & auto-sync Discharge Summary to locker",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-REP-01",
+    "category": "Reports & Locker",
+    "name": "Fetch patient digital health locker documents",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-REP-02",
+    "category": "Reports & Locker",
+    "name": "Fetch diagnostic lab reports",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-REP-03",
+    "category": "Timeline Feed",
+    "name": "Generate unified chronological medical feed",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  },
+  {
+    "test_id": "TC-REP-04",
+    "category": "Global Search",
+    "name": "Instant multi-table search across records, labs & doctors",
+    "status": "PASS",
+    "details": "",
+    "errors": ""
+  }
+]

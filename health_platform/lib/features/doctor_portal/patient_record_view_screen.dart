@@ -101,17 +101,35 @@ class _PatientRecordViewScreenState extends ConsumerState<PatientRecordViewScree
     );
 
     final record = _chartData.isNotEmpty ? _chartData : fallbackRecord;
-    final fullName = record['full_name'] ?? fallbackRecord['full_name'] ?? 'Patient';
-    final patientCode = record['patient_id'] ?? fallbackRecord['patient_id'] ?? widget.patientId;
-    final bloodGroup = record['blood_group'] ?? fallbackRecord['blood_group'] ?? '--';
-    final gender = record['gender'] ?? fallbackRecord['gender'] ?? '--';
-    final phone = record['phone_number'] ?? fallbackRecord['phone_number'] ?? '--';
-    final email = record['email'] ?? fallbackRecord['email'] ?? '--';
+    final fullName = record['full_name']?.toString() ?? fallbackRecord['full_name']?.toString() ?? 'Patient';
+    final patientCode = record['patient_id']?.toString() ?? fallbackRecord['patient_id']?.toString() ?? widget.patientId;
+    final bloodGroup = record['blood_group']?.toString() ?? fallbackRecord['blood_group']?.toString() ?? '--';
+    final gender = record['gender']?.toString() ?? fallbackRecord['gender']?.toString() ?? '--';
+    final phone = record['phone_number']?.toString() ?? fallbackRecord['phone_number']?.toString() ?? '--';
+    final email = record['email']?.toString() ?? fallbackRecord['email']?.toString() ?? '--';
 
-    final allergies = List<String>.from(record['allergies'] ?? []);
-    final chronicConditions = List<String>.from(record['chronic_conditions'] ?? []);
-    final prescriptions = List<Map<String, dynamic>>.from(record['prescriptions'] ?? []);
-    final reports = List<Map<String, dynamic>>.from(record['reports'] ?? record['recent_lab_reports'] ?? []);
+    final rawAllergies = record['allergies'];
+    final allergies = rawAllergies is List
+        ? rawAllergies.map((a) => a?.toString() ?? '').where((a) => a.isNotEmpty).toList()
+        : <String>[];
+    final rawConditions = record['chronic_conditions'];
+    final chronicConditions = rawConditions is List
+        ? rawConditions.map((c) => c?.toString() ?? '').where((c) => c.isNotEmpty).toList()
+        : <String>[];
+    final rawPrescriptions = record['prescriptions'];
+    final prescriptions = rawPrescriptions is List
+        ? rawPrescriptions
+            .whereType<Map>()
+            .map((p) => Map<String, dynamic>.from(p))
+            .toList()
+        : <Map<String, dynamic>>[];
+    final rawReports = record['reports'] ?? record['recent_lab_reports'];
+    final reports = rawReports is List
+        ? rawReports
+            .whereType<Map>()
+            .map((r) => Map<String, dynamic>.from(r))
+            .toList()
+        : <Map<String, dynamic>>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -562,7 +580,22 @@ class _PrescriptionHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final medicines = List<Map<String, dynamic>>.from(rx['medicines'] ?? []);
+    final rawMedicines = rx['medicines'];
+    final medicines = rawMedicines is List
+        ? rawMedicines
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .toList()
+        : <Map<String, dynamic>>[];
+
+    final dateStr = rx['prescribed_date']?.toString() ??
+        rx['date']?.toString() ??
+        rx['created_at']?.toString().split('T').first ??
+        '--';
+    final doctorStr = rx['doctor_name']?.toString() ??
+        rx['attending_doctor']?.toString() ??
+        'Doctor';
+    final diagnosisStr = rx['diagnosis']?.toString() ?? 'General Consultation';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -578,46 +611,65 @@ class _PrescriptionHistoryCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Diagnosis: ${rx['diagnosis']}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: kDoctorAccent,
+              Expanded(
+                child: Text(
+                  'Diagnosis: $diagnosisStr',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: kDoctorAccent,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
-                rx['date'],
+                dateStr,
                 style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
               ),
             ],
           ),
+          const SizedBox(height: 2),
           Text(
-            'Prescribed by ${rx['doctor_name']}',
+            'Prescribed by $doctorStr',
             style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
           ),
-          const Divider(height: 16),
-          ...medicines.map(
-            (med) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  const Icon(Icons.medication_outlined, size: 15, color: kDoctorAccent),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      med['name'],
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
+          if (medicines.isNotEmpty) ...[
+            const Divider(height: 16),
+            ...medicines.map(
+              (med) {
+                final medName = med['medicine_name']?.toString() ??
+                    med['name']?.toString() ??
+                    'Medicine';
+                final dosage = med['dosage']?.toString() ?? '';
+                final duration = med['duration']?.toString() ?? '';
+                final details = [dosage, duration]
+                    .where((s) => s.isNotEmpty)
+                    .join(' • ');
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.medication_outlined, size: 15, color: kDoctorAccent),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          medName,
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      if (details.isNotEmpty)
+                        Text(
+                          details,
+                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        ),
+                    ],
                   ),
-                  Text(
-                    '${med['dosage']} • ${med['duration']}',
-                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -631,6 +683,20 @@ class _LabReportHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = report['report_name']?.toString() ??
+        report['title']?.toString() ??
+        'Diagnostic Report';
+    final facility = report['facility_name']?.toString() ??
+        report['facility']?.toString() ??
+        'Health Facility';
+    final date = report['report_date']?.toString() ??
+        report['date']?.toString() ??
+        '--';
+    final status = report['status']?.toString() ?? 'Completed';
+
+    final isNormal = status.toLowerCase() == 'normal' ||
+        status.toLowerCase() == 'completed';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -655,11 +721,11 @@ class _LabReportHistoryTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  report['title'],
+                  title,
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                 ),
                 Text(
-                  '${report['facility']} • ${report['date']}',
+                  '$facility • $date',
                   style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                 ),
               ],
@@ -667,10 +733,10 @@ class _LabReportHistoryTile extends StatelessWidget {
           ),
           Chip(
             label: Text(
-              report['status'],
+              status,
               style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
             ),
-            backgroundColor: report['status'] == 'Normal'
+            backgroundColor: isNormal
                 ? AppColors.successLight
                 : AppColors.warningLight,
             side: BorderSide.none,
