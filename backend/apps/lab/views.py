@@ -219,11 +219,22 @@ class LabPatientListView(APIView):
 
     def get(self, request):
         from apps.accounts.models import User, Role
-        all_users = User.objects.all()[:50]
-        # Include any user with 'patient' in roles or role=patient
-        patients = [u for u in all_users if u.role == Role.PATIENT or 'patient' in (u.roles or [])]
-        if not patients:
-            patients = list(all_users)
+        q = request.query_params.get('q', '').strip()
+        if not q:
+            return Response([], status=status.HTTP_200_OK)
+
+        raw_prefix = q.replace('PAT-', '').replace('pat-', '').strip().lower()
+        # Strictly exclude system administrators, staff, and non-patients
+        qs = User.objects.filter(is_staff=False, is_superuser=False)
+        matched = []
+        for u in qs:
+            u_pid = f"PAT-{str(u.id)[:6].upper()}"
+            if (q.lower() in u.email.lower() or
+                q.lower() in u.full_name.lower() or
+                raw_prefix in str(u.id).replace('-', '').lower() or
+                q.upper() == u_pid):
+                matched.append(u)
+
         results = [
             {
                 'id': str(p.id),
@@ -232,7 +243,7 @@ class LabPatientListView(APIView):
                 'email': p.email,
                 'phone_number': p.phone_number or '',
             }
-            for p in patients
+            for p in matched[:10]
         ]
         return Response(results, status=status.HTTP_200_OK)
 

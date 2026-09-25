@@ -40,7 +40,6 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   bool _isCustomFile = false;
 
   bool _isLoadingPatients = false;
-  List<Map<String, dynamic>> _registeredPatients = [];
   Map<String, dynamic>? _selectedPatient;
 
   bool _isSubmitting = false;
@@ -121,41 +120,55 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
       _attachedFileName = 'Certified_Diagnostic_Report.pdf';
     }
 
-    _loadRegisteredPatients();
+    _initTargetPatient();
   }
 
-  Future<void> _loadRegisteredPatients() async {
+  void _initTargetPatient() {
+    final targetPid = widget.patient ?? 'PAT-4726A2';
+    _patientIdentifierController.text = targetPid;
+    _patientNameController.text = 'Manan Soni';
+    _selectedPatient = {
+      'patient_id': targetPid,
+      'full_name': 'Manan Soni',
+      'email': 'manansoni2905@gmail.com',
+    };
+  }
+
+  Future<void> _lookupPatient() async {
+    final query = _patientIdentifierController.text.trim();
+    if (query.isEmpty) return;
+
     setState(() => _isLoadingPatients = true);
     try {
-      final list = await ApiClient().getLabPatients();
+      final list = await ApiClient().getLabPatients(query);
       if (mounted) {
         setState(() {
-          _registeredPatients = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
           _isLoadingPatients = false;
-
-          // Default select Manan Soni or first patient
-          if (_registeredPatients.isNotEmpty) {
-            final match = _registeredPatients.firstWhere(
-              (p) =>
-                  (p['email'] as String? ?? '').toLowerCase().contains('manan') ||
-                  (p['full_name'] as String? ?? '').toLowerCase().contains('manan'),
-              orElse: () => _registeredPatients.first,
+          if (list.isNotEmpty) {
+            final p = Map<String, dynamic>.from(list.first as Map);
+            _selectedPatient = p;
+            _patientIdentifierController.text = p['patient_id'] ?? query;
+            _patientNameController.text = p['full_name'] ?? '';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Found Verified Patient: ${p['full_name']} (${p['patient_id']})'),
+                backgroundColor: kLabAccent,
+                duration: const Duration(seconds: 2),
+              ),
             );
-            _selectPatient(match);
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No patient found for that ID/Email. You can type their details manually.'),
+                duration: Duration(seconds: 2),
+              ),
+            );
           }
         });
       }
     } catch (_) {
       if (mounted) setState(() => _isLoadingPatients = false);
     }
-  }
-
-  void _selectPatient(Map<String, dynamic> patient) {
-    setState(() {
-      _selectedPatient = patient;
-      _patientIdentifierController.text = patient['patient_id'] ?? patient['email'] ?? '';
-      _patientNameController.text = patient['full_name'] ?? '';
-    });
   }
 
   void _applyTestPreset(String testName) {
@@ -347,54 +360,63 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.person_pin_rounded, color: kLabAccent, size: 20),
-              SizedBox(width: 8),
-              Text(
-                '1. Target Patient Identification (Unique Patient ID / Email)',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(Icons.person_pin_rounded, color: kLabAccent, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    '1. Target Patient Identification (Unique Patient ID / Email)',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                ],
               ),
+              if (_isLoadingPatients)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: kLabAccent),
+                ),
             ],
           ),
           const SizedBox(height: 12),
-          if (_isLoadingPatients)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              child: LinearProgressIndicator(color: kLabAccent),
-            )
-          else if (_registeredPatients.isNotEmpty) ...[
-            const Text(
-              'Select Registered Patient:',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _registeredPatients.map((p) {
-                final isSel = _selectedPatient?['id'] == p['id'];
-                return ChoiceChip(
-                  label: Text('${p['full_name']} (${p['patient_id']})'),
-                  selected: isSel,
-                  selectedColor: kLabAccent.withValues(alpha: 0.15),
-                  backgroundColor: const Color(0xFFF1F5F9),
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSel ? FontWeight.bold : FontWeight.w500,
-                    color: isSel ? kLabAccent : AppColors.textPrimary,
+          if (_selectedPatient != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: kLabAccent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: kLabAccent.withValues(alpha: 0.25)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_user_rounded, color: kLabAccent, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Verified Patient: ${_selectedPatient!['full_name']} • ${_selectedPatient!['patient_id']} (${_selectedPatient!['email'] ?? ""})',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF065F46)),
+                    ),
                   ),
-                  onSelected: (val) {
-                    if (val) _selectPatient(p);
-                  },
-                );
-              }).toList(),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedPatient = null;
+                        _patientIdentifierController.clear();
+                        _patientNameController.clear();
+                      });
+                    },
+                    child: const Text('Clear', style: TextStyle(fontSize: 12, color: AppColors.emergency, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 12),
-          ],
           Row(
             children: [
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -402,7 +424,14 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                     const SizedBox(height: 4),
                     TextFormField(
                       controller: _patientIdentifierController,
-                      decoration: _inputDec('e.g. PAT-4726A2 or manansoni2905@gmail.com'),
+                      decoration: _inputDec('e.g. PAT-4726A2 or manansoni2905@gmail.com').copyWith(
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.search_rounded, size: 20, color: kLabAccent),
+                          tooltip: 'Lookup Patient',
+                          onPressed: _lookupPatient,
+                        ),
+                      ),
+                      onFieldSubmitted: (_) => _lookupPatient(),
                       validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
                   ],

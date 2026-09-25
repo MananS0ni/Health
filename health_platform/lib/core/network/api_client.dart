@@ -310,8 +310,9 @@ class ApiClient {
     return jsonDecode(response.body);
   }
 
-  Future<List<dynamic>> getLabPatients() async {
-    final response = await http.get(Uri.parse('$baseUrl/lab/patients/'), headers: headers);
+  Future<List<dynamic>> getLabPatients([String? query]) async {
+    final qStr = (query != null && query.trim().isNotEmpty) ? '?q=${Uri.encodeComponent(query.trim())}' : '';
+    final response = await http.get(Uri.parse('$baseUrl/lab/patients/$qStr'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;

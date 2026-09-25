@@ -22,48 +22,20 @@ class AdmissionsScreen extends ConsumerStatefulWidget {
 class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
   String _selectedWard = 'All Wards';
   ListStatus _viewStatus = ListStatus.content;
-  List<Map<String, dynamic>> _registeredPatients = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRegisteredPatients();
-  }
-
-  Future<void> _loadRegisteredPatients() async {
-    try {
-      final list = await ApiClient().getLabPatients();
-      if (mounted) {
-        setState(() {
-          _registeredPatients = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-        });
-      }
-    } catch (_) {}
-  }
 
   void _showNewAdmissionDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final patientIdController = TextEditingController();
+    final nameController = TextEditingController(text: 'Manan Soni');
+    final patientIdController = TextEditingController(text: 'PAT-4726A2');
     final ageController = TextEditingController(text: '28');
     final bedController = TextEditingController(text: 'BED-102');
-    final diagnosisController = TextEditingController();
+    final diagnosisController = TextEditingController(text: 'High Fever Observation');
 
     String ward = 'General Male Ward';
     String doctor = 'Dr. Dhruv Patel';
     String gender = 'Male';
     String status = 'Admitted';
     bool isSubmitting = false;
-
-    // Default select Manan Soni if available
-    if (_registeredPatients.isNotEmpty) {
-      final match = _registeredPatients.firstWhere(
-        (p) => (p['full_name'] as String? ?? '').toLowerCase().contains('manan'),
-        orElse: () => _registeredPatients.first,
-      );
-      nameController.text = match['full_name'] ?? '';
-      patientIdController.text = match['patient_id'] ?? match['email'] ?? '';
-    }
 
     showDialog(
       context: context,
@@ -89,31 +61,27 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_registeredPatients.isNotEmpty) ...[
-                      const Text('Quick Select Patient (Unique Patient ID):', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
-                      const SizedBox(height: 6),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _registeredPatients.take(4).map((p) {
-                          final isSel = patientIdController.text == p['patient_id'];
-                          return ChoiceChip(
-                            label: Text('${p['full_name']} (${p['patient_id']})', style: const TextStyle(fontSize: 11)),
-                            selected: isSel,
-                            selectedColor: kHospitalAccent.withValues(alpha: 0.15),
-                            onSelected: (val) {
-                              if (val) {
-                                setDialogState(() {
-                                  nameController.text = p['full_name'] ?? '';
-                                  patientIdController.text = p['patient_id'] ?? p['email'] ?? '';
-                                });
-                              }
-                            },
-                          );
-                        }).toList(),
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: kHospitalAccent.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: kHospitalAccent.withValues(alpha: 0.2)),
                       ),
-                      const SizedBox(height: 10),
-                    ],
+                      child: Row(
+                        children: [
+                          const Icon(Icons.verified_user_rounded, color: kHospitalAccent, size: 16),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Patient: ${nameController.text.isNotEmpty ? nameController.text : "Inpatient"} (${patientIdController.text})',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Row(
                       children: [
                         Expanded(
@@ -141,7 +109,24 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
                               const SizedBox(height: 4),
                               TextFormField(
                                 controller: patientIdController,
-                                decoration: _inputDec('PAT-XXXXXX'),
+                                decoration: _inputDec('PAT-XXXXXX').copyWith(
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(Icons.search_rounded, size: 18, color: kHospitalAccent),
+                                    tooltip: 'Lookup Patient',
+                                    onPressed: () async {
+                                      final q = patientIdController.text.trim();
+                                      if (q.isEmpty) return;
+                                      final list = await ApiClient().getLabPatients(q);
+                                      if (list.isNotEmpty) {
+                                        final p = Map<String, dynamic>.from(list.first as Map);
+                                        setDialogState(() {
+                                          nameController.text = p['full_name'] ?? '';
+                                          patientIdController.text = p['patient_id'] ?? q;
+                                        });
+                                      }
+                                    },
+                                  ),
+                                ),
                               ),
                             ],
                           ),
