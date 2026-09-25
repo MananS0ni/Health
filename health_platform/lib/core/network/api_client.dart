@@ -3,13 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  // Mobile devices connect to the host PC's Wi-Fi IP address:
+  // Uses local host on web, and PC's Wi-Fi IP on mobile devices for wireless connectivity
   static String get hostServerUrl {
     if (kIsWeb) {
       return 'http://127.0.0.1:8000';
     }
-    // When running on a physical Android or iOS device over local Wi-Fi:
-    return 'http://10.98.220.191:8000';
+    // PC Wi-Fi IP address reachable by mobile devices on the same Wi-Fi
+    return 'http://10.169.96.191:8000';
   }
 
   static String get baseUrl => '$hostServerUrl/api';
