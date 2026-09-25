@@ -526,6 +526,43 @@ class ApiClient {
     }
   }
 
+  // ── Admin Portal ──
+  Future<Map<String, dynamic>> getAdminOverview() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin-portal/overview/'),
+      headers: headers,
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    return {'success': false, 'stats': {}, 'engine_status': {}, 'recent_activity': []};
+  }
+
+  Future<List<dynamic>> getAdminUsers({String? role, String? query}) async {
+    final params = <String, String>{};
+    if (role != null && role.isNotEmpty && role.toLowerCase() != 'all') {
+      params['role'] = role;
+    }
+    if (query != null && query.isNotEmpty) {
+      params['q'] = query;
+    }
+    final uri = Uri.parse('$baseUrl/admin-portal/users/').replace(queryParameters: params.isNotEmpty ? params : null);
+    final response = await http.get(uri, headers: headers);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is Map && data['users'] is List) return data['users'];
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> toggleUserVerification(String userId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin-portal/users/$userId/toggle-verify/'),
+      headers: headers,
+    );
+    return jsonDecode(response.body);
+  }
+
   void logout() {
     accessToken = null;
     refreshToken = null;

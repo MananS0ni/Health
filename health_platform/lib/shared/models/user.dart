@@ -91,9 +91,10 @@ class User {
   });
 
   bool get isDoctor => roles.contains('doctor');
-  bool get isLabStaff => roles.contains('lab_staff');
-  bool get isHospitalStaff => roles.contains('hospital_staff');
-  bool get hasProRole => isDoctor || isLabStaff || isHospitalStaff;
+  bool get isLabStaff => roles.contains('lab_staff') || roles.contains('lab');
+  bool get isHospitalStaff => roles.contains('hospital_staff') || roles.contains('hospital');
+  bool get isAdmin => roles.contains('admin');
+  bool get hasProRole => isDoctor || isLabStaff || isHospitalStaff || isAdmin;
 
   /// Convenience — first non-patient role, or null.
   String? get primaryProRole {

@@ -137,7 +137,7 @@ class RoleSelectScreen extends ConsumerWidget {
                           },
                         ),
                       ],
-                      if (roles.contains('hospital_staff')) ...[
+                      if (roles.contains('hospital_staff') || roles.contains('hospital')) ...[
                         const SizedBox(height: 12),
                         _RoleCard(
                           title: 'Hospital Staff Portal',
@@ -150,6 +150,22 @@ class RoleSelectScreen extends ConsumerWidget {
                                 .read(activeRoleProvider.notifier)
                                 .setRole('hospital_staff');
                             context.go('/hospital');
+                          },
+                        ),
+                      ],
+                      if (roles.contains('admin')) ...[
+                        const SizedBox(height: 12),
+                        _RoleCard(
+                          title: 'System Admin Portal',
+                          subtitle:
+                              'Platform governance, provider registry, verification & system metrics',
+                          icon: Icons.admin_panel_settings_rounded,
+                          accentColor: const Color(0xFF7C3AED), // Royal Purple
+                          onTap: () {
+                            ref
+                                .read(activeRoleProvider.notifier)
+                                .setRole('admin');
+                            context.go('/admin');
                           },
                         ),
                       ],

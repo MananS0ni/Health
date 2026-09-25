@@ -12,6 +12,7 @@ import '../../features/doctor_portal/add_diagnosis_screen.dart';
 
 import '../../features/lab_portal/lab_shell.dart';
 import '../../features/hospital_portal/hospital_shell.dart';
+import '../../features/admin_portal/admin_portal_screen.dart';
 
 import '../../features/notifications/notifications_screen.dart';
 
@@ -140,6 +141,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/hospital/integration',
       builder: (context, state) => const HospitalShell(initialIndex: 3),
+    ),
+    GoRoute(
+      path: '/admin',
+      builder: (context, state) => const AdminPortalScreen(),
+    ),
+    GoRoute(
+      path: '/admin-portal',
+      builder: (context, state) => const AdminPortalScreen(),
     ),
   ],
 );

@@ -20,6 +20,12 @@ from apps.reports.views import GlobalSearchView
 from django.conf import settings
 from django.conf.urls.static import static
 
+from apps.accounts.admin_views import (
+    AdminPortalOverviewView,
+    AdminPortalUsersView,
+    AdminPortalToggleVerifyView,
+)
+
 urlpatterns = [
     path('', health_check, name='api-root'),
     path('admin/', admin.site.urls),
@@ -30,4 +36,7 @@ urlpatterns = [
     path('api/hospital/', include('apps.hospital.urls')),
     path('api/lab/', include('apps.lab.urls')),
     path('api/search/', GlobalSearchView.as_view(), name='global-search'),
+    path('api/admin-portal/overview/', AdminPortalOverviewView.as_view(), name='admin-portal-overview'),
+    path('api/admin-portal/users/', AdminPortalUsersView.as_view(), name='admin-portal-users'),
+    path('api/admin-portal/users/<str:user_id>/toggle-verify/', AdminPortalToggleVerifyView.as_view(), name='admin-portal-toggle-verify'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

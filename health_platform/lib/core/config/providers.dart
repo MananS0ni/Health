@@ -348,7 +348,7 @@ final userProvider = Provider<User>((ref) {
         fullName: 'Manan Soni',
         email: 'manansoni2905@gmail.com',
         phoneNumber: '+91 98765 43210',
-        roles: ['patient'],
+        roles: ['patient', 'doctor', 'hospital', 'lab', 'admin'],
         isVerified: true,
       );
     }

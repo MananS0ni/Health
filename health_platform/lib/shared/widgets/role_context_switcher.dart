@@ -23,8 +23,9 @@ class RoleContextSwitcher extends ConsumerWidget {
         return 'Lab Portal';
       case 'hospital_staff':
       case 'hospital':
+        return 'Hospital Portal';
       case 'admin':
-        return 'Hospital & Admin Portal';
+        return 'Admin Portal';
       default:
         return role;
     }
@@ -41,8 +42,9 @@ class RoleContextSwitcher extends ConsumerWidget {
         return Icons.science_outlined;
       case 'hospital_staff':
       case 'hospital':
-      case 'admin':
         return Icons.local_hospital_outlined;
+      case 'admin':
+        return Icons.admin_panel_settings_outlined;
       default:
         return Icons.person_outline;
     }
@@ -59,8 +61,9 @@ class RoleContextSwitcher extends ConsumerWidget {
         return '/lab';
       case 'hospital_staff':
       case 'hospital':
-      case 'admin':
         return '/hospital';
+      case 'admin':
+        return '/admin';
       default:
         return '/dashboard';
     }
@@ -75,7 +78,10 @@ class RoleContextSwitcher extends ConsumerWidget {
       case 'lab_staff':
         return const Color(0xFF059669); // Emerald
       case 'hospital_staff':
+      case 'hospital':
         return const Color(0xFFD97706); // Amber
+      case 'admin':
+        return const Color(0xFF7C3AED); // Royal Purple
       default:
         return AppColors.primary;
     }
@@ -89,6 +95,10 @@ class RoleContextSwitcher extends ConsumerWidget {
     if (!user.hasProRole && user.roles.length <= 1) {
       return const SizedBox.shrink();
     }
+
+    final availableRoles = user.roles.contains('admin')
+        ? ['patient', 'doctor', 'lab', 'hospital', 'admin']
+        : user.roles;
 
     final currentColor = accentColor ?? _accentForRole(activeRole);
 
@@ -136,12 +146,17 @@ class RoleContextSwitcher extends ConsumerWidget {
           ],
         ),
       ),
-      itemBuilder: (context) => user.roles
-          .map(
-            (role) => PopupMenuItem<String>(
-              value: role,
-              child: Row(
-                children: [
+      itemBuilder: (context) {
+        final rolesToDisplay = List<String>.from(availableRoles);
+        if (!rolesToDisplay.contains(activeRole)) {
+          rolesToDisplay.add(activeRole);
+        }
+        return rolesToDisplay
+            .map(
+              (role) => PopupMenuItem<String>(
+                value: role,
+                child: Row(
+                  children: [
                   Icon(
                     _icon(role),
                     size: 16,
@@ -174,7 +189,8 @@ class RoleContextSwitcher extends ConsumerWidget {
               ),
             ),
           )
-          .toList(),
+          .toList();
+      },
     );
   }
 }

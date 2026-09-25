@@ -11,6 +11,7 @@ class Role(models.TextChoices):
     DOCTOR = 'doctor', 'Doctor'
     LAB = 'lab', 'Diagnostic Lab'
     HOSPITAL = 'hospital', 'Hospital Care'
+    ADMIN = 'admin', 'System Administrator'
 
 
 class UserManager(BaseUserManager):
