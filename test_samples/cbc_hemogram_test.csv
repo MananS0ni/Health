@@ -1,0 +1,9 @@
+patient_id,patient_name,test_name,test_category,sample_collected_date,report_date,result_value,unit,reference_range,result_status,lab_name,lab_technician,report_file_name,notes
+PAT-2026-99999,Sample Record,Hemoglobin (Hb),Hematology,2026-09-25,2026-09-25,11.2,g/dL,13.0 - 17.0,Low,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Mild microcytic hypochromic picture
+PAT-2026-99999,Sample Record,RBC Count,Hematology,2026-09-25,2026-09-25,4.1,mil/uL,4.5 - 5.9,Low,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Borderline low red cell count
+PAT-2026-99999,Sample Record,Total Leukocyte Count (WBC),Hematology,2026-09-25,2026-09-25,7400,/uL,4000 - 11000,Normal,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Normal white blood cells
+PAT-2026-99999,Sample Record,Platelet Count,Hematology,2026-09-25,2026-09-25,260000,/uL,150000 - 450000,Normal,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Platelet count within safe range
+PAT-2026-99999,Sample Record,Neutrophils,Hematology,2026-09-25,2026-09-25,62,%,40 - 70,Normal,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Normal differential
+PAT-2026-99999,Sample Record,Lymphocytes,Hematology,2026-09-25,2026-09-25,29,%,20 - 40,Normal,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Normal lymphocyte percentage
+PAT-2026-99999,Sample Record,Hematocrit (PCV),Hematology,2026-09-25,2026-09-25,35.4,%,40 - 50,Low,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Packed cell volume decreased
+PAT-2026-99999,Sample Record,Mean Corpuscular Volume (MCV),Hematology,2026-09-25,2026-09-25,78,fL,80 - 100,Low,CityHealth Pathology Lab,Dr. Neha Kapoor,CityHealth_CBC_Profile.pdf,Microcytosis noted
