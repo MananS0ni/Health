@@ -1,6 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/config/providers.dart';
 import '../../../core/theme/app_colors.dart';
@@ -38,6 +41,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   String? _attachedFileName;
   int _attachedFileSizeKb = 148;
   bool _isCustomFile = false;
+  Uint8List? _attachedFileBytes;
 
   bool _isLoadingPatients = false;
   Map<String, dynamic>? _selectedPatient;
@@ -185,6 +189,52 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
     });
   }
 
+  Future<void> _pickRealFile() async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'csv', 'png', 'jpg', 'jpeg'],
+      );
+
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        final size = await file.length() ?? bytes.length;
+        setState(() {
+          _isCustomFile = true;
+          _attachedFileName = file.name;
+          _attachedFileSizeKb = (size / 1024).round();
+          _attachedFileBytes = bytes;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Attached device file: ${file.name} ($_attachedFileSizeKb KB)'),
+                  ),
+                ],
+              ),
+              backgroundColor: kLabAccent,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to open file: $e'),
+            backgroundColor: AppColors.emergency,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _handleUploadAndSync() async {
     final identifier = _patientIdentifierController.text.trim();
     if (identifier.isEmpty) {
@@ -210,6 +260,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
         summary: _summaryController.text.trim(),
         doctorName: _doctorController.text.trim(),
         fileName: _attachedFileName ?? 'Certified_Lab_Report.pdf',
+        fileBytes: _attachedFileBytes,
       );
 
       // Refresh stores so Patient Locker and Lab Orders update instantly
@@ -513,6 +564,8 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   }
 
   Widget _buildDropzoneCard() {
+    final bool hasRealBytes = _attachedFileBytes != null;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -524,93 +577,145 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.upload_file_rounded, color: kLabAccent, size: 20),
-              SizedBox(width: 8),
-              Text(
+            children: [
+              const Icon(Icons.upload_file_rounded, color: kLabAccent, size: 20),
+              const SizedBox(width: 8),
+              const Text(
                 '3. Document Dropzone (PDF / CSV File)',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
+              const Spacer(),
+              if (hasRealBytes)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 13),
+                      SizedBox(width: 4),
+                      Text(
+                        'Device File Ready',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: kLabAccent.withValues(alpha: 0.4), width: 1.5),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: kLabAccent.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+          InkWell(
+            onTap: _pickRealFile,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              decoration: BoxDecoration(
+                color: hasRealBytes ? const Color(0xFFF0FDF4) : const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: hasRealBytes ? kLabAccent : kLabAccent.withValues(alpha: 0.4),
+                  width: hasRealBytes ? 2.0 : 1.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: kLabAccent.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      hasRealBytes ? Icons.task_rounded : Icons.picture_as_pdf_rounded,
+                      color: kLabAccent,
+                      size: 32,
+                    ),
                   ),
-                  child: const Icon(Icons.picture_as_pdf_rounded, color: kLabAccent, size: 32),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _attachedFileName ?? 'No document attached',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Size: $_attachedFileSizeKb KB • Certified Electronic Document • Ready for Ingestion',
-                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 10,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        // Demo file switch simulation
-                        setState(() {
-                          _isCustomFile = true;
-                          _attachedFileName = 'Patient_${_selectedPatient?['patient_id'] ?? "PAT4726A2"}_Full_Report.pdf';
-                          _attachedFileSizeKb = 215;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Attached custom report: $_attachedFileName'),
-                            duration: const Duration(seconds: 2),
+                  const SizedBox(height: 10),
+                  Text(
+                    _attachedFileName ?? 'Click to Browse Device File (PDF / CSV)',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    hasRealBytes
+                        ? 'Size: $_attachedFileSizeKb KB • Actual Device File Loaded in Memory • Ready for Server Upload'
+                        : 'Size: $_attachedFileSizeKb KB • Click anywhere here to select a real file from your PC',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: hasRealBytes ? const Color(0xFF065F46) : AppColors.textSecondary,
+                      fontWeight: hasRealBytes ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _pickRealFile,
+                        icon: const Icon(Icons.folder_open_rounded, size: 16),
+                        label: Text(
+                          hasRealBytes ? 'Change Selected File...' : 'Browse Device File (Real PDF)...',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: hasRealBytes ? kLabAccent : Colors.white,
+                          foregroundColor: hasRealBytes ? Colors.white : AppColors.textPrimary,
+                          elevation: 0,
+                          side: const BorderSide(color: kLabAccent),
+                        ),
+                      ),
+                      if (hasRealBytes)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _isCustomFile = false;
+                              _attachedFileBytes = null;
+                              final preset = _presetTests[_selectedTest];
+                              _attachedFileName = preset?['sample_file'] ?? 'CBC_Automated_Hemogram_Report.pdf';
+                              _attachedFileSizeKb = preset?['size_kb'] ?? 142;
+                            });
+                          },
+                          icon: const Icon(Icons.close_rounded, size: 16),
+                          label: const Text('Reset to Standard Sample', style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppColors.textSecondary,
+                            elevation: 0,
+                            side: const BorderSide(color: AppColors.border),
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.folder_open_rounded, size: 16),
-                      label: const Text('Browse Device File...', style: TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.textPrimary,
-                        elevation: 0,
-                        side: const BorderSide(color: AppColors.border),
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          _isCustomFile = false;
-                          final preset = _presetTests[_selectedTest];
-                          _attachedFileName = preset?['sample_file'] ?? 'CBC_Automated_Hemogram_Report.pdf';
-                          _attachedFileSizeKb = preset?['size_kb'] ?? 142;
-                        });
-                      },
-                      icon: const Icon(Icons.replay_rounded, size: 16),
-                      label: const Text('Use Standard Lab PDF', style: TextStyle(fontSize: 12)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kLabAccent.withValues(alpha: 0.1),
-                        foregroundColor: kLabAccent,
-                        elevation: 0,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                        )
+                      else
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              _isCustomFile = false;
+                              _attachedFileBytes = null;
+                              final preset = _presetTests[_selectedTest];
+                              _attachedFileName = preset?['sample_file'] ?? 'CBC_Automated_Hemogram_Report.pdf';
+                              _attachedFileSizeKb = preset?['size_kb'] ?? 142;
+                            });
+                          },
+                          icon: const Icon(Icons.replay_rounded, size: 16),
+                          label: const Text('Use Standard Lab PDF', style: TextStyle(fontSize: 12)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kLabAccent.withValues(alpha: 0.1),
+                            foregroundColor: kLabAccent,
+                            elevation: 0,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -800,6 +905,29 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                 ],
               ),
             ),
+            if (_submissionResult?['file_url'] != null) ...[
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final rawUrl = _submissionResult!['file_url'].toString();
+                    final fullUrl = rawUrl.startsWith('http')
+                        ? rawUrl
+                        : 'http://127.0.0.1:8000$rawUrl';
+                    launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
+                  },
+                  icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                  label: const Text('Open & Verify Uploaded File in Browser'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: kLabAccent,
+                    side: const BorderSide(color: kLabAccent),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             Row(
               children: [
@@ -809,6 +937,8 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                       setState(() {
                         _isSubmitted = false;
                         _submissionResult = null;
+                        _attachedFileBytes = null;
+                        _isCustomFile = false;
                       });
                     },
                     style: ElevatedButton.styleFrom(

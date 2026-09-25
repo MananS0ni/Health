@@ -17,6 +17,8 @@ def health_check(request):
 
 
 from apps.reports.views import GlobalSearchView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('', health_check, name='api-root'),
@@ -28,4 +30,4 @@ urlpatterns = [
     path('api/hospital/', include('apps.hospital.urls')),
     path('api/lab/', include('apps.lab.urls')),
     path('api/search/', GlobalSearchView.as_view(), name='global-search'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

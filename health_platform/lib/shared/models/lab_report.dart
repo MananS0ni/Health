@@ -8,6 +8,7 @@ class LabReport {
   final List<TestParameter> testParameters;
   final String? summary;
   final String? status;
+  final String? fileUrl;
 
   LabReport({
     required this.reportId,
@@ -19,6 +20,7 @@ class LabReport {
     required this.testParameters,
     this.summary,
     this.status,
+    this.fileUrl,
   });
 
   factory LabReport.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class LabReport {
           : [],
       summary: json['summary'],
       status: json['status'],
+      fileUrl: json['file_url']?.toString(),
     );
   }
 

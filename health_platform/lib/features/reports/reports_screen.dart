@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
@@ -350,16 +351,51 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     ...report.testParameters.map((param) => _ParameterCard(parameter: param)),
                     const SizedBox(height: AppSpacing.md),
-                    AppButton(
-                      text: 'Download PDF Report',
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Downloading report PDF...')),
-                        );
-                      },
-                      isFullWidth: true,
-                    ),
+                    if (report.fileUrl != null && report.fileUrl!.isNotEmpty) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.picture_as_pdf_rounded, color: Color(0xFF16A34A), size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Certified Electronic Report File Attached',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      AppButton(
+                        text: 'Open Uploaded PDF Report',
+                        onPressed: () {
+                          final rawUrl = report.fileUrl!;
+                          final fullUrl = rawUrl.startsWith('http')
+                              ? rawUrl
+                              : 'http://127.0.0.1:8000$rawUrl';
+                          launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
+                        },
+                        isFullWidth: true,
+                      ),
+                    ] else ...[
+                      AppButton(
+                        text: 'Download PDF Report',
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Parameter-only report (no attached file).')),
+                          );
+                        },
+                        isFullWidth: true,
+                      ),
+                    ],
                   ],
                 ),
               ),

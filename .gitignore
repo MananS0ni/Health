@@ -5,6 +5,8 @@ __pycache__/
 *.sqlite3
 *.log
 .env
+media/
+backend/media/
 
 # Flutter
 health_platform/build/

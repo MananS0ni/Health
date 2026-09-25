@@ -38,6 +38,8 @@ dependencies:
   go_router: ^17.4.0
   intl: ^0.20.3
   http: ^1.2.2
+  file_picker: ^13.1.0
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

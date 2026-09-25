@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_card.dart';
@@ -682,6 +683,41 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                       const Text('Clinical Notes', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       Text(record.description!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                    ],
+                    if (record.attachments != null && record.attachments!.isNotEmpty) ...[
+                      const Divider(height: AppSpacing.lg),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF86EFAC)),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.description_rounded, color: Color(0xFF16A34A), size: 20),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Certified File Attached to this Health Record',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      AppButton(
+                        text: 'Open Attached Document',
+                        onPressed: () {
+                          final rawUrl = record.attachments!.first;
+                          final fullUrl = rawUrl.startsWith('http')
+                              ? rawUrl
+                              : 'http://127.0.0.1:8000$rawUrl';
+                          launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
+                        },
+                        isFullWidth: true,
+                      ),
                     ],
                     const SizedBox(height: AppSpacing.xl),
                     AppButton(
