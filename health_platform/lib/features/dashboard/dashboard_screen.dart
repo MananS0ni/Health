@@ -125,7 +125,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             Icon(Icons.verified_user_outlined, size: 15, color: AppColors.primary),
                             SizedBox(width: 6),
                             Text(
-                              'ABHA Verified',
+                              'Verified Patient',
                               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                             ),
                           ],
