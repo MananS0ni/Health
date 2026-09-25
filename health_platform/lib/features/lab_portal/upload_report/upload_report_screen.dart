@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,6 +43,8 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   int _attachedFileSizeKb = 148;
   bool _isCustomFile = false;
   Uint8List? _attachedFileBytes;
+  List<Map<String, dynamic>>? _customExtractedParameters;
+  int _detectedPatientsCount = 0;
 
   bool _isLoadingPatients = false;
   Map<String, dynamic>? _selectedPatient;
@@ -185,6 +188,106 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
     });
   }
 
+  List<String> _parseCsvLine(String line) {
+    final List<String> result = [];
+    final StringBuffer current = StringBuffer();
+    bool inQuotes = false;
+    for (int i = 0; i < line.length; i++) {
+      final char = line[i];
+      if (char == '"') {
+        inQuotes = !inQuotes;
+      } else if (char == ',' && !inQuotes) {
+        result.add(current.toString().trim());
+        current.clear();
+      } else {
+        current.write(char);
+      }
+    }
+    result.add(current.toString().trim());
+    return result;
+  }
+
+  List<Map<String, dynamic>> _parseCsvReport(Uint8List bytes) {
+    try {
+      final text = utf8.decode(bytes);
+      final lines = const LineSplitter().convert(text).where((l) => l.trim().isNotEmpty).toList();
+      if (lines.length < 2) return [];
+
+      final headerCols = _parseCsvLine(lines.first).map((c) => c.toLowerCase().trim()).toList();
+
+      int colIdx(List<String> synonyms) {
+        for (final s in synonyms) {
+          final idx = headerCols.indexOf(s);
+          if (idx != -1) return idx;
+        }
+        return -1;
+      }
+
+      final pIdIdx = colIdx(['patient_id', 'patient_email', 'email', 'patient']);
+      final pNameIdx = colIdx(['patient_name', 'name']);
+      final testIdx = colIdx(['test_name', 'test', 'panel']);
+      final catIdx = colIdx(['test_category', 'category']);
+      final paramIdx = colIdx(['parameter_name', 'parameter']);
+      final valIdx = colIdx(['result_value', 'value', 'result']);
+      final unitIdx = colIdx(['unit', 'units']);
+      final rangeIdx = colIdx(['reference_range', 'range', 'normal_range']);
+      final statusIdx = colIdx(['result_status', 'flag', 'status', 'is_abnormal']);
+      final docIdx = colIdx(['lab_technician', 'doctor_name', 'doctor', 'technician']);
+      final notesIdx = colIdx(['notes', 'summary']);
+
+      final List<Map<String, dynamic>> parsed = [];
+
+      for (int i = 1; i < lines.length; i++) {
+        final cols = _parseCsvLine(lines[i]);
+        if (cols.isEmpty) continue;
+
+        String getCol(int idx) => (idx >= 0 && idx < cols.length) ? cols[idx].trim() : '';
+
+        final pId = getCol(pIdIdx);
+        final pName = getCol(pNameIdx);
+        final tName = getCol(testIdx);
+        final cat = getCol(catIdx);
+        final param = getCol(paramIdx).isNotEmpty ? getCol(paramIdx) : (tName.isNotEmpty ? tName : 'Parameter $i');
+        final val = getCol(valIdx);
+        final unit = getCol(unitIdx);
+        final range = getCol(rangeIdx);
+        final rawStatus = getCol(statusIdx);
+        final doc = getCol(docIdx);
+        final notes = getCol(notesIdx);
+
+        final isAbn = ['high', 'low', 'abnormal', 'critical', 'positive', 'true', '1'].contains(rawStatus.toLowerCase());
+        final flag = rawStatus.isNotEmpty ? rawStatus : (isAbn ? 'High' : 'Normal');
+
+        final displayVal = val.isNotEmpty
+            ? (unit.isNotEmpty && !val.contains(unit) ? '$val $unit' : val)
+            : (flag.isNotEmpty ? flag : 'Completed');
+
+        parsed.add({
+          'name': param,
+          'parameter_name': param,
+          'value': displayVal,
+          'raw_value': val,
+          'unit': unit,
+          'range': range.isNotEmpty ? range : '-',
+          'reference_range': range,
+          'flag': flag,
+          'is_abnormal': isAbn,
+          'patient_id': pId,
+          'patient_name': pName,
+          'test_name': tName.isNotEmpty ? tName : param,
+          'category': cat,
+          'doctor': doc,
+          'notes': notes,
+        });
+      }
+
+      return parsed;
+    } catch (e) {
+      debugPrint('Error parsing CSV: $e');
+      return [];
+    }
+  }
+
   Future<void> _pickRealFile() async {
     try {
       final file = await FilePicker.pickFile(
@@ -195,13 +298,50 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
       if (file != null) {
         final bytes = await file.readAsBytes();
         final size = await file.length() ?? bytes.length;
+
+        List<Map<String, dynamic>> extractedParams = [];
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          extractedParams = _parseCsvReport(bytes);
+        }
+
         setState(() {
           _isCustomFile = true;
           _attachedFileName = file.name;
           _attachedFileSizeKb = (size / 1024).round();
           _attachedFileBytes = bytes;
+
+          if (extractedParams.isNotEmpty) {
+            _customExtractedParameters = extractedParams;
+            final pIds = extractedParams
+                .map((e) => e['patient_id'] ?? e['patient_name'])
+                .where((e) => e != null && e.toString().trim().isNotEmpty)
+                .toSet();
+            _detectedPatientsCount = pIds.length;
+
+            final first = extractedParams.first;
+            if (first['patient_id']?.toString().isNotEmpty == true) {
+              _patientIdentifierController.text = first['patient_id'];
+            }
+            if (first['patient_name']?.toString().isNotEmpty == true) {
+              _patientNameController.text = first['patient_name'];
+            }
+            if (first['test_name']?.toString().isNotEmpty == true) {
+              _selectedTest = first['test_name'];
+            }
+            if (first['category']?.toString().isNotEmpty == true) {
+              _selectedCategory = first['category'];
+            }
+            if (first['doctor']?.toString().isNotEmpty == true) {
+              _doctorController.text = first['doctor'];
+            }
+            if (first['notes']?.toString().isNotEmpty == true) {
+              _summaryController.text = first['notes'];
+            }
+          }
         });
+
         if (mounted) {
+          final isCsvWithData = extractedParams.isNotEmpty;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
@@ -209,12 +349,16 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                   const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text('Attached device file: ${file.name} ($_attachedFileSizeKb KB)'),
+                    child: Text(
+                      isCsvWithData
+                          ? 'Extracted ${extractedParams.length} clinical parameters across $_detectedPatientsCount patient(s) from ${file.name}'
+                          : 'Attached device file: ${file.name} ($_attachedFileSizeKb KB)',
+                    ),
                   ),
                 ],
               ),
               backgroundColor: kLabAccent,
-              duration: const Duration(seconds: 3),
+              duration: const Duration(seconds: 4),
             ),
           );
         }
@@ -232,7 +376,14 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   }
 
   Future<void> _handleUploadAndSync() async {
-    final identifier = _patientIdentifierController.text.trim();
+    String identifier = _patientIdentifierController.text.trim();
+    if (identifier.isEmpty) {
+      if (_customExtractedParameters != null && _customExtractedParameters!.isNotEmpty) {
+        identifier = _customExtractedParameters!.first['patient_id'] ?? 'BATCH_PATIENT';
+        _patientIdentifierController.text = identifier;
+      }
+    }
+
     if (identifier.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -257,6 +408,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
         doctorName: _doctorController.text.trim(),
         fileName: _attachedFileName ?? 'Certified_Lab_Report.pdf',
         fileBytes: _attachedFileBytes,
+        parameters: _customExtractedParameters,
       );
 
       // Refresh stores so Patient Locker and Lab Orders update instantly
@@ -381,7 +533,9 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                           label: Text(
                             _isSubmitting
                                 ? 'Parsing & Synchronizing with Health Locker...'
-                                : 'Publish & Push Directly to Patient Locker',
+                                : ((_customExtractedParameters != null && _customExtractedParameters!.length > 1)
+                                    ? 'Publish & Push ${_customExtractedParameters!.length} Extracted Reports to Patient Lockers'
+                                    : 'Publish & Push Directly to Patient Locker'),
                             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                           ),
                         ),
@@ -675,6 +829,8 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                             setState(() {
                               _isCustomFile = false;
                               _attachedFileBytes = null;
+                              _customExtractedParameters = null;
+                              _detectedPatientsCount = 0;
                               final preset = _presetTests[_selectedTest];
                               _attachedFileName = preset?['sample_file'] ?? 'CBC_Automated_Hemogram_Report.pdf';
                               _attachedFileSizeKb = preset?['size_kb'] ?? 142;
@@ -688,26 +844,63 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                             elevation: 0,
                             side: const BorderSide(color: AppColors.border),
                           ),
-                        )
-                      else
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              _isCustomFile = false;
-                              _attachedFileBytes = null;
-                              final preset = _presetTests[_selectedTest];
-                              _attachedFileName = preset?['sample_file'] ?? 'CBC_Automated_Hemogram_Report.pdf';
-                              _attachedFileSizeKb = preset?['size_kb'] ?? 142;
-                            });
-                          },
-                          icon: const Icon(Icons.replay_rounded, size: 16),
-                          label: const Text('Use Standard Lab PDF', style: TextStyle(fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: kLabAccent.withValues(alpha: 0.1),
-                            foregroundColor: kLabAccent,
-                            elevation: 0,
-                          ),
                         ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          const sampleCsv = '''patient_id,patient_name,test_name,test_category,sample_collected_date,report_date,result_value,unit,reference_range,result_status,lab_name,lab_technician,report_file_name,notes
+HLTH-2026-00147,Rahul Mehta,Complete Blood Count (CBC),Hematology,2026-09-20,2026-09-21,Normal,,Normal,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00147_CBC_20260921.pdf,
+HLTH-2026-00147,Rahul Mehta,Fasting Blood Sugar,Biochemistry,2026-09-20,2026-09-21,118,mg/dL,70-100,High,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00147_FBS_20260921.pdf,Slightly elevated; recommend follow-up
+HLTH-2026-00289,Ananya Patel,Lipid Profile,Biochemistry,2026-09-18,2026-09-19,210,mg/dL,<200,High,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00289_LIPID_20260919.pdf,Total cholesterol
+HLTH-2026-00289,Ananya Patel,Thyroid Panel (TSH),Endocrinology,2026-09-18,2026-09-19,2.4,mIU/L,0.4-4.0,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00289_TSH_20260919.pdf,
+HLTH-2026-00312,Vikram Nair,Urinalysis,Pathology,2026-09-22,2026-09-22,Normal,,Normal,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00312_URINE_20260922.pdf,
+HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnormality detected,,,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00312_XRAY_20260923.pdf,Reviewed by radiologist''';
+                          final bytes = Uint8List.fromList(utf8.encode(sampleCsv));
+                          final extractedParams = _parseCsvReport(bytes);
+                          setState(() {
+                            _isCustomFile = true;
+                            _attachedFileName = 'lab_reports_template.csv';
+                            _attachedFileSizeKb = (bytes.length / 1024).round().clamp(1, 9999);
+                            _attachedFileBytes = bytes;
+                            _customExtractedParameters = extractedParams;
+                            final pIds = extractedParams.map((e) => e['patient_id'] ?? e['patient_name']).where((e) => e != null && e.toString().isNotEmpty).toSet();
+                            _detectedPatientsCount = pIds.length;
+                            final first = extractedParams.first;
+                            if (first['patient_id']?.toString().isNotEmpty == true) {
+                              _patientIdentifierController.text = first['patient_id'];
+                            }
+                            if (first['patient_name']?.toString().isNotEmpty == true) {
+                              _patientNameController.text = first['patient_name'];
+                            }
+                            if (first['test_name']?.toString().isNotEmpty == true) {
+                              _selectedTest = first['test_name'];
+                            }
+                            if (first['category']?.toString().isNotEmpty == true) {
+                              _selectedCategory = first['category'];
+                            }
+                            if (first['doctor']?.toString().isNotEmpty == true) {
+                              _doctorController.text = first['doctor'];
+                            }
+                            if (first['notes']?.toString().isNotEmpty == true) {
+                              _summaryController.text = first['notes'];
+                            }
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Loaded ${extractedParams.length} parameters across $_detectedPatientsCount patients from template.'),
+                              backgroundColor: kLabAccent,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.table_view_rounded, size: 16),
+                        label: const Text('Load Sample CSV Template', style: TextStyle(fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFEFF6FF),
+                          foregroundColor: const Color(0xFF1D4ED8),
+                          elevation: 0,
+                          side: const BorderSide(color: Color(0xFFBFDBFE)),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -720,8 +913,16 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   }
 
   Widget _buildParametersPreviewCard() {
+    final bool hasCustom = _customExtractedParameters != null && _customExtractedParameters!.isNotEmpty;
     final preset = _presetTests[_selectedTest];
-    final previewList = (preset?['preview'] as List<dynamic>?) ?? [];
+    final previewList = hasCustom
+        ? _customExtractedParameters!
+        : ((preset?['preview'] as List<dynamic>?) ?? []);
+
+    final hasPatientInfo = hasCustom &&
+        previewList.any((e) =>
+            (e['patient_name']?.toString().isNotEmpty == true) ||
+            (e['patient_id']?.toString().isNotEmpty == true));
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -737,66 +938,136 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
-                children: const [
-                  Icon(Icons.auto_awesome_rounded, color: Color(0xFF2563EB), size: 20),
-                  SizedBox(width: 8),
+                children: [
+                  Icon(
+                    hasCustom ? Icons.verified_rounded : Icons.auto_awesome_rounded,
+                    color: hasCustom ? kLabAccent : const Color(0xFF2563EB),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    '4. Auto-Extracted Clinical Parameters (Zero Typing)',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    hasCustom
+                        ? '4. Verified Extracted Parameters from File'
+                        : '4. Auto-Extracted Clinical Parameters (Zero Typing)',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: hasCustom ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                  border: Border.all(color: hasCustom ? const Color(0xFF86EFAC) : const Color(0xFFBFDBFE)),
                 ),
-                child: Text(
-                  '${previewList.length} Parameters Ready',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (hasCustom) ...[
+                      const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 13),
+                      const SizedBox(width: 4),
+                    ],
+                    Text(
+                      hasCustom
+                          ? '${previewList.length} Extracted from File'
+                          : '${previewList.length} Parameters Ready',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: hasCustom ? const Color(0xFF16A34A) : const Color(0xFF1D4ED8),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
-            'The following verified parameters will be published and plotted directly into the patient\'s health locker and EHR timeline:',
-            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+          if (hasCustom && _detectedPatientsCount > 1) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.people_alt_rounded, color: Color(0xFF16A34A), size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Multi-Patient Batch Ingest: Detected $_detectedPatientsCount patients across ${previewList.length} test records.',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF166534)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Text(
+            hasCustom
+                ? 'The following parameters were parsed from your file and will be saved directly into the patient\'s health locker and EHR timeline:'
+                : 'The following verified parameters will be published and plotted directly into the patient\'s health locker and EHR timeline:',
+            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 12),
           Table(
             border: TableBorder.all(color: const Color(0xFFE2E8F0), width: 1, borderRadius: BorderRadius.circular(6)),
+            columnWidths: hasPatientInfo
+                ? const {
+                    0: FlexColumnWidth(2.4),
+                    1: FlexColumnWidth(1.6),
+                    2: FlexColumnWidth(1.4),
+                    3: FlexColumnWidth(1.1),
+                    4: FlexColumnWidth(2.2),
+                  }
+                : null,
             children: [
               TableRow(
                 decoration: const BoxDecoration(color: Color(0xFFF8FAFC)),
-                children: const [
-                  Padding(
+                children: [
+                  const Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Test Parameter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  Padding(
+                  const Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Observed Value', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  Padding(
+                  const Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Reference Range', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  Padding(
+                  const Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Flag', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
+                  if (hasPatientInfo)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Text('Target Patient', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
                 ],
               ),
               ...previewList.map((item) {
-                final isAbnormal = item['flag'] == 'High' || item['flag'] == 'Abnormal';
+                final isAbnormal = item['flag'] == 'High' ||
+                    item['flag'] == 'Abnormal' ||
+                    item['is_abnormal'] == true;
+                final patientLabel = [
+                  item['patient_name'],
+                  if (item['patient_id']?.toString().isNotEmpty == true) '(${item['patient_id']})',
+                ].where((s) => s != null && s.toString().isNotEmpty).join(' ');
+
                 return TableRow(
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8),
-                      child: Text(item['name'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        item['name'] ?? item['parameter_name'] ?? item['test_name'] ?? '',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
@@ -804,7 +1075,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
-                      child: Text(item['range'] ?? '', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      child: Text(item['range'] ?? item['reference_range'] ?? '-', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(8),
@@ -818,7 +1089,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                           ),
                         ),
                         child: Text(
-                          item['flag'] ?? 'Normal',
+                          item['flag'] ?? (isAbnormal ? 'High' : 'Normal'),
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -827,6 +1098,14 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                         ),
                       ),
                     ),
+                    if (hasPatientInfo)
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Text(
+                          patientLabel.isNotEmpty ? patientLabel : '-',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
+                        ),
+                      ),
                   ],
                 );
               }),

@@ -369,6 +369,7 @@ class ApiClient {
     String? doctorName,
     String? fileName,
     List<int>? fileBytes,
+    List<Map<String, dynamic>>? parameters,
   }) async {
     if (fileBytes != null && fileBytes.isNotEmpty && fileName != null) {
       final uri = Uri.parse('$baseUrl/lab/upload-report/');
@@ -385,6 +386,9 @@ class ApiClient {
       request.fields['category'] = category;
       if (summary != null) request.fields['summary'] = summary;
       if (doctorName != null) request.fields['doctor_name'] = doctorName;
+      if (parameters != null && parameters.isNotEmpty) {
+        request.fields['parameters'] = jsonEncode(parameters);
+      }
 
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -412,6 +416,7 @@ class ApiClient {
           'category': category,
           'summary': summary ?? '',
           'doctor_name': doctorName ?? '',
+          if (parameters != null && parameters.isNotEmpty) 'parameters': parameters,
         }),
       );
       final data = jsonDecode(response.body);

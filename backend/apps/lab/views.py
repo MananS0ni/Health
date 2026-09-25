@@ -82,6 +82,124 @@ class LabPublishReportView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+def process_lab_csv_data(reader, lab_name, default_file_obj=None):
+    from apps.accounts.models import User, Role
+    from apps.reports.models import MedicalRecord, LabReport, TestParameter
+    from django.utils import timezone
+
+    processed_rows = 0
+    reports_map = {}
+    patients_seen = set()
+    first_patient = None
+
+    for raw_row in reader:
+        row = {str(k).strip().lower(): str(v).strip() for k, v in raw_row.items() if k is not None and v is not None}
+        if not any(row.values()):
+            continue
+
+        # Patient identification (supports patient_id, patient_email, email, patient)
+        patient_id = row.get('patient_id') or row.get('patient_email') or row.get('email') or row.get('patient') or ''
+        patient_name = row.get('patient_name') or row.get('name') or ''
+
+        if not patient_id and not patient_name:
+            continue
+
+        patient = None
+        if '@' in patient_id:
+            patient = User.objects.filter(email__iexact=patient_id).first()
+        elif patient_id:
+            raw_prefix = patient_id.replace('PAT-', '').replace('pat-', '').replace('HLTH-', '').replace('hlth-', '').strip().lower()
+            for u in User.objects.all():
+                u_str = str(u.id).replace('-', '').lower()
+                u_pid = f"PAT-{str(u.id)[:6].upper()}"
+                if patient_id.upper() == u_pid or raw_prefix in u_str or raw_prefix in u.email.lower():
+                    patient = u
+                    break
+
+        if not patient and patient_name:
+            patient = User.objects.filter(full_name__icontains=patient_name).first()
+
+        if not patient:
+            clean_id = patient_id.lower().replace('-', '_').replace(' ', '_')
+            auto_email = patient_id if '@' in patient_id else f"{clean_id}@healthsync.local"
+            if not clean_id:
+                auto_email = f"patient_{processed_rows}_{int(timezone.now().timestamp())}@healthsync.local"
+            patient, _ = User.objects.get_or_create(
+                email=auto_email,
+                defaults={
+                    'full_name': patient_name or patient_id,
+                    'role': Role.PATIENT,
+                    'roles': ['patient'],
+                    'is_verified': True,
+                }
+            )
+
+        if not first_patient:
+            first_patient = patient
+        patients_seen.add(patient.email)
+
+        # Test and parameter fields
+        test_name = row.get('test_name') or row.get('test') or row.get('panel') or 'Diagnostic Test'
+        category = row.get('test_category') or row.get('category') or 'Pathology'
+        param_name = row.get('parameter_name') or row.get('parameter') or test_name
+        param_val = row.get('result_value') or row.get('value') or row.get('result') or 'Normal'
+        unit = row.get('unit') or row.get('units') or ''
+        ref_range = row.get('reference_range') or row.get('range') or row.get('normal_range') or ''
+
+        status_val = row.get('result_status') or row.get('is_abnormal') or row.get('flag') or row.get('status') or 'Normal'
+        is_abnormal = str(status_val).lower() in ('true', '1', 'yes', 'y', 'abnormal', 'high', 'critical', 'positive')
+
+        doc_name = row.get('lab_technician') or row.get('doctor_name') or row.get('doctor') or 'Dr. Priya Shah'
+        notes = row.get('notes') or row.get('summary') or f"Automated diagnostic test processed by {lab_name}."
+        row_lab = row.get('lab_name') or lab_name
+
+        report_key = (patient.id, test_name.lower())
+        if report_key not in reports_map:
+            report = LabReport.objects.create(
+                patient=patient,
+                report_name=test_name,
+                category=category,
+                facility_name=row_lab,
+                doctor_name=doc_name,
+                status='Abnormal' if is_abnormal else 'Normal',
+                summary=notes,
+                file_url=default_file_obj if default_file_obj else None,
+            )
+            reports_map[report_key] = report
+
+            MedicalRecord.objects.create(
+                patient=patient,
+                title=f"{test_name} - {row_lab}",
+                record_type='Lab Report',
+                facility_name=row_lab,
+                doctor_name=doc_name,
+                description=f"Verified diagnostic report.\nTest: {test_name}\nStatus: {report.status}\n{notes}",
+                file_url=default_file_obj if default_file_obj else None,
+            )
+        else:
+            report = reports_map[report_key]
+            if is_abnormal and report.status != 'Abnormal':
+                report.status = 'Abnormal'
+                report.save(update_fields=['status'])
+
+        TestParameter.objects.create(
+            report=report,
+            parameter_name=param_name,
+            value=f"{param_val} {unit}".strip() if unit and unit not in param_val else param_val,
+            unit=unit,
+            reference_range=ref_range,
+            is_abnormal=is_abnormal,
+        )
+        processed_rows += 1
+
+    return {
+        'processed_rows': processed_rows,
+        'reports_created': len(reports_map),
+        'patients_notified': list(patients_seen),
+        'first_patient': first_patient,
+    }
+
+
 class LabBatchUploadView(APIView):
     """
     POST /api/lab/batch-upload/
@@ -94,11 +212,10 @@ class LabBatchUploadView(APIView):
     def post(self, request):
         import csv
         import io
-        from apps.accounts.models import User, Role
 
         csv_content = None
-        if 'file' in request.FILES:
-            uploaded_file = request.FILES['file']
+        uploaded_file = request.FILES.get('file')
+        if uploaded_file:
             try:
                 csv_content = uploaded_file.read().decode('utf-8-sig')
             except UnicodeDecodeError:
@@ -113,20 +230,9 @@ class LabBatchUploadView(APIView):
 
         f = io.StringIO(csv_content.strip())
         reader = csv.DictReader(f)
-        
-        # Clean column headers
+
         if not reader.fieldnames:
             return Response({'error': 'CSV missing header row.'}, status=status.HTTP_400_BAD_REQUEST)
-
-        required_cols = {'patient_email', 'test_name', 'parameter_name', 'value'}
-        normalized_headers = {col.strip().lower(): col for col in reader.fieldnames if col}
-        
-        missing = [req for req in required_cols if req not in normalized_headers]
-        if missing:
-            return Response({
-                'error': f'Missing required CSV columns: {", ".join(missing)}',
-                'expected_columns': ['patient_email', 'patient_name', 'test_name', 'category', 'parameter_name', 'value', 'unit', 'reference_range', 'is_abnormal', 'doctor_name', 'summary']
-            }, status=status.HTTP_400_BAD_REQUEST)
 
         lab_name = 'Diagnostic Hub'
         if hasattr(request.user, 'lab_profile') and request.user.lab_profile.lab_name:
@@ -134,79 +240,14 @@ class LabBatchUploadView(APIView):
         elif request.user.full_name:
             lab_name = request.user.full_name
 
-        processed_rows = 0
-        reports_map = {}  # key: (patient_id, test_name) -> LabReport
-        patients_seen = set()
-
-        for row_idx, raw_row in enumerate(reader, start=2):
-            # Normalize row keys
-            row = {k.strip().lower(): v.strip() for k, v in raw_row.items() if k and v is not None}
-            email = row.get('patient_email', '').lower().strip()
-            if not email or '@' not in email:
-                continue
-
-            patient_name = row.get('patient_name', '')
-            test_name = row.get('test_name', 'Diagnostic Test')
-            category = row.get('category', 'Biochemistry')
-            param_name = row.get('parameter_name', 'Parameter')
-            param_val = row.get('value', '')
-            unit = row.get('unit', '')
-            ref_range = row.get('reference_range', '')
-            is_abnormal_str = row.get('is_abnormal', 'false').lower()
-            is_abnormal = is_abnormal_str in ('true', '1', 'yes', 'y', 'abnormal')
-            doctor_name = row.get('doctor_name', 'Prescribing Physician')
-            summary = row.get('summary', f"Batch-imported results from {lab_name}.")
-
-            # Find or auto-provision patient account
-            patient, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    'full_name': patient_name or email.split('@')[0].capitalize(),
-                    'role': Role.PATIENT,
-                    'roles': ['patient'],
-                    'is_verified': True,
-                }
-            )
-            if patient_name and not patient.full_name:
-                patient.full_name = patient_name
-                patient.save(update_fields=['full_name'])
-
-            patients_seen.add(email)
-
-            report_key = (patient.id, test_name.lower())
-            if report_key not in reports_map:
-                report = LabReport.objects.create(
-                    patient=patient,
-                    report_name=test_name,
-                    category=category,
-                    facility_name=lab_name,
-                    doctor_name=doctor_name,
-                    status='Abnormal' if is_abnormal else 'Normal',
-                    summary=summary,
-                )
-                reports_map[report_key] = report
-            else:
-                report = reports_map[report_key]
-                if is_abnormal and report.status != 'Abnormal':
-                    report.status = 'Abnormal'
-                    report.save(update_fields=['status'])
-
-            TestParameter.objects.create(
-                report=report,
-                parameter_name=param_name,
-                value=param_val,
-                unit=unit,
-                reference_range=ref_range,
-                is_abnormal=is_abnormal,
-            )
-            processed_rows += 1
+        result = process_lab_csv_data(reader, lab_name, default_file_obj=uploaded_file)
 
         return Response({
             'success': True,
-            'message': f'Successfully batch-processed {processed_rows} test parameters across {len(reports_map)} reports.',
-            'processed_rows': processed_rows,
-            'reports_created': len(reports_map),
-            'patients_notified': list(patients_seen),
+            'message': f'Successfully batch-processed {result["processed_rows"]} test parameters across {result["reports_created"]} reports.',
+            'processed_rows': result['processed_rows'],
+            'reports_created': result['reports_created'],
+            'patients_notified': result['patients_notified'],
         }, status=status.HTTP_201_CREATED)
 
 
@@ -308,6 +349,33 @@ class LabDirectUploadView(APIView):
         elif request.user.full_name:
             lab_name = request.user.full_name
 
+        # If a CSV file was uploaded directly, process it through the CSV pipeline
+        if file_obj and file_obj.name.lower().endswith('.csv'):
+            try:
+                import csv
+                import io
+                from django.utils import timezone
+                csv_bytes = file_obj.read()
+                file_obj.seek(0)
+                csv_content = csv_bytes.decode('utf-8-sig')
+                f = io.StringIO(csv_content.strip())
+                reader = csv.DictReader(f)
+                result = process_lab_csv_data(reader, lab_name, default_file_obj=file_obj)
+                target_pat = result['first_patient'] or patient
+                if result['processed_rows'] > 0:
+                    return Response({
+                        'success': True,
+                        'message': f"CSV processed: {result['processed_rows']} test parameters published across {result['reports_created']} reports to health lockers.",
+                        'report_id': f"BATCH-{int(timezone.now().timestamp())}",
+                        'patient_id': f"PAT-{str(target_pat.id)[:6].upper()}" if target_pat else identifier,
+                        'patient_name': target_pat.full_name if target_pat else 'Patient',
+                        'parameters_count': result['processed_rows'],
+                        'reports_created': result['reports_created'],
+                        'status': 'Normal',
+                    }, status=status.HTTP_201_CREATED)
+            except Exception:
+                pass
+
         if not summary:
             summary = f"Verified automated diagnostic report published by {lab_name}. Parameters extracted and original certified document secured."
 
@@ -326,7 +394,22 @@ class LabDirectUploadView(APIView):
         raw_params = data.get('parameters')
         if raw_params:
             try:
-                params_list = json.loads(raw_params) if isinstance(raw_params, str) else raw_params
+                raw_list = json.loads(raw_params) if isinstance(raw_params, str) else raw_params
+                if isinstance(raw_list, list):
+                    for p in raw_list:
+                        name = p.get('parameter_name') or p.get('name') or 'Metric'
+                        val = p.get('value') or p.get('result_value') or ''
+                        unit = p.get('unit') or ''
+                        rng = p.get('reference_range') or p.get('range') or ''
+                        flag = str(p.get('flag') or p.get('status') or p.get('result_status') or '').lower()
+                        is_ab = p.get('is_abnormal', False) or flag in ('high', 'abnormal', 'critical', 'positive')
+                        params_list.append({
+                            'parameter_name': name,
+                            'value': val,
+                            'unit': unit,
+                            'reference_range': rng,
+                            'is_abnormal': is_ab,
+                        })
             except Exception:
                 params_list = []
 
