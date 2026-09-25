@@ -49,6 +49,7 @@ class OrgProfile {
 
 class User {
   final String id;
+  final String? patientId;
   final String fullName;
   final String? email;
   final String phoneNumber;
@@ -71,6 +72,7 @@ class User {
 
   const User({
     required this.id,
+    this.patientId,
     required this.fullName,
     this.email,
     required this.phoneNumber,
@@ -103,6 +105,7 @@ class User {
 
   User copyWith({
     String? id,
+    String? patientId,
     String? fullName,
     String? email,
     String? phoneNumber,
@@ -121,6 +124,7 @@ class User {
   }) {
     return User(
       id: id ?? this.id,
+      patientId: patientId ?? this.patientId,
       fullName: fullName ?? this.fullName,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
@@ -155,8 +159,15 @@ class User {
         ? List<String>.from(conditionsRaw)
         : <String>[];
 
+    final rawId = json['id'] as String? ?? '';
+    final computedPid = json['patient_id'] as String? ??
+        (rawId.isNotEmpty
+            ? 'PAT-${rawId.replaceAll('-', '').padRight(6).substring(0, 6).toUpperCase()}'
+            : 'PAT-LOCAL');
+
     return User(
-      id: json['id'] ?? json['patient_id'] ?? '',
+      id: rawId,
+      patientId: computedPid,
       fullName: json['full_name'] ?? '',
       email: json['email'],
       phoneNumber: json['phone_number'] ?? '',
@@ -181,6 +192,7 @@ class User {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'patient_id': patientId,
         'full_name': fullName,
         'email': email,
         'phone_number': phoneNumber,

@@ -19,9 +19,12 @@ class RoleContextSwitcher extends ConsumerWidget {
       case 'doctor':
         return 'Doctor Portal';
       case 'lab_staff':
+      case 'lab':
         return 'Lab Portal';
       case 'hospital_staff':
-        return 'Hospital Portal';
+      case 'hospital':
+      case 'admin':
+        return 'Hospital & Admin Portal';
       default:
         return role;
     }
@@ -34,8 +37,11 @@ class RoleContextSwitcher extends ConsumerWidget {
       case 'doctor':
         return Icons.medical_services_outlined;
       case 'lab_staff':
+      case 'lab':
         return Icons.science_outlined;
       case 'hospital_staff':
+      case 'hospital':
+      case 'admin':
         return Icons.local_hospital_outlined;
       default:
         return Icons.person_outline;
@@ -49,8 +55,11 @@ class RoleContextSwitcher extends ConsumerWidget {
       case 'doctor':
         return '/doctor';
       case 'lab_staff':
+      case 'lab':
         return '/lab';
       case 'hospital_staff':
+      case 'hospital':
+      case 'admin':
         return '/hospital';
       default:
         return '/dashboard';

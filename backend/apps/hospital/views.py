@@ -24,10 +24,50 @@ class InpatientAdmissionListCreateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        serializer = InpatientAdmissionSerializer(data=request.data)
+        from apps.accounts.models import User, Role
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        identifier = (data.get('patient_identifier') or data.get('patient_email') or data.get('patient_id') or '').strip()
+
+        patient = None
+        if identifier:
+            if '@' in identifier:
+                patient = User.objects.filter(email__iexact=identifier).first()
+            else:
+                raw_prefix = identifier.replace('PAT-', '').replace('pat-', '').strip().lower()
+                for u in User.objects.all():
+                    u_str = str(u.id).replace('-', '').lower()
+                    if u_str.startswith(raw_prefix) or str(u.id).lower().startswith(raw_prefix):
+                        patient = u
+                        break
+
+        if not patient:
+            p_name = data.get('patient_name', '').strip()
+            if p_name:
+                patient = User.objects.filter(full_name__icontains=p_name).first()
+
+        serializer = InpatientAdmissionSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(hospital=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            admission = serializer.save(hospital=request.user, patient=patient)
+
+            if patient:
+                hosp_name = 'Hospital Care Center'
+                if hasattr(request.user, 'hospital_profile') and request.user.hospital_profile.hospital_name:
+                    hosp_name = request.user.hospital_profile.hospital_name
+                elif request.user.full_name:
+                    hosp_name = request.user.full_name
+
+                MedicalRecord.objects.create(
+                    patient=patient,
+                    title=f"Inpatient Admission: {admission.diagnosis}",
+                    record_type="Inpatient Admission",
+                    record_date=admission.admission_date,
+                    facility_name=hosp_name,
+                    doctor_name=admission.attending_doctor,
+                    description=f"Admitted to {admission.ward} (Bed: {admission.bed_no}). Attending: {admission.attending_doctor}. Clinical Diagnosis: {admission.diagnosis}.",
+                )
+
+            out_serializer = InpatientAdmissionSerializer(admission)
+            return Response(out_serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

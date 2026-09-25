@@ -43,6 +43,14 @@ class _HospitalShellState extends ConsumerState<HospitalShell> {
     _currentIndex = widget.initialIndex;
   }
 
+  @override
+  void didUpdateWidget(HospitalShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) {
+      setState(() => _currentIndex = widget.initialIndex);
+    }
+  }
+
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
   }

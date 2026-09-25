@@ -310,6 +310,77 @@ class ApiClient {
     return jsonDecode(response.body);
   }
 
+  Future<List<dynamic>> getLabPatients() async {
+    final response = await http.get(Uri.parse('$baseUrl/lab/patients/'), headers: headers);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) return data;
+    }
+    return [];
+  }
+
+  Future<Map<String, dynamic>> uploadDirectLabReport({
+    required String patientIdentifier,
+    String? patientName,
+    required String testName,
+    required String category,
+    String? summary,
+    String? doctorName,
+    String? fileName,
+    List<int>? fileBytes,
+  }) async {
+    if (fileBytes != null && fileBytes.isNotEmpty && fileName != null) {
+      final uri = Uri.parse('$baseUrl/lab/upload-report/');
+      final request = http.MultipartRequest('POST', uri);
+      if (accessToken != null) {
+        request.headers['Authorization'] = 'Bearer $accessToken';
+      }
+      if (currentUserEmail != null && currentUserEmail!.isNotEmpty) {
+        request.headers['X-User-Email'] = currentUserEmail!;
+      }
+      request.fields['patient_identifier'] = patientIdentifier;
+      if (patientName != null) request.fields['patient_name'] = patientName;
+      request.fields['test_name'] = testName;
+      request.fields['category'] = category;
+      if (summary != null) request.fields['summary'] = summary;
+      if (doctorName != null) request.fields['doctor_name'] = doctorName;
+
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          fileBytes,
+          filename: fileName,
+        ),
+      );
+
+      final streamed = await request.send();
+      final resp = await http.Response.fromStream(streamed);
+      final data = jsonDecode(resp.body);
+      if (resp.statusCode >= 200 && resp.statusCode < 300) {
+        return data is Map<String, dynamic> ? data : {'success': true};
+      }
+      throw Exception(data['error'] ?? 'Upload failed (${resp.statusCode})');
+    } else {
+      final response = await http.post(
+        Uri.parse('$baseUrl/lab/upload-report/'),
+        headers: headers,
+        body: jsonEncode({
+          'patient_identifier': patientIdentifier,
+          'patient_name': patientName ?? '',
+          'test_name': testName,
+          'category': category,
+          'summary': summary ?? '',
+          'doctor_name': doctorName ?? '',
+        }),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return data is Map<String, dynamic> ? data : {'success': true};
+      }
+      throw Exception(data['error'] ?? 'Upload failed (${response.statusCode})');
+    }
+  }
+
   // ── Hospital Portal ──
   Future<List<dynamic>> getAdmissions() async {
     final response = await http.get(Uri.parse('$baseUrl/hospital/admissions/'), headers: headers);

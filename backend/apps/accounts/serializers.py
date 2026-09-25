@@ -49,11 +49,13 @@ class UserSerializer(serializers.ModelSerializer):
     lab_profile = LabProfileSerializer(read_only=True)
     hospital_profile = HospitalProfileSerializer(read_only=True)
     roles = serializers.SerializerMethodField()
+    patient_id = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id',
+            'patient_id',
             'email',
             'full_name',
             'phone_number',
@@ -65,7 +67,10 @@ class UserSerializer(serializers.ModelSerializer):
             'hospital_profile',
             'created_at',
         ]
-        read_only_fields = ['id', 'email', 'is_verified', 'created_at']
+        read_only_fields = ['id', 'patient_id', 'email', 'is_verified', 'created_at']
+
+    def get_patient_id(self, obj):
+        return f"PAT-{str(obj.id)[:6].upper()}"
 
     def get_roles(self, obj):
         roles = list(obj.roles or [])

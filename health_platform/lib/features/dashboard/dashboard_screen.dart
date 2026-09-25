@@ -121,12 +121,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.verified_user_outlined, size: 15, color: AppColors.primary),
-                            SizedBox(width: 6),
+                          children: [
+                            const Icon(Icons.verified_user_outlined, size: 15, color: AppColors.primary),
+                            const SizedBox(width: 6),
                             Text(
-                              'Verified Patient',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                              user.patientId != null && user.patientId!.isNotEmpty
+                                  ? 'Verified • ${user.patientId}'
+                                  : 'Verified Patient',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                             ),
                           ],
                         ),
