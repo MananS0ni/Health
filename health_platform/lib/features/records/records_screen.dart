@@ -168,127 +168,183 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
     );
   }
 
-  void _showShareDoctorModal(BuildContext context, dynamic record) {
-    final availableDoctors = [
-      'Dr. Max Patel (General Medicine)',
-      'Dr. Rana Parthil (General Medicine)',
-      'Dr. Dhruv Patel (General Medicine)',
-      'Dr. S. K. Gupta (Cardiology)',
-      'Dr. R. Mehta (Ortho)',
-    ];
-    String selectedDoctor = availableDoctors.first;
-    final docName = record.attendingDoctor?.toString() ?? '';
-    if (docName.isNotEmpty && !availableDoctors.contains(docName)) {
-      availableDoctors.insert(0, docName);
-      selectedDoctor = docName;
-    } else if (docName.isNotEmpty) {
-      selectedDoctor = docName;
-    }
-
-    String accessDuration = '7 Days';
-
+  void _showAuthorizedProvidersModal(BuildContext context, dynamic record) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (modalContext) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: const [
-                  Icon(Icons.share_outlined, color: AppColors.primary),
-                  SizedBox(width: 8),
-                  Text('Share Health Record', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Grant secure access for "${record.title}" to a verified doctor.',
-                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 14),
+      builder: (modalContext) => Consumer(
+        builder: (context, ref, _) {
+          final approvedConsents = ref
+              .watch(patientConsentsProvider)
+              .where((c) => c['status'] == 'approved')
+              .toList();
 
-              const Text('Select Doctor', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-              const SizedBox(height: 6),
-              DropdownButtonFormField<String>(
-                initialValue: selectedDoctor,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                ),
-                items: availableDoctors
-                    .map((doc) => DropdownMenuItem(
-                          value: doc,
-                          child: Text(doc, style: const TextStyle(fontSize: 13)),
-                        ))
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) setModalState(() => selectedDoctor = v);
-                },
-              ),
-              const SizedBox(height: 14),
-
-              const Text('Access Validity Duration', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 8,
-                children: ['24 Hours', '7 Days', '30 Days', 'Permanent'].map((duration) {
-                  final selected = accessDuration == duration;
-                  return ChoiceChip(
-                    label: Text(duration),
-                    selected: selected,
-                    onSelected: (val) {
-                      if (val) setModalState(() => accessDuration = duration);
-                    },
-                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
-                    labelStyle: TextStyle(
-                      fontSize: 11,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                      color: selected ? AppColors.primary : AppColors.textSecondary,
+          return Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.7,
+            ),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 18),
-
-              AppButton(
-                text: 'Grant Access to $selectedDoctor',
-                onPressed: () {
-                  final doctorShortName = selectedDoctor.split(' (').first;
-                  setState(() {
-                    _sharedRecordsMap[record.recordId] = '$doctorShortName ($accessDuration)';
-                  });
-                  Navigator.pop(modalContext);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Access granted to $doctorShortName for $accessDuration.'),
-                      backgroundColor: AppColors.primary,
-                      behavior: SnackBarBehavior.floating,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: const [
+                    Icon(Icons.shield_outlined, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text(
+                      'Record Access Permissions',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
-                  );
-                },
-                isFullWidth: true,
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Only approved healthcare providers can view your medical history. You can revoke access at any time.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 16),
+                if (approvedConsents.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: const [
+                        Icon(Icons.lock_person_outlined, size: 36, color: AppColors.textSecondary),
+                        SizedBox(height: 10),
+                        Text(
+                          'No Active Provider Access',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'No doctor, lab, or hospital currently has access to your records.\n\nHealthcare providers must send access requests to you directly, which will appear on your Dashboard for approval.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: approvedConsents.length,
+                      itemBuilder: (ctx, i) {
+                        final consent = approvedConsents[i];
+                        final rawName = consent['doctor_name'] ?? consent['doctor_email'] ?? 'Healthcare Provider';
+                        final providerName = rawName.toString().toLowerCase().startsWith('dr.')
+                            ? rawName.toString()
+                            : 'Dr. $rawName';
+                        final purpose = consent['purpose'] ?? 'Clinical Consultation';
+                        final consentId = consent['id'].toString();
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDBEAFE),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.medical_services_outlined, color: Color(0xFF1E40AF), size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          providerName,
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDCFCE7),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            'Active Consent',
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF166534)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      purpose,
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFFDC2626),
+                                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                icon: const Icon(Icons.block_rounded, size: 14),
+                                label: const Text('Revoke', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                onPressed: () async {
+                                  Navigator.pop(modalContext);
+                                  await ref.read(patientConsentsProvider.notifier).actionConsent(consentId, 'revoke');
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Access revoked for $providerName.'),
+                                        backgroundColor: const Color(0xFFDC2626),
+                                        behavior: SnackBarBehavior.floating,
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -629,10 +685,10 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                     ],
                     const SizedBox(height: AppSpacing.xl),
                     AppButton(
-                      text: sharedInfo == null ? 'Share Record with Doctor' : 'Update / Revoke Doctor Access',
+                      text: 'Record Access Permissions & Revoke',
                       onPressed: () {
                         Navigator.pop(context);
-                        _showShareDoctorModal(context, record);
+                        _showAuthorizedProvidersModal(context, record);
                       },
                       isFullWidth: true,
                     ),

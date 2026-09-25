@@ -9,7 +9,6 @@ import '../../shared/widgets/empty_state.dart';
 import '../../shared/widgets/app_avatar.dart' show AppAvatar, AppAvatarSize;
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
-import '../../core/network/api_client.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -46,234 +45,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.dispose();
   }
 
-  void _showLinkDoctorOrLabModal(BuildContext context) {
-    final searchController = TextEditingController();
-    int selectedTab = 0; // 0 = Doctor, 1 = Lab
-    List<Map<String, dynamic>> dynamicDoctors = [];
-    bool isLoadingDoctors = true;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (modalContext) => StatefulBuilder(
-        builder: (context, setModalState) {
-          // Fetch real doctors once on open
-          if (isLoadingDoctors) {
-            ApiClient().getDoctorDirectory().then((docs) {
-              if (modalContext.mounted) {
-                setModalState(() {
-                  dynamicDoctors = docs.map((d) => Map<String, dynamic>.from(d as Map)).toList();
-                  isLoadingDoctors = false;
-                });
-              }
-            }).catchError((_) {
-              if (modalContext.mounted) setModalState(() => isLoadingDoctors = false);
-            });
-          }
-
-          final query = searchController.text.trim().toLowerCase();
-          final filteredDoctors = dynamicDoctors.where((d) {
-            if (query.isEmpty) return true;
-            final name = (d['name'] ?? '').toString().toLowerCase();
-            final spec = (d['specialty'] ?? '').toString().toLowerCase();
-            final clinic = (d['clinic'] ?? '').toString().toLowerCase();
-            final email = (d['email'] ?? '').toString().toLowerCase();
-            return name.contains(query) || spec.contains(query) || clinic.contains(query) || email.contains(query);
-          }).toList();
-
-          return Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.75,
-            ),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.border,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: const [
-                    Icon(Icons.add_link_rounded, color: AppColors.primary),
-                    SizedBox(width: 8),
-                    Text(
-                      'Link Doctor or Laboratory',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Connect with your doctor or clinic to share records and receive instant prescriptions.',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 12),
-                // Segmented selector
-                Row(
-                  children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Center(child: Text('Registered Doctors')),
-                        selected: selectedTab == 0,
-                        onSelected: (val) {
-                          if (val) setModalState(() => selectedTab = 0);
-                        },
-                        selectedColor: AppColors.primary.withValues(alpha: 0.15),
-                        labelStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight: selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
-                          color: selectedTab == 0 ? AppColors.primary : AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Center(child: Text('Diagnostic Labs')),
-                        selected: selectedTab == 1,
-                        onSelected: (val) {
-                          if (val) setModalState(() => selectedTab = 1);
-                        },
-                        selectedColor: const Color(0xFF059669).withValues(alpha: 0.15),
-                        labelStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight: selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
-                          color: selectedTab == 1 ? const Color(0xFF059669) : AppColors.textSecondary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: searchController,
-                  onChanged: (_) => setModalState(() {}),
-                  decoration: InputDecoration(
-                    hintText: selectedTab == 0
-                        ? 'Search Doctor by Name, Clinic, or Email...'
-                        : 'Search Lab by Name, License No, or Location...',
-                    prefixIcon: Icon(
-                      selectedTab == 0 ? Icons.medical_services_outlined : Icons.science_outlined,
-                      color: selectedTab == 0 ? AppColors.primary : const Color(0xFF059669),
-                    ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  selectedTab == 0 ? 'Verified Doctors on Platform' : 'Diagnostic Testing Centers',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 6),
-                Expanded(
-                  child: selectedTab == 0
-                      ? (isLoadingDoctors
-                          ? const Center(child: CircularProgressIndicator())
-                          : filteredDoctors.isEmpty
-                              ? const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: Text('No matching doctors found.', style: TextStyle(color: AppColors.textSecondary)),
-                                  ),
-                                )
-                              : ListView.builder(
-                                  itemCount: filteredDoctors.length,
-                                  itemBuilder: (ctx, i) {
-                                    final doc = filteredDoctors[i];
-                                    final rawDocName = (doc['name'] ?? 'Doctor').toString();
-                                    final docName = rawDocName.toLowerCase().startsWith('dr.')
-                                        ? rawDocName
-                                        : 'Dr. $rawDocName';
-                                    final docSpecialty = doc['specialty'] ?? 'General Medicine';
-                                    final docClinic = doc['clinic'] ?? 'Clinic';
-                                    final docEmail = doc['email'] ?? '';
-
-                                    return _SuggestedProviderTile(
-                                      name: docName,
-                                      subtext: '$docSpecialty • $docClinic',
-                                      icon: Icons.person_pin_rounded,
-                                      color: const Color(0xFF1E40AF),
-                                      onLink: () async {
-                                        ref.read(linkedProvidersProvider.notifier).addProvider({
-                                          'name': docName,
-                                          'specialty': '$docSpecialty • $docClinic',
-                                          'type': 'doctor',
-                                        });
-                                        try {
-                                          await ApiClient().linkDoctorDirectly(doctorEmail: docEmail);
-                                        } catch (_) {}
-                                        if (context.mounted) {
-                                          Navigator.pop(modalContext);
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('$docName linked & authorized for 24h!')),
-                                          );
-                                        }
-                                      },
-                                    );
-                                  },
-                                ))
-                      : ListView(
-                          children: [
-                            _SuggestedProviderTile(
-                              name: 'Metropolis Diagnostics Lab',
-                              subtext: 'License: LAB-IND-9982 • Connaught Place Branch',
-                              icon: Icons.science_rounded,
-                              color: const Color(0xFF059669),
-                              onLink: () {
-                                ref.read(linkedProvidersProvider.notifier).addProvider({
-                                  'name': 'Metropolis Diagnostics',
-                                  'specialty': 'Pathology & Blood Tests',
-                                  'type': 'lab',
-                                });
-                                Navigator.pop(modalContext);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Metropolis Diagnostics Lab linked to your profile!')),
-                                );
-                              },
-                            ),
-                            _SuggestedProviderTile(
-                              name: 'Dr. Lal PathLabs',
-                              subtext: 'License: LAB-IND-4410 • Diagnostic Center',
-                              icon: Icons.local_hospital_outlined,
-                              color: const Color(0xFFD97706),
-                              onLink: () {
-                                ref.read(linkedProvidersProvider.notifier).addProvider({
-                                  'name': 'Dr. Lal PathLabs',
-                                  'specialty': 'Diagnostic Pathology',
-                                  'type': 'lab',
-                                });
-                                Navigator.pop(modalContext);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Dr. Lal PathLabs linked to your profile!')),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -285,12 +57,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final approvedConsents = ref.watch(patientConsentsProvider).where((c) => c['status'] == 'approved').toList();
     final linkedProviders = <Map<String, dynamic>>[
       ...approvedConsents.map((c) {
-        final raw = (c['doctor_name'] ?? 'Doctor').toString();
+        final raw = (c['doctor_name'] ?? c['doctor_email'] ?? 'Doctor').toString();
         final name = raw.toLowerCase().startsWith('dr.') ? raw : 'Dr. $raw';
         return {
+          'id': c['id']?.toString() ?? '',
+          'consent_id': c['id']?.toString() ?? '',
           'name': name,
-          'specialty': 'General Medicine • Clinical Practice',
+          'specialty': c['purpose'] != null && c['purpose'].toString().isNotEmpty
+              ? c['purpose'].toString()
+              : 'General Medicine • Clinical Practice',
           'type': 'doctor',
+          'valid_until': c['valid_until'],
         };
       }),
       ...rawLinked.where((p) => !approvedConsents.any((c) {
@@ -335,15 +112,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ],
                         ),
                       ),
-                      ElevatedButton.icon(
-                        onPressed: () => _showLinkDoctorOrLabModal(context),
-                        icon: const Icon(Icons.add_link_rounded, size: 16),
-                        label: const Text('+ Link Doctor/Lab', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.verified_user_outlined, size: 15, color: AppColors.primary),
+                            SizedBox(width: 6),
+                            Text(
+                              'ABHA Verified',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -351,7 +136,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
 
-              // Pending Doctor Consent Requests
+              // Pending Provider (Doctor / Lab / Hospital) Access Requests
               if (ref.watch(patientConsentsProvider).any((c) => c['status'] == 'pending'))
                 SliverToBoxAdapter(
                   child: Padding(
@@ -361,28 +146,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                        border: Border.all(color: const Color(0xFF93C5FD)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: const [
-                              Icon(Icons.shield_rounded, color: Color(0xFF2563EB), size: 18),
-                              SizedBox(width: 8),
-                              Text(
-                                'Doctor Record Access Requests',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                            children: [
+                              const Icon(Icons.shield_rounded, color: Color(0xFF2563EB), size: 18),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Incoming Provider Access Requests',
+                                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFDBEAFE),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${ref.watch(patientConsentsProvider).where((c) => c['status'] == 'pending').length} Pending',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Only approved providers can access your health records. Review and grant 24-hr clinical access below.',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF1E40AF)),
+                          ),
+                          const SizedBox(height: 8),
                           ...ref
                               .watch(patientConsentsProvider)
                               .where((c) => c['status'] == 'pending')
                               .map((consent) {
-                            final doctorName = consent['doctor_name'] ?? consent['doctor_email'] ?? 'Doctor';
-                            final purpose = consent['purpose'] ?? 'Clinical Consultation';
+                            final rawName = consent['doctor_name'] ?? consent['doctor_email'] ?? 'Healthcare Provider';
+                            final requesterName = rawName.toString().toLowerCase().startsWith('dr.')
+                                ? rawName.toString()
+                                : 'Dr. $rawName';
+                            final purpose = consent['purpose'] ?? 'Clinical Consultation & Record Access';
                             final consentId = consent['id'].toString();
 
                             return Container(
@@ -395,11 +200,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                               child: Row(
                                 children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFDBEAFE),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(Icons.medical_services_outlined, color: Color(0xFF1E40AF), size: 20),
+                                  ),
+                                  const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Dr. $doctorName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                        Text(requesterName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                         Text(purpose, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                                         const Text('Access duration: 24 Hours upon approval', style: TextStyle(fontSize: 10, color: Color(0xFF2563EB))),
                                       ],
@@ -475,7 +289,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
 
-              // Linked Healthcare Providers Section
+              // Authorized Healthcare Providers Section
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -485,79 +299,186 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Linked Healthcare Providers',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          TextButton(
-                            onPressed: () => _showLinkDoctorOrLabModal(context),
-                            child: const Text('Add Provider', style: TextStyle(fontSize: 12)),
+                          Row(
+                            children: [
+                              const Text(
+                                'Authorized Healthcare Providers',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              if (linkedProviders.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: const Color(0xFF86EFAC)),
+                                  ),
+                                  child: Text(
+                                    '${linkedProviders.length} Active',
+                                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
+                      const SizedBox(height: 8),
                       if (linkedProviders.isEmpty)
-                        AppCard(
-                          onTap: () => _showLinkDoctorOrLabModal(context),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Icon(Icons.add_link_rounded, color: AppColors.primary, size: 20),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Text(
-                                    'No linked doctor or lab yet. Tap here to connect with your clinic.',
-                                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                                  ),
+                                child: const Icon(Icons.shield_outlined, color: AppColors.textSecondary, size: 24),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'No Healthcare Providers Currently Authorized',
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text(
+                                      'Only Doctors, Diagnostic Labs, and Hospitals can request access to your records. When a request arrives, you can approve or deny it above.',
+                                      style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                  ],
                                 ),
-                                const Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         )
                       else
-                        Row(
+                        Column(
                           children: linkedProviders.map((provider) {
                             final isDoc = provider['type'] == 'doctor';
-                            return Expanded(
-                              child: Container(
-                                margin: const EdgeInsets.only(right: 8),
-                                child: AppCard(
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: isDoc
-                                              ? const Color(0xFF1E40AF).withValues(alpha: 0.1)
-                                              : const Color(0xFF059669).withValues(alpha: 0.1),
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: Icon(
-                                          isDoc ? Icons.medical_services_outlined : Icons.science_outlined,
-                                          color: isDoc ? const Color(0xFF1E40AF) : const Color(0xFF059669),
-                                          size: 20,
-                                        ),
+                            final consentId = provider['consent_id']?.toString() ?? '';
+                            final providerName = provider['name']?.toString() ?? 'Provider';
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: AppCard(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: isDoc
+                                            ? const Color(0xFF1E40AF).withValues(alpha: 0.1)
+                                            : const Color(0xFF059669).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(provider['name'] ?? '', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                                            Text(provider['specialty'] ?? '', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                                          ],
-                                        ),
+                                      child: Icon(
+                                        isDoc ? Icons.medical_services_outlined : Icons.science_outlined,
+                                        color: isDoc ? const Color(0xFF1E40AF) : const Color(0xFF059669),
+                                        size: 22,
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Flexible(
+                                                child: Text(
+                                                  providerName,
+                                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 6),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFDCFCE7),
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
+                                                child: const Text(
+                                                  'Active Consent',
+                                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF166534)),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            provider['specialty'] ?? '',
+                                            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    OutlinedButton.icon(
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xFFDC2626),
+                                        side: const BorderSide(color: Color(0xFFFCA5A5)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                        visualDensity: VisualDensity.compact,
+                                      ),
+                                      icon: const Icon(Icons.block_rounded, size: 14),
+                                      label: const Text('Revoke Access', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                      onPressed: () async {
+                                        final confirm = await showDialog<bool>(
+                                          context: context,
+                                          builder: (ctx) => AlertDialog(
+                                            title: Text('Revoke Access for $providerName?'),
+                                            content: Text(
+                                              'Are you sure you want to revoke clinical record access for $providerName? They will immediately lose access to your medical history.',
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(ctx, false),
+                                                child: const Text('Cancel'),
+                                              ),
+                                              ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(0xFFDC2626),
+                                                  foregroundColor: Colors.white,
+                                                ),
+                                                onPressed: () => Navigator.pop(ctx, true),
+                                                child: const Text('Revoke'),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                        if (confirm == true) {
+                                          if (consentId.isNotEmpty) {
+                                            await ref.read(patientConsentsProvider.notifier).actionConsent(consentId, 'revoke');
+                                          }
+                                          ref.read(linkedProvidersProvider.notifier).removeProvider(providerName);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Access revoked for $providerName.'),
+                                                backgroundColor: const Color(0xFFDC2626),
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
                             );
@@ -796,60 +717,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 }
 
-class _SuggestedProviderTile extends StatelessWidget {
-  final String name;
-  final String subtext;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onLink;
-
-  const _SuggestedProviderTile({
-    required this.name,
-    required this.subtext,
-    required this.icon,
-    required this.color,
-    required this.onLink,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                Text(subtext, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            onPressed: onLink,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: color,
-              side: BorderSide(color: color),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text('Link', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _SummaryCard extends StatelessWidget {
   final String title;

@@ -6,6 +6,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/config/providers.dart';
 import '../../shared/widgets/app_avatar.dart';
 import '../../shared/widgets/app_list_state.dart';
+import '../../core/network/api_client.dart';
 
 const Color kDoctorAccent = Color(0xFF1E40AF);
 
@@ -25,7 +26,24 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: widget.initialQuery ?? '');
+    final initial = widget.initialQuery ?? '';
+    _searchController = TextEditingController(text: initial);
+    if (initial.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(doctorPatientsProvider.notifier).fetchPatients(initial.trim());
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(PatientSearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialQuery != oldWidget.initialQuery &&
+        widget.initialQuery != null &&
+        widget.initialQuery!.trim().isNotEmpty) {
+      _searchController.text = widget.initialQuery!;
+      ref.read(doctorPatientsProvider.notifier).fetchPatients(widget.initialQuery!.trim());
+    }
   }
 
   void _showAddPatientModal(BuildContext context) {
@@ -208,13 +226,16 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
     final filteredPatients = query.isEmpty
         ? allPatients
         : allPatients.where((p) {
-            final name = p['full_name'].toString().toLowerCase();
-            final phone = p['phone_number'].toString();
-            final pid = p['patient_id'].toString().toLowerCase();
-            return name.contains(query) || phone.contains(query) || pid.contains(query);
+            final name = (p['full_name'] ?? '').toString().toLowerCase();
+            final phone = (p['phone_number'] ?? '').toString().toLowerCase();
+            final pid = (p['patient_id'] ?? '').toString().toLowerCase();
+            final email = (p['email'] ?? '').toString().toLowerCase();
+            return name.contains(query) || phone.contains(query) || pid.contains(query) || email.contains(query);
           }).toList();
 
-    final activeStatus = (_viewStatus == ListStatus.content && filteredPatients.isEmpty)
+    final displayPatients = filteredPatients.isNotEmpty ? filteredPatients : allPatients;
+
+    final activeStatus = (_viewStatus == ListStatus.content && displayPatients.isEmpty)
         ? ListStatus.empty
         : _viewStatus;
 
@@ -250,51 +271,103 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
               currentStatus: _viewStatus,
               onStatusChanged: (s) => setState(() => _viewStatus = s),
             ),
-            TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Search patient by name, phone, or ID...',
-                prefixIcon: const Icon(Icons.search_rounded, color: kDoctorAccent),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {});
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    keyboardType: TextInputType.emailAddress,
+                    onSubmitted: (val) {
+                      final email = val.trim();
+                      ref.read(doctorPatientsProvider.notifier).fetchPatients(email);
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Enter patient registered email...',
+                      prefixIcon: const Icon(Icons.email_outlined, color: kDoctorAccent),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear_rounded),
+                              onPressed: () {
+                                _searchController.clear();
+                                ref.read(doctorPatientsProvider.notifier).reset();
+                                setState(() {});
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: AppColors.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: kDoctorAccent, width: 1.5),
+                      ),
+                    ),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: kDoctorAccent, width: 1.5),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kDoctorAccent,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(Icons.search_rounded, size: 18),
+                  label: const Text('Search'),
+                  onPressed: () {
+                    final email = _searchController.text.trim();
+                    ref.read(doctorPatientsProvider.notifier).fetchPatients(email);
+                  },
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: AppSpacing.md),
             Expanded(
-              child: AppListState(
-                status: activeStatus,
-                emptyMessage: 'No Matching Patients Found',
-                emptyIcon: Icons.person_search_outlined,
-                errorMessage: 'Error querying clinical EMR records.',
-                accentColor: kDoctorAccent,
-                onRetry: () => setState(() => _viewStatus = ListStatus.content),
-                child: ListView.builder(
-                  itemCount: filteredPatients.length,
-                  itemBuilder: (context, index) {
-                    final patient = filteredPatients[index];
-                    return _PatientSearchResultCard(patient: patient);
-                  },
-                ),
-              ),
+              child: _searchController.text.trim().isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.mark_email_read_outlined, size: 48, color: AppColors.textSecondary),
+                            SizedBox(height: 12),
+                            Text(
+                              'Enter Patient Email to Search Database',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'For patient privacy and HIPAA compliance, all patient medical records are secured. Enter the patient\'s registered email above to look up their clinical records directly from the database.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : AppListState(
+                      status: activeStatus,
+                      emptyMessage: 'No Patient Found in Database',
+                      emptyIcon: Icons.person_search_outlined,
+                      errorMessage: 'Error querying clinical EMR records from database.',
+                      accentColor: kDoctorAccent,
+                      onRetry: () {
+                        final email = _searchController.text.trim();
+                        ref.read(doctorPatientsProvider.notifier).fetchPatients(email);
+                      },
+                      child: ListView.builder(
+                        itemCount: displayPatients.length,
+                        itemBuilder: (context, index) {
+                          final patient = displayPatients[index];
+                          return _PatientSearchResultCard(patient: patient);
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
@@ -303,13 +376,22 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
   }
 }
 
-class _PatientSearchResultCard extends StatelessWidget {
+class _PatientSearchResultCard extends StatefulWidget {
   final Map<String, dynamic> patient;
 
   const _PatientSearchResultCard({required this.patient});
 
   @override
+  State<_PatientSearchResultCard> createState() => _PatientSearchResultCardState();
+}
+
+class _PatientSearchResultCardState extends State<_PatientSearchResultCard> {
+  bool _isRequesting = false;
+  bool _requested = false;
+
+  @override
   Widget build(BuildContext context) {
+    final patient = widget.patient;
     final vitals = patient['vitals'] as Map<String, dynamic>?;
 
     return Container(
@@ -333,12 +415,15 @@ class _PatientSearchResultCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          patient['full_name'],
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                        Flexible(
+                          child: Text(
+                            patient['full_name'],
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -349,7 +434,7 @@ class _PatientSearchResultCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            patient['patient_id'],
+                            patient['patient_id'] ?? '',
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
@@ -382,12 +467,15 @@ class _PatientSearchResultCard extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Last Diagnosis: ${patient['last_diagnosis']}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
+                Expanded(
+                  child: Text(
+                    'Last Diagnosis: ${patient['last_diagnosis']}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (vitals != null && vitals['bp'] != null)
@@ -407,6 +495,51 @@ class _PatientSearchResultCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton.icon(
+                onPressed: (_isRequesting || _requested)
+                    ? null
+                    : () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        setState(() => _isRequesting = true);
+                        try {
+                          final patientId = patient['patient_id']?.toString() ?? patient['email']?.toString() ?? '';
+                          final res = await ApiClient().requestDoctorConsent(patientId: patientId);
+                          if (!mounted) return;
+                          setState(() {
+                            _isRequesting = false;
+                            _requested = true;
+                          });
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text('✅ ${res['message'] ?? 'Consent request sent to patient.'}'),
+                              backgroundColor: const Color(0xFF16A34A),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          setState(() => _isRequesting = false);
+                          messenger.showSnackBar(
+                            SnackBar(
+                              content: Text('❌ ${e.toString().replaceAll('Exception: ', '')}'),
+                              backgroundColor: AppColors.emergency,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                icon: _isRequesting
+                    ? const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Icon(_requested ? Icons.check_circle_outline_rounded : Icons.shield_outlined, size: 14),
+                label: Text(_requested ? 'Request Sent' : 'Request Access'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _requested ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+                  side: BorderSide(color: _requested ? const Color(0xFF16A34A) : const Color(0xFFD97706)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
                 onPressed: () {
                   context.go('/doctor/add-diagnosis?id=${patient['patient_id']}');
                 },
@@ -416,7 +549,7 @@ class _PatientSearchResultCard extends StatelessWidget {
                   foregroundColor: kDoctorAccent,
                   side: const BorderSide(color: kDoctorAccent),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 ),
               ),
               const SizedBox(width: 8),
@@ -431,7 +564,7 @@ class _PatientSearchResultCard extends StatelessWidget {
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
             ],

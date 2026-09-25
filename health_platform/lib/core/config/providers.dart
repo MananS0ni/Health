@@ -581,6 +581,10 @@ class LinkedProvidersNotifier extends Notifier<List<Map<String, dynamic>>> {
     state = [...state, provider];
   }
 
+  void removeProvider(String name) {
+    state = state.where((p) => (p['name'] ?? '').toString().toLowerCase() != name.toLowerCase()).toList();
+  }
+
   void reset() => state = [];
 }
 
@@ -691,24 +695,30 @@ final doctorAppointmentsProvider =
 class DoctorPatientsNotifier extends Notifier<List<Map<String, dynamic>>> {
   @override
   List<Map<String, dynamic>> build() {
-    fetchPatients();
     return [];
   }
 
   Future<void> fetchPatients([String query = '']) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) {
+      state = [];
+      return;
+    }
     try {
-      final list = await ApiClient().searchPatients(query);
-      if (list.isNotEmpty) {
-        state = list.cast<Map<String, dynamic>>();
-      }
-    } catch (_) {}
+      final list = await ApiClient().searchPatients(cleanQuery);
+      state = list.cast<Map<String, dynamic>>();
+    } catch (_) {
+      state = [];
+    }
   }
 
   Future<Map<String, dynamic>?> addPatient(Map<String, dynamic> patient) async {
-    state = [patient, ...state];
     try {
       final res = await ApiClient().registerDoctorPatient(patient);
-      await fetchPatients();
+      final email = patient['email']?.toString() ?? '';
+      if (email.isNotEmpty) {
+        await fetchPatients(email);
+      }
       return res;
     } catch (_) {
       return null;

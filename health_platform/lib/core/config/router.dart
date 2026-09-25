@@ -84,7 +84,10 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/doctor/patients',
-      builder: (context, state) => const DoctorShell(initialIndex: 1),
+      builder: (context, state) => DoctorShell(
+        initialIndex: 1,
+        searchQuery: state.uri.queryParameters['q'],
+      ),
     ),
     GoRoute(
       path: '/doctor/appointments',

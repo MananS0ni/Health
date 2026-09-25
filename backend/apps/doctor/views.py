@@ -139,30 +139,45 @@ class DoctorAppointmentListCreateView(APIView):
 
 class DoctorPatientSearchView(APIView):
     """
-    GET /api/doctor/patients/?q=rajesh
-    Search patient directory by name, email, or phone.
+    GET /api/doctor/patients/?q=patient@example.com&email=patient@example.com
+    Search patient directory by email (or name/phone) from the database.
+    Privacy rule: Only returns records when an email or search query is explicitly provided.
     """
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        email = request.query_params.get('email', '').strip()
         query = request.query_params.get('q', '').strip()
+        search_term = (email or query).lower().strip()
+
+        # Strict privacy enforcement: do NOT dump patients if no email / query is provided
+        if not search_term:
+            return Response([], status=status.HTTP_200_OK)
+
         all_users = User.objects.all()
         patients = [
             u for u in all_users
             if u.role == Role.PATIENT or 'patient' in (u.roles or [])
         ]
-        if query:
-            q_lower = query.lower()
-            patients = [
-                p for p in patients
-                if q_lower in (p.full_name or '').lower() or
-                   q_lower in (p.email or '').lower() or
-                   q_lower in (p.phone_number or '').lower()
-            ]
+        
+        matched_patients = []
+        for p in patients:
+            p_email = (p.email or '').lower()
+            p_phone = (p.phone_number or '').lower()
+            p_name = (p.full_name or '').lower()
+            p_id = str(p.id).lower()
+            pat_code = f"pat-{str(p.id)[:6].lower()}"
+
+            if (search_term == p_email or
+                search_term in p_email or
+                search_term == p_phone or
+                search_term == pat_code or
+                search_term in p_name):
+                matched_patients.append(p)
 
         results = []
         from django.utils import timezone
-        for p in patients[:25]:
+        for p in matched_patients[:25]:
             profile = getattr(p, 'patient_profile', None)
             latest_consultation = Appointment.objects.filter(patient=p).order_by('-appointment_date').first()
             last_visit_str = latest_consultation.appointment_date.strftime('%Y-%m-%d') if latest_consultation else 'First Consultation (New Patient)'
@@ -444,32 +459,9 @@ class PatientConsentListView(APIView):
         return Response(ConsentRequestSerializer(consents, many=True).data, status=status.HTTP_200_OK)
 
     def post(self, request):
-        from datetime import timedelta
-        from django.utils import timezone
-        patient = request.user if request.user.is_authenticated else (User.objects.filter(email='manansoni2905@gmail.com').first() or User.objects.first())
-        doc_val = request.data.get('doctor_id') or request.data.get('doctor_email') or request.data.get('doctor')
-        doctor = resolve_patient_user(doc_val)
-        if not doctor:
-            # Fallback to any doctor user if specific email not found
-            doctor = User.objects.filter(roles__icontains='doctor').first() or User.objects.filter(email='dr.patel@health.com').first()
-
-        if not doctor:
-            return Response({'error': 'Doctor account not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        consent_obj, _ = ConsentRequest.objects.update_or_create(
-            doctor=doctor,
-            patient=patient,
-            defaults={
-                'purpose': 'Patient Connection & Medical Records Access Request',
-                'status': 'pending',
-                'valid_until': None,
-            }
-        )
         return Response({
-            'success': True,
-            'message': f'Connection request sent to Dr. {doctor.full_name or doctor.email}. Awaiting doctor acceptance.',
-            'consent': ConsentRequestSerializer(consent_obj).data
-        }, status=status.HTTP_200_OK)
+            'error': 'Patients cannot initiate links from their side. Healthcare providers (Doctors, Diagnostic Labs, Hospitals) must send access requests, which you can approve or deny from your dashboard.'
+        }, status=status.HTTP_403_FORBIDDEN)
 
 
 class PatientConsentActionView(APIView):
@@ -565,33 +557,48 @@ class DoctorIncomingConsentActionView(APIView):
 
 class DoctorDirectoryView(APIView):
     """
-    GET /api/doctor/directory/
-    Returns all registered doctors and clinics for patient discovery and linking.
+    GET /api/doctor/directory/?email=doctor@example.com (or ?q=...)
+    Search registered doctors by email from the database.
+    Privacy rule: Only returns records when an email or search query is explicitly provided.
     """
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        email = request.query_params.get('email', '').strip().lower()
         query = request.query_params.get('q', '').strip().lower()
+        search_term = email or query
+
+        # Strict privacy enforcement: do NOT dump doctors if no email / query is provided
+        if not search_term:
+            return Response([], status=status.HTTP_200_OK)
+
         all_users = User.objects.all()
         doctors = [
             u for u in all_users
             if u.role == Role.DOCTOR or 'doctor' in (u.roles or [])
         ]
-        if query:
-            doctors = [
-                d for d in doctors
-                if query in (d.full_name or '').lower() or
-                   query in (d.email or '').lower() or
-                   query in (getattr(d, 'doctor_profile', None).specialty if (hasattr(d, 'doctor_profile') and hasattr(getattr(d, 'doctor_profile'), 'specialty')) else '').lower() or
-                   query in (getattr(d, 'doctor_profile', None).hospital_affiliation if (hasattr(d, 'doctor_profile') and hasattr(getattr(d, 'doctor_profile'), 'hospital_affiliation')) else '').lower()
-            ]
+
+        matched_doctors = []
+        for d in doctors:
+            d_email = (d.email or '').lower()
+            d_name = (d.full_name or '').lower()
+            doc_prof = getattr(d, 'doctor_profile', None)
+            d_spec = (getattr(doc_prof, 'specialization', None) or getattr(doc_prof, 'specialty', None) or '').lower()
+            d_clinic = (getattr(doc_prof, 'clinic_name', None) or getattr(doc_prof, 'hospital_affiliation', None) or '').lower()
+            
+            if (search_term == d_email or
+                search_term in d_email or
+                search_term in d_name or
+                search_term in d_spec or
+                search_term in d_clinic):
+                matched_doctors.append(d)
 
         results = []
-        for d in doctors:
+        for d in matched_doctors:
             profile = getattr(d, 'doctor_profile', None)
-            spec = getattr(profile, 'specialty', None) or 'General Medicine'
-            clinic = getattr(profile, 'hospital_affiliation', None) or getattr(profile, 'clinic_name', None) or 'Metro Health Clinic'
-            license_no = getattr(profile, 'license_number', None) or 'MCI-REG'
+            spec = getattr(profile, 'specialization', None) or getattr(profile, 'specialty', None) or 'General Medicine'
+            clinic = getattr(profile, 'clinic_name', None) or getattr(profile, 'hospital_affiliation', None) or 'Metro Health Clinic'
+            license_no = getattr(profile, 'registration_number', None) or getattr(profile, 'license_number', None) or 'MCI-REG'
             
             results.append({
                 'id': str(d.id),
@@ -599,6 +606,7 @@ class DoctorDirectoryView(APIView):
                 'email': d.email,
                 'specialty': spec,
                 'clinic': clinic,
+                'registration_number': license_no,
                 'subtext': f"Reg: {license_no} • {clinic}",
                 'type': 'doctor',
             })

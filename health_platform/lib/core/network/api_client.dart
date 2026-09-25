@@ -227,8 +227,10 @@ class ApiClient {
   }
 
   Future<List<dynamic>> searchPatients(String query) async {
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return [];
     final response = await http.get(
-      Uri.parse('$baseUrl/doctor/patients/?q=$query'),
+      Uri.parse('$baseUrl/doctor/patients/?q=${Uri.encodeComponent(cleanQuery)}&email=${Uri.encodeComponent(cleanQuery)}'),
       headers: headers,
     );
     if (response.statusCode == 200) {
@@ -268,9 +270,9 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getDoctorDirectory([String query = '']) async {
-    final url = query.isNotEmpty
-        ? '$baseUrl/doctor/directory/?q=${Uri.encodeComponent(query)}'
-        : '$baseUrl/doctor/directory/';
+    final cleanQuery = query.trim();
+    if (cleanQuery.isEmpty) return [];
+    final url = '$baseUrl/doctor/directory/?q=${Uri.encodeComponent(cleanQuery)}&email=${Uri.encodeComponent(cleanQuery)}';
     final response = await http.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

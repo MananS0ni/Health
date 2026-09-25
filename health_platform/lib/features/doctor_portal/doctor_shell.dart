@@ -18,10 +18,12 @@ const Color kDoctorAccentLight = Color(0xFF3B82F6);
 
 class DoctorShell extends ConsumerStatefulWidget {
   final int initialIndex;
+  final String? searchQuery;
 
   const DoctorShell({
     super.key,
     this.initialIndex = 0,
+    this.searchQuery,
   });
 
   @override
@@ -31,10 +33,13 @@ class DoctorShell extends ConsumerStatefulWidget {
 class _DoctorShellState extends ConsumerState<DoctorShell> {
   late int _currentIndex;
 
-  final List<Widget> _screens = const [
-    DoctorDashboardScreen(),
-    PatientSearchScreen(),
-    DoctorAppointmentsScreen(),
+  List<Widget> get _screens => [
+    const DoctorDashboardScreen(),
+    PatientSearchScreen(
+      key: ValueKey(widget.searchQuery ?? 'patient_search'),
+      initialQuery: widget.searchQuery,
+    ),
+    const DoctorAppointmentsScreen(),
   ];
 
   @override
@@ -44,6 +49,17 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(activeRoleProvider.notifier).setRole('doctor');
     });
+  }
+
+  @override
+  void didUpdateWidget(DoctorShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex ||
+        oldWidget.searchQuery != widget.searchQuery) {
+      setState(() {
+        _currentIndex = widget.initialIndex;
+      });
+    }
   }
 
   void _onTabSelected(int index) {

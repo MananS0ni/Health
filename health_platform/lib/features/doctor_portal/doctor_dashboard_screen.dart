@@ -34,7 +34,10 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        ref.read(doctorPatientsProvider.notifier).fetchPatients();
+        final pEmail = req['patient_email']?.toString() ?? req['email']?.toString() ?? '';
+        if (pEmail.isNotEmpty) {
+          ref.read(doctorPatientsProvider.notifier).fetchPatients(pEmail);
+        }
         context.go('/doctor/patient-detail?id=$patientCode');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -183,21 +186,24 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               ),
               child: TextField(
                 controller: _searchController,
+                keyboardType: TextInputType.emailAddress,
                 onSubmitted: (query) {
-                  if (query.isNotEmpty) {
-                    context.go('/doctor/patients?q=${Uri.encodeComponent(query)}');
+                  final clean = query.trim();
+                  if (clean.isNotEmpty) {
+                    context.go('/doctor/patients?q=${Uri.encodeComponent(clean)}');
                   }
                 },
                 decoration: InputDecoration(
-                  hintText: 'Quick search patient by mobile number or name...',
+                  hintText: 'Search patient by registered email (e.g. manansoni2905@gmail.com)...',
                   hintStyle: const TextStyle(color: AppColors.textTertiary, fontSize: 13),
                   prefixIcon: const Icon(Icons.search_rounded, color: kDoctorAccent),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.arrow_forward_rounded, color: kDoctorAccent),
+                    tooltip: 'Search Patient',
                     onPressed: () {
-                      if (_searchController.text.isNotEmpty) {
-                        context.go(
-                            '/doctor/patients?q=${Uri.encodeComponent(_searchController.text)}');
+                      final clean = _searchController.text.trim();
+                      if (clean.isNotEmpty) {
+                        context.go('/doctor/patients?q=${Uri.encodeComponent(clean)}');
                       }
                     },
                   ),
@@ -316,7 +322,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'No incoming patient requests. When patients connect with you via "+ Link Doctor/Lab", their requests will appear here for you to accept.',
+                        'No pending patient requests. To connect with a patient, use the Search tab or enter their registered email above to send an access request.',
                         style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ),
@@ -410,7 +416,7 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'No recent patient consultations yet. Search for a patient by phone or name above.',
+                        'No recent patient consultations yet. Search for a patient by email above to view their records.',
                         style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                       ),
                     ),
