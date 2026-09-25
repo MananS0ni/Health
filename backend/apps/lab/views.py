@@ -82,7 +82,7 @@ class LabPublishReportView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-def process_lab_csv_data(reader, lab_name, default_file_obj=None):
+def process_lab_csv_data(reader, lab_name, default_file_obj=None, target_patient=None, override_test_name=None, override_category=None):
     from apps.accounts.models import User, Role
     from apps.reports.models import MedicalRecord, LabReport, TestParameter
     from django.utils import timezone
@@ -90,53 +90,56 @@ def process_lab_csv_data(reader, lab_name, default_file_obj=None):
     processed_rows = 0
     reports_map = {}
     patients_seen = set()
-    first_patient = None
+    first_patient = target_patient
 
     for raw_row in reader:
         row = {str(k).strip().lower(): str(v).strip() for k, v in raw_row.items() if k is not None and v is not None}
         if not any(row.values()):
             continue
 
-        # Patient identification (supports patient_id, patient_email, email, patient)
-        patient_id = row.get('patient_id') or row.get('patient_email') or row.get('email') or row.get('patient') or ''
-        patient_name = row.get('patient_name') or row.get('name') or ''
-
-        if not patient_id and not patient_name:
-            continue
-
-        patient = None
-        if '@' in patient_id:
-            patient = User.objects.filter(email__iexact=patient_id).first()
-        elif patient_id:
-            raw_prefix = patient_id.replace('PAT-', '').replace('pat-', '').replace('HLTH-', '').replace('hlth-', '').strip().lower()
-            for u in User.objects.all():
-                u_str = str(u.id).replace('-', '').lower()
-                u_pid = f"PAT-{str(u.id)[:6].upper()}"
-                if patient_id.upper() == u_pid or raw_prefix in u_str or raw_prefix in u.email.lower():
-                    patient = u
-                    break
-
-        if not patient and patient_name:
-            patient = User.objects.filter(full_name__icontains=patient_name).first()
-
+        # If a target patient was explicitly chosen in the upload form, ALWAYS use that patient!
+        # Do not auto-create or assign to dummy patient names from the CSV.
+        patient = target_patient
         if not patient:
-            clean_id = patient_id.lower().replace('-', '_').replace(' ', '_')
-            auto_email = patient_id if '@' in patient_id else f"{clean_id}@healthsync.local"
-            if not clean_id:
-                auto_email = f"patient_{processed_rows}_{int(timezone.now().timestamp())}@healthsync.local"
-            patient, _ = User.objects.get_or_create(
-                email=auto_email,
-                defaults={
-                    'full_name': patient_name or patient_id,
-                    'role': Role.PATIENT,
-                    'roles': ['patient'],
-                    'is_verified': True,
-                }
-            )
+            patient_id = row.get('patient_id') or row.get('patient_email') or row.get('email') or row.get('patient') or ''
+            patient_name = row.get('patient_name') or row.get('name') or ''
+
+            if not patient_id and not patient_name:
+                continue
+
+            if '@' in patient_id:
+                patient = User.objects.filter(email__iexact=patient_id).first()
+            elif patient_id:
+                raw_prefix = patient_id.replace('PAT-', '').replace('pat-', '').replace('HLTH-', '').replace('hlth-', '').strip().lower()
+                for u in User.objects.all():
+                    u_str = str(u.id).replace('-', '').lower()
+                    u_pid = f"PAT-{str(u.id)[:6].upper()}"
+                    if patient_id.upper() == u_pid or raw_prefix in u_str or raw_prefix in u.email.lower():
+                        patient = u
+                        break
+
+            if not patient and patient_name:
+                patient = User.objects.filter(full_name__icontains=patient_name).first()
+
+            if not patient:
+                clean_id = patient_id.lower().replace('-', '_').replace(' ', '_')
+                auto_email = patient_id if '@' in patient_id else f"{clean_id}@healthsync.local"
+                if not clean_id:
+                    auto_email = f"patient_{processed_rows}_{int(timezone.now().timestamp())}@healthsync.local"
+                patient, _ = User.objects.get_or_create(
+                    email=auto_email,
+                    defaults={
+                        'full_name': patient_name or patient_id,
+                        'role': Role.PATIENT,
+                        'roles': ['patient'],
+                        'is_verified': True,
+                    }
+                )
 
         if not first_patient:
             first_patient = patient
-        patients_seen.add(patient.email)
+        if patient and patient.email:
+            patients_seen.add(patient.email)
 
         # Test and parameter fields
         test_name = row.get('test_name') or row.get('test') or row.get('panel') or 'Diagnostic Test'
@@ -360,8 +363,15 @@ class LabDirectUploadView(APIView):
                 csv_content = csv_bytes.decode('utf-8-sig')
                 f = io.StringIO(csv_content.strip())
                 reader = csv.DictReader(f)
-                result = process_lab_csv_data(reader, lab_name, default_file_obj=file_obj)
-                target_pat = result['first_patient'] or patient
+                result = process_lab_csv_data(
+                    reader,
+                    lab_name,
+                    default_file_obj=file_obj,
+                    target_patient=patient,
+                    override_test_name=test_name,
+                    override_category=category,
+                )
+                target_pat = patient
                 if result['processed_rows'] > 0:
                     return Response({
                         'success': True,

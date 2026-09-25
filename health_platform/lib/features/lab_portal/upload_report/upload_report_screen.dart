@@ -44,7 +44,6 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   bool _isCustomFile = false;
   Uint8List? _attachedFileBytes;
   List<Map<String, dynamic>>? _customExtractedParameters;
-  int _detectedPatientsCount = 0;
 
   bool _isLoadingPatients = false;
   Map<String, dynamic>? _selectedPatient;
@@ -312,19 +311,8 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
 
           if (extractedParams.isNotEmpty) {
             _customExtractedParameters = extractedParams;
-            final pIds = extractedParams
-                .map((e) => e['patient_id'] ?? e['patient_name'])
-                .where((e) => e != null && e.toString().trim().isNotEmpty)
-                .toSet();
-            _detectedPatientsCount = pIds.length;
-
             final first = extractedParams.first;
-            if (first['patient_id']?.toString().isNotEmpty == true) {
-              _patientIdentifierController.text = first['patient_id'];
-            }
-            if (first['patient_name']?.toString().isNotEmpty == true) {
-              _patientNameController.text = first['patient_name'];
-            }
+            // Retain the user's manually entered patient details in Section 1 (NO auto-fill of patient ID or name!)
             if (first['test_name']?.toString().isNotEmpty == true) {
               _selectedTest = first['test_name'];
             }
@@ -351,7 +339,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                   Expanded(
                     child: Text(
                       isCsvWithData
-                          ? 'Extracted ${extractedParams.length} clinical parameters across $_detectedPatientsCount patient(s) from ${file.name}'
+                          ? 'Auto-extracted ${extractedParams.length} clinical parameters from ${file.name}. Target patient remains as selected.'
                           : 'Attached device file: ${file.name} ($_attachedFileSizeKb KB)',
                     ),
                   ),
@@ -376,18 +364,11 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   }
 
   Future<void> _handleUploadAndSync() async {
-    String identifier = _patientIdentifierController.text.trim();
-    if (identifier.isEmpty) {
-      if (_customExtractedParameters != null && _customExtractedParameters!.isNotEmpty) {
-        identifier = _customExtractedParameters!.first['patient_id'] ?? 'BATCH_PATIENT';
-        _patientIdentifierController.text = identifier;
-      }
-    }
-
+    final identifier = _patientIdentifierController.text.trim();
     if (identifier.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select or enter a Patient ID / Email'),
+          content: Text('Please enter or search the Target Patient ID or Email in Section 1.'),
           backgroundColor: AppColors.emergency,
         ),
       );
@@ -830,7 +811,6 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                               _isCustomFile = false;
                               _attachedFileBytes = null;
                               _customExtractedParameters = null;
-                              _detectedPatientsCount = 0;
                               final preset = _presetTests[_selectedTest];
                               _attachedFileName = preset?['sample_file'] ?? 'CBC_Automated_Hemogram_Report.pdf';
                               _attachedFileSizeKb = preset?['size_kb'] ?? 142;
@@ -862,15 +842,7 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
                             _attachedFileSizeKb = (bytes.length / 1024).round().clamp(1, 9999);
                             _attachedFileBytes = bytes;
                             _customExtractedParameters = extractedParams;
-                            final pIds = extractedParams.map((e) => e['patient_id'] ?? e['patient_name']).where((e) => e != null && e.toString().isNotEmpty).toSet();
-                            _detectedPatientsCount = pIds.length;
                             final first = extractedParams.first;
-                            if (first['patient_id']?.toString().isNotEmpty == true) {
-                              _patientIdentifierController.text = first['patient_id'];
-                            }
-                            if (first['patient_name']?.toString().isNotEmpty == true) {
-                              _patientNameController.text = first['patient_name'];
-                            }
                             if (first['test_name']?.toString().isNotEmpty == true) {
                               _selectedTest = first['test_name'];
                             }
@@ -886,7 +858,7 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
                           });
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Loaded ${extractedParams.length} parameters across $_detectedPatientsCount patients from template.'),
+                              content: Text('Loaded ${extractedParams.length} clinical parameters from template. Target patient remains as selected.'),
                               backgroundColor: kLabAccent,
                               duration: const Duration(seconds: 3),
                             ),
@@ -918,11 +890,6 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
     final previewList = hasCustom
         ? _customExtractedParameters!
         : ((preset?['preview'] as List<dynamic>?) ?? []);
-
-    final hasPatientInfo = hasCustom &&
-        previewList.any((e) =>
-            (e['patient_name']?.toString().isNotEmpty == true) ||
-            (e['patient_id']?.toString().isNotEmpty == true));
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -983,29 +950,6 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
             ],
           ),
           const SizedBox(height: 10),
-          if (hasCustom && _detectedPatientsCount > 1) ...[
-            Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF86EFAC)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.people_alt_rounded, color: Color(0xFF16A34A), size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Multi-Patient Batch Ingest: Detected $_detectedPatientsCount patients across ${previewList.length} test records.',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF166534)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           Text(
             hasCustom
                 ? 'The following parameters were parsed from your file and will be saved directly into the patient\'s health locker and EHR timeline:'
@@ -1015,50 +959,38 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
           const SizedBox(height: 12),
           Table(
             border: TableBorder.all(color: const Color(0xFFE2E8F0), width: 1, borderRadius: BorderRadius.circular(6)),
-            columnWidths: hasPatientInfo
-                ? const {
-                    0: FlexColumnWidth(2.4),
-                    1: FlexColumnWidth(1.6),
-                    2: FlexColumnWidth(1.4),
-                    3: FlexColumnWidth(1.1),
-                    4: FlexColumnWidth(2.2),
-                  }
-                : null,
+            columnWidths: const {
+              0: FlexColumnWidth(2.4),
+              1: FlexColumnWidth(1.4),
+              2: FlexColumnWidth(1.6),
+              3: FlexColumnWidth(1.0),
+            },
             children: [
-              TableRow(
-                decoration: const BoxDecoration(color: Color(0xFFF8FAFC)),
+              const TableRow(
+                decoration: BoxDecoration(color: Color(0xFFF8FAFC)),
                 children: [
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Test Parameter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Observed Value', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Reference Range', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.all(8),
                     child: Text('Flag', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                   ),
-                  if (hasPatientInfo)
-                    const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Text('Target Patient', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    ),
                 ],
               ),
               ...previewList.map((item) {
                 final isAbnormal = item['flag'] == 'High' ||
                     item['flag'] == 'Abnormal' ||
                     item['is_abnormal'] == true;
-                final patientLabel = [
-                  item['patient_name'],
-                  if (item['patient_id']?.toString().isNotEmpty == true) '(${item['patient_id']})',
-                ].where((s) => s != null && s.toString().isNotEmpty).join(' ');
 
                 return TableRow(
                   children: [
@@ -1098,14 +1030,6 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
                         ),
                       ),
                     ),
-                    if (hasPatientInfo)
-                      Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: Text(
-                          patientLabel.isNotEmpty ? patientLabel : '-',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
-                        ),
-                      ),
                   ],
                 );
               }),
