@@ -47,6 +47,54 @@ class OrgProfile {
       };
 }
 
+class LabProfile {
+  final String labName;
+  final String? licenseNumber;
+  final String? address;
+
+  const LabProfile({
+    required this.labName,
+    this.licenseNumber,
+    this.address,
+  });
+
+  factory LabProfile.fromJson(Map<String, dynamic> json) => LabProfile(
+        labName: json['lab_name'] ?? '',
+        licenseNumber: json['license_number'],
+        address: json['address'],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'lab_name': labName,
+        'license_number': licenseNumber,
+        'address': address,
+      };
+}
+
+class HospitalProfile {
+  final String hospitalName;
+  final String? registrationId;
+  final String? departments;
+
+  const HospitalProfile({
+    required this.hospitalName,
+    this.registrationId,
+    this.departments,
+  });
+
+  factory HospitalProfile.fromJson(Map<String, dynamic> json) => HospitalProfile(
+        hospitalName: json['hospital_name'] ?? '',
+        registrationId: json['registration_id'],
+        departments: json['departments'],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'hospital_name': hospitalName,
+        'registration_id': registrationId,
+        'departments': departments,
+      };
+}
+
 class User {
   final String id;
   final String? patientId;
@@ -58,7 +106,9 @@ class User {
 
   // Professional sub-profiles (null if role not present)
   final DoctorProfile? doctorProfile;
-  final OrgProfile? orgProfile; // shared for lab_staff / hospital_staff
+  final LabProfile? labProfile;
+  final HospitalProfile? hospitalProfile;
+  final OrgProfile? orgProfile; // fallback/convenience
 
   // Health / personal fields
   final String? bloodGroup;
@@ -80,6 +130,8 @@ class User {
     required this.roles,
     this.isVerified = false,
     this.doctorProfile,
+    this.labProfile,
+    this.hospitalProfile,
     this.orgProfile,
     this.bloodGroup,
     this.dateOfBirth,
@@ -115,6 +167,8 @@ class User {
     List<String>? roles,
     bool? isVerified,
     DoctorProfile? doctorProfile,
+    LabProfile? labProfile,
+    HospitalProfile? hospitalProfile,
     OrgProfile? orgProfile,
     String? bloodGroup,
     String? dateOfBirth,
@@ -135,6 +189,8 @@ class User {
       roles: roles ?? this.roles,
       isVerified: isVerified ?? this.isVerified,
       doctorProfile: doctorProfile ?? this.doctorProfile,
+      labProfile: labProfile ?? this.labProfile,
+      hospitalProfile: hospitalProfile ?? this.hospitalProfile,
       orgProfile: orgProfile ?? this.orgProfile,
       bloodGroup: bloodGroup ?? this.bloodGroup,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
@@ -186,6 +242,30 @@ class User {
             ? 'PAT-${rawId.replaceAll('-', '').padRight(6).substring(0, 6).toUpperCase()}'
             : 'PAT-LOCAL');
 
+    final labProf = json['lab_profile'] != null
+        ? LabProfile.fromJson(json['lab_profile'])
+        : null;
+    final hospProf = json['hospital_profile'] != null
+        ? HospitalProfile.fromJson(json['hospital_profile'])
+        : null;
+
+    OrgProfile? orgProf = json['org_profile'] != null
+        ? OrgProfile.fromJson(json['org_profile'])
+        : null;
+    if (orgProf == null) {
+      if (hospProf != null) {
+        orgProf = OrgProfile(
+          organizationName: hospProf.hospitalName,
+          employeeId: hospProf.registrationId,
+        );
+      } else if (labProf != null) {
+        orgProf = OrgProfile(
+          organizationName: labProf.labName,
+          employeeId: labProf.licenseNumber,
+        );
+      }
+    }
+
     return User(
       id: rawId,
       patientId: computedPid,
@@ -197,9 +277,9 @@ class User {
       doctorProfile: json['doctor_profile'] != null
           ? DoctorProfile.fromJson(json['doctor_profile'])
           : null,
-      orgProfile: json['org_profile'] != null
-          ? OrgProfile.fromJson(json['org_profile'])
-          : null,
+      labProfile: labProf,
+      hospitalProfile: hospProf,
+      orgProfile: orgProf,
       bloodGroup: json['blood_group'],
       dateOfBirth: json['date_of_birth'],
       gender: json['gender'],
@@ -221,6 +301,8 @@ class User {
         'roles': roles,
         'is_verified': isVerified,
         'doctor_profile': doctorProfile?.toJson(),
+        'lab_profile': labProfile?.toJson(),
+        'hospital_profile': hospitalProfile?.toJson(),
         'org_profile': orgProfile?.toJson(),
         'blood_group': bloodGroup,
         'date_of_birth': dateOfBirth,

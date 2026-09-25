@@ -27,6 +27,8 @@ class AuthState {
   final List<String> pendingRoles;
   final DoctorProfile? pendingDoctorProfile;
   final OrgProfile? pendingOrgProfile;
+  final LabProfile? pendingLabProfile;
+  final HospitalProfile? pendingHospitalProfile;
   final String? pendingBloodGroup;
   final String? pendingDateOfBirth;
   final String? pendingGender;
@@ -50,6 +52,8 @@ class AuthState {
     this.pendingRoles = const ['patient'],
     this.pendingDoctorProfile,
     this.pendingOrgProfile,
+    this.pendingLabProfile,
+    this.pendingHospitalProfile,
     this.pendingBloodGroup,
     this.pendingDateOfBirth,
     this.pendingGender,
@@ -82,6 +86,8 @@ class AuthState {
     List<String>? pendingRoles,
     DoctorProfile? pendingDoctorProfile,
     OrgProfile? pendingOrgProfile,
+    LabProfile? pendingLabProfile,
+    HospitalProfile? pendingHospitalProfile,
     String? pendingBloodGroup,
     String? pendingDateOfBirth,
     String? pendingGender,
@@ -106,6 +112,8 @@ class AuthState {
       pendingRoles: pendingRoles ?? this.pendingRoles,
       pendingDoctorProfile: pendingDoctorProfile ?? this.pendingDoctorProfile,
       pendingOrgProfile: pendingOrgProfile ?? this.pendingOrgProfile,
+      pendingLabProfile: pendingLabProfile ?? this.pendingLabProfile,
+      pendingHospitalProfile: pendingHospitalProfile ?? this.pendingHospitalProfile,
       pendingBloodGroup: pendingBloodGroup ?? this.pendingBloodGroup,
       pendingDateOfBirth: pendingDateOfBirth ?? this.pendingDateOfBirth,
       pendingGender: pendingGender ?? this.pendingGender,
@@ -143,6 +151,8 @@ class AuthNotifier extends Notifier<AuthState> {
     required List<String> roles,
     DoctorProfile? doctorProfile,
     OrgProfile? orgProfile,
+    LabProfile? labProfile,
+    HospitalProfile? hospitalProfile,
     String? bloodGroup,
     String? dateOfBirth,
     String? gender,
@@ -160,6 +170,8 @@ class AuthNotifier extends Notifier<AuthState> {
       pendingRoles: roles,
       pendingDoctorProfile: doctorProfile,
       pendingOrgProfile: orgProfile,
+      pendingLabProfile: labProfile,
+      pendingHospitalProfile: hospitalProfile,
       pendingBloodGroup: bloodGroup,
       pendingDateOfBirth: dateOfBirth,
       pendingGender: gender,
@@ -235,6 +247,8 @@ class AuthNotifier extends Notifier<AuthState> {
           roles: state.pendingRoles,
           doctorProfile: state.pendingDoctorProfile?.toJson(),
           orgProfile: state.pendingOrgProfile?.toJson(),
+          labProfile: state.pendingLabProfile?.toJson(),
+          hospitalProfile: state.pendingHospitalProfile?.toJson(),
           dateOfBirth: state.pendingDateOfBirth,
           gender: state.pendingGender,
           bloodGroup: state.pendingBloodGroup,
@@ -264,6 +278,8 @@ class AuthNotifier extends Notifier<AuthState> {
             )).copyWith(
           roles: effectiveRoles,
           doctorProfile: baseUser?.doctorProfile ?? state.pendingDoctorProfile,
+          labProfile: baseUser?.labProfile ?? state.pendingLabProfile,
+          hospitalProfile: baseUser?.hospitalProfile ?? state.pendingHospitalProfile,
           orgProfile: baseUser?.orgProfile ?? state.pendingOrgProfile,
           bloodGroup: baseUser?.bloodGroup ?? state.pendingBloodGroup,
           dateOfBirth: baseUser?.dateOfBirth ?? state.pendingDateOfBirth,

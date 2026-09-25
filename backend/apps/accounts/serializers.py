@@ -26,6 +26,8 @@ class VerifyOTPSerializer(serializers.Serializer):
     emergency_contact_phone = serializers.CharField(required=False, allow_blank=True, default='')
     doctor_profile = serializers.DictField(required=False, allow_null=True)
     org_profile = serializers.DictField(required=False, allow_null=True)
+    lab_profile = serializers.DictField(required=False, allow_null=True)
+    hospital_profile = serializers.DictField(required=False, allow_null=True)
 
     def validate_email(self, value):
         return value.lower().strip()

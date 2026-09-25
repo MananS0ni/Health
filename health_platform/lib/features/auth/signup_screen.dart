@@ -61,7 +61,15 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _clinicController = TextEditingController();
   String _specialization = _kSpecializations.first;
 
-  // Org fields (lab/hospital staff)
+  // Lab fields
+  final _labNameController = TextEditingController();
+  final _labLicenseController = TextEditingController();
+
+  // Hospital fields
+  final _hospitalNameController = TextEditingController();
+  final _hospitalRegIdController = TextEditingController();
+
+  // Org fields fallback
   final _orgNameController = TextEditingController();
   final _empIdController = TextEditingController();
 
@@ -69,9 +77,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   bool _isLoading = false;
 
   bool get _isDoctor => _selectedRoles.contains('doctor');
-  bool get _isOrgRole =>
-      _selectedRoles.contains('lab_staff') ||
-      _selectedRoles.contains('hospital_staff');
+  bool get _isLabStaff => _selectedRoles.contains('lab_staff');
+  bool get _isHospitalStaff => _selectedRoles.contains('hospital_staff');
 
   @override
   void dispose() {
@@ -86,6 +93,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _emergencyContactPhoneController.dispose();
     _regNoController.dispose();
     _clinicController.dispose();
+    _labNameController.dispose();
+    _labLicenseController.dispose();
+    _hospitalNameController.dispose();
+    _hospitalRegIdController.dispose();
     _orgNameController.dispose();
     _empIdController.dispose();
     super.dispose();
@@ -106,7 +117,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     setState(() => _isLoading = true);
 
     final isDoc = _selectedRoles.contains('doctor');
-    final isOrg = _selectedRoles.contains('lab_staff') || _selectedRoles.contains('hospital_staff');
+    final isLab = _selectedRoles.contains('lab_staff');
+    final isHosp = _selectedRoles.contains('hospital_staff');
 
     DoctorProfile? docProfile;
     if (isDoc) {
@@ -117,11 +129,29 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       );
     }
 
+    LabProfile? labProfile;
+    if (isLab) {
+      labProfile = LabProfile(
+        labName: _labNameController.text.trim(),
+        licenseNumber: _labLicenseController.text.trim().isNotEmpty ? _labLicenseController.text.trim() : null,
+      );
+    }
+
+    HospitalProfile? hospitalProfile;
+    if (isHosp) {
+      hospitalProfile = HospitalProfile(
+        hospitalName: _hospitalNameController.text.trim(),
+        registrationId: _hospitalRegIdController.text.trim().isNotEmpty ? _hospitalRegIdController.text.trim() : null,
+      );
+    }
+
     OrgProfile? orgProfile;
-    if (isOrg) {
+    if (isLab || isHosp) {
+      final name = isLab ? _labNameController.text.trim() : _hospitalNameController.text.trim();
+      final id = isLab ? _labLicenseController.text.trim() : _hospitalRegIdController.text.trim();
       orgProfile = OrgProfile(
-        organizationName: _orgNameController.text.trim(),
-        employeeId: _empIdController.text.trim().isNotEmpty ? _empIdController.text.trim() : null,
+        organizationName: name.isNotEmpty ? name : (_orgNameController.text.trim().isNotEmpty ? _orgNameController.text.trim() : 'Health Organization'),
+        employeeId: id.isNotEmpty ? id : (_empIdController.text.trim().isNotEmpty ? _empIdController.text.trim() : null),
       );
     }
 
@@ -132,6 +162,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           phoneNumber: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
           roles: _selectedRoles.toList(),
           doctorProfile: docProfile,
+          labProfile: labProfile,
+          hospitalProfile: hospitalProfile,
           orgProfile: orgProfile,
           bloodGroup: _bloodGroup,
           dateOfBirth: _dobController.text.trim().isNotEmpty ? _dobController.text.trim() : null,
@@ -515,29 +547,56 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                         ],
 
-                        // ── Org fields ────────────────────────────────────
-                        if (_isOrgRole) ...[
+                        // ── Lab Staff fields ──────────────────────────────
+                        if (_isLabStaff) ...[
                           const SizedBox(height: 20),
-                          const _SectionDivider(label: 'Organisation Details'),
+                          const _SectionDivider(label: 'Laboratory Details'),
                           const SizedBox(height: 14),
-                          _FormLabel('Organisation Name *'),
+                          _FormLabel('Diagnostic Lab Name *'),
                           const SizedBox(height: 7),
                           TextFormField(
-                            controller: _orgNameController,
-                            decoration: _dec('e.g. Narayana Health',
-                                icon: Icons.business_outlined),
-                            validator: _isOrgRole
+                            controller: _labNameController,
+                            decoration: _dec('e.g. Metropolis Healthcare / Dr. Lal PathLabs',
+                                icon: Icons.science_outlined),
+                            validator: _isLabStaff
                                 ? (v) => (v == null || v.trim().isEmpty)
-                                    ? 'Organisation name required'
+                                    ? 'Lab name required'
                                     : null
                                 : null,
                           ),
                           const SizedBox(height: 12),
-                          _FormLabel('Employee ID (optional)'),
+                          _FormLabel('Lab License / Technician ID (optional)'),
                           const SizedBox(height: 7),
                           TextFormField(
-                            controller: _empIdController,
-                            decoration: _dec('e.g. EMP-0042',
+                            controller: _labLicenseController,
+                            decoration: _dec('e.g. LAB-LIC-88219',
+                                icon: Icons.badge_outlined),
+                          ),
+                        ],
+
+                        // ── Hospital Staff fields ─────────────────────────
+                        if (_isHospitalStaff) ...[
+                          const SizedBox(height: 20),
+                          const _SectionDivider(label: 'Hospital / Facility Details'),
+                          const SizedBox(height: 14),
+                          _FormLabel('Hospital / Facility Name *'),
+                          const SizedBox(height: 7),
+                          TextFormField(
+                            controller: _hospitalNameController,
+                            decoration: _dec('e.g. Apollo Hospital / Narayana Health',
+                                icon: Icons.local_hospital_outlined),
+                            validator: _isHospitalStaff
+                                ? (v) => (v == null || v.trim().isEmpty)
+                                    ? 'Hospital name required'
+                                    : null
+                                : null,
+                          ),
+                          const SizedBox(height: 12),
+                          _FormLabel('Staff Employee ID / Registration ID (optional)'),
+                          const SizedBox(height: 7),
+                          TextFormField(
+                            controller: _hospitalRegIdController,
+                            decoration: _dec('e.g. HOSP-EMP-0042',
                                 icon: Icons.tag_outlined),
                           ),
                         ],

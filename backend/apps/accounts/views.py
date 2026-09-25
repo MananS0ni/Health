@@ -114,6 +114,8 @@ class VerifyOTPView(APIView):
         roles = serializer.validated_data.get('roles', [])
         doctor_profile_data = serializer.validated_data.get('doctor_profile')
         org_profile_data = serializer.validated_data.get('org_profile')
+        lab_profile_data = serializer.validated_data.get('lab_profile')
+        hospital_profile_data = serializer.validated_data.get('hospital_profile')
 
         primary_role = Role.PATIENT
         if 'doctor' in roles:
@@ -174,23 +176,31 @@ class VerifyOTPView(APIView):
                 }
             )
 
-        if ('lab_staff' in user.roles or 'lab' in user.roles or user.role == Role.LAB) and org_profile_data:
+        if ('lab_staff' in user.roles or 'lab' in user.roles or user.role == Role.LAB) and (lab_profile_data or org_profile_data):
+            lp_data = lab_profile_data or org_profile_data or {}
+            lab_name = lp_data.get('lab_name') or lp_data.get('organization_name') or user.full_name or 'Diagnostic Lab'
+            license_number = lp_data.get('license_number') or lp_data.get('employee_id') or ''
+            address = lp_data.get('address') or ''
             LabProfile.objects.update_or_create(
                 user=user,
                 defaults={
-                    'lab_name': org_profile_data.get('organization_name', user.full_name or 'Diagnostic Lab'),
-                    'license_number': org_profile_data.get('employee_id', ''),
-                    'address': '',
+                    'lab_name': lab_name,
+                    'license_number': license_number,
+                    'address': address,
                 }
             )
 
-        if ('hospital_staff' in user.roles or 'hospital' in user.roles or user.role == Role.HOSPITAL) and org_profile_data:
+        if ('hospital_staff' in user.roles or 'hospital' in user.roles or user.role == Role.HOSPITAL) and (hospital_profile_data or org_profile_data):
+            hp_data = hospital_profile_data or org_profile_data or {}
+            hospital_name = hp_data.get('hospital_name') or hp_data.get('organization_name') or user.full_name or 'Hospital Care'
+            registration_id = hp_data.get('registration_id') or hp_data.get('employee_id') or ''
+            departments = hp_data.get('departments') or 'General, ICU, Emergency'
             HospitalProfile.objects.update_or_create(
                 user=user,
                 defaults={
-                    'hospital_name': org_profile_data.get('organization_name', user.full_name or 'Hospital Care'),
-                    'registration_id': org_profile_data.get('employee_id', ''),
-                    'departments': 'General, ICU, Emergency',
+                    'hospital_name': hospital_name,
+                    'registration_id': registration_id,
+                    'departments': departments,
                 }
             )
 

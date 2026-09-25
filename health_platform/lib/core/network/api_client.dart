@@ -44,6 +44,8 @@ class ApiClient {
     String? phoneNumber,
     List<String>? roles,
     Map<String, dynamic>? doctorProfile,
+    Map<String, dynamic>? labProfile,
+    Map<String, dynamic>? hospitalProfile,
     Map<String, dynamic>? orgProfile,
     String? dateOfBirth,
     String? gender,
@@ -70,6 +72,12 @@ class ApiClient {
     }
     if (doctorProfile != null) {
       payload['doctor_profile'] = doctorProfile;
+    }
+    if (labProfile != null) {
+      payload['lab_profile'] = labProfile;
+    }
+    if (hospitalProfile != null) {
+      payload['hospital_profile'] = hospitalProfile;
     }
     if (orgProfile != null) {
       payload['org_profile'] = orgProfile;
