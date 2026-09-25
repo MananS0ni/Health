@@ -145,10 +145,21 @@ class User {
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
-    final rolesRaw = json['roles'] ?? (json['role'] != null ? [json['role']] : null);
-    final roles = rolesRaw is List
-        ? List<String>.from(rolesRaw)
-        : <String>['patient'];
+    final rolesList = <String>[];
+    final rolesRaw = json['roles'];
+    if (rolesRaw is List) {
+      rolesList.addAll(rolesRaw.map((e) => e.toString()));
+    }
+    if (json['role'] != null) {
+      final r = json['role'].toString();
+      if (!rolesList.contains(r)) rolesList.add(r);
+    }
+    if (rolesList.contains('lab') && !rolesList.contains('lab_staff')) rolesList.add('lab_staff');
+    if (rolesList.contains('lab_staff') && !rolesList.contains('lab')) rolesList.add('lab');
+    if (rolesList.contains('hospital') && !rolesList.contains('hospital_staff')) rolesList.add('hospital_staff');
+    if (rolesList.contains('hospital_staff') && !rolesList.contains('hospital')) rolesList.add('hospital');
+    if (!rolesList.contains('patient')) rolesList.insert(0, 'patient');
+    final roles = rolesList;
 
     final allergiesRaw = json['allergies'];
     final allergies = allergiesRaw is List

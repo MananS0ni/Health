@@ -76,6 +76,14 @@ class UserSerializer(serializers.ModelSerializer):
         roles = list(obj.roles or [])
         if obj.role and obj.role not in roles:
             roles.append(obj.role)
+        if 'lab' in roles and 'lab_staff' not in roles:
+            roles.append('lab_staff')
+        if 'lab_staff' in roles and 'lab' not in roles:
+            roles.append('lab')
+        if 'hospital' in roles and 'hospital_staff' not in roles:
+            roles.append('hospital_staff')
+        if 'hospital_staff' in roles and 'hospital' not in roles:
+            roles.append('hospital')
         if 'patient' not in roles:
             roles.insert(0, 'patient')
         return roles

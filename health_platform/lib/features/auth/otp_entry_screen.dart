@@ -113,14 +113,17 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
         final User user = authState.user ?? ref.read(userProvider);
         if (user.roles.length > 1) {
           context.go('/role-select');
+        } else if (user.roles.contains('admin')) {
+          ref.read(activeRoleProvider.notifier).setRole('admin');
+          context.go('/admin');
         } else if (user.roles.contains('doctor')) {
           ref.read(activeRoleProvider.notifier).setRole('doctor');
           context.go('/doctor');
-        } else if (user.roles.contains('lab_staff')) {
-          ref.read(activeRoleProvider.notifier).setRole('lab_staff');
+        } else if (user.roles.contains('lab_staff') || user.roles.contains('lab')) {
+          ref.read(activeRoleProvider.notifier).setRole('lab');
           context.go('/lab');
-        } else if (user.roles.contains('hospital_staff')) {
-          ref.read(activeRoleProvider.notifier).setRole('hospital_staff');
+        } else if (user.roles.contains('hospital_staff') || user.roles.contains('hospital')) {
+          ref.read(activeRoleProvider.notifier).setRole('hospital');
           context.go('/hospital');
         } else {
           ref.read(activeRoleProvider.notifier).setRole('patient');

@@ -118,9 +118,9 @@ class VerifyOTPView(APIView):
         primary_role = Role.PATIENT
         if 'doctor' in roles:
             primary_role = Role.DOCTOR
-        elif 'lab_staff' in roles:
+        elif 'lab_staff' in roles or 'lab' in roles:
             primary_role = Role.LAB
-        elif 'hospital_staff' in roles:
+        elif 'hospital_staff' in roles or 'hospital' in roles:
             primary_role = Role.HOSPITAL
         elif serializer.validated_data.get('role'):
             primary_role = serializer.validated_data['role']
@@ -142,9 +142,24 @@ class VerifyOTPView(APIView):
             user.full_name = full_name
         if phone_number:
             user.phone_number = phone_number
+
+        # Merge roles to preserve existing professional access
+        merged_roles = set(user.roles or [])
         if roles:
-            user.roles = roles
-        if primary_role != Role.PATIENT or not user.role:
+            merged_roles.update(roles)
+        if user.role == Role.LAB or primary_role == Role.LAB:
+            merged_roles.update(['lab', 'lab_staff'])
+        elif user.role == Role.DOCTOR or primary_role == Role.DOCTOR:
+            merged_roles.add('doctor')
+        elif user.role == Role.HOSPITAL or primary_role == Role.HOSPITAL:
+            merged_roles.update(['hospital', 'hospital_staff'])
+        if any(r in merged_roles for r in ['doctor', 'lab', 'lab_staff', 'hospital', 'hospital_staff']):
+            merged_roles.add('patient')
+        user.roles = list(merged_roles)
+
+        if not created and user.role and user.role != Role.PATIENT:
+            pass
+        elif primary_role != Role.PATIENT or not user.role:
             user.role = primary_role
         user.save()
 
@@ -159,7 +174,7 @@ class VerifyOTPView(APIView):
                 }
             )
 
-        if ('lab_staff' in user.roles or user.role == Role.LAB) and org_profile_data:
+        if ('lab_staff' in user.roles or 'lab' in user.roles or user.role == Role.LAB) and org_profile_data:
             LabProfile.objects.update_or_create(
                 user=user,
                 defaults={
@@ -169,7 +184,7 @@ class VerifyOTPView(APIView):
                 }
             )
 
-        if ('hospital_staff' in user.roles or user.role == Role.HOSPITAL) and org_profile_data:
+        if ('hospital_staff' in user.roles or 'hospital' in user.roles or user.role == Role.HOSPITAL) and org_profile_data:
             HospitalProfile.objects.update_or_create(
                 user=user,
                 defaults={

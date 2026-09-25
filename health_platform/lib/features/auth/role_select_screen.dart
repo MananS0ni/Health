@@ -121,18 +121,18 @@ class RoleSelectScreen extends ConsumerWidget {
                           },
                         ),
                       ],
-                      if (roles.contains('lab_staff')) ...[
+                      if (roles.contains('lab_staff') || roles.contains('lab')) ...[
                         const SizedBox(height: 12),
                         _RoleCard(
-                          title: 'Lab Staff Portal',
+                          title: 'Diagnostic Lab Portal',
                           subtitle:
-                              'Process test orders, upload lab reports & monitor LIMS sync',
+                              'Process test orders, upload lab reports & monitor diagnostic sync',
                           icon: Icons.science_rounded,
                           accentColor: const Color(0xFF059669), // Emerald
                           onTap: () {
                             ref
                                 .read(activeRoleProvider.notifier)
-                                .setRole('lab_staff');
+                                .setRole('lab');
                             context.go('/lab');
                           },
                         ),
