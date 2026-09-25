@@ -28,6 +28,13 @@ class AuthState {
   final DoctorProfile? pendingDoctorProfile;
   final OrgProfile? pendingOrgProfile;
   final String? pendingBloodGroup;
+  final String? pendingDateOfBirth;
+  final String? pendingGender;
+  final List<String>? pendingAllergies;
+  final List<String>? pendingMedicalConditions;
+  final List<String>? pendingCurrentMedications;
+  final String? pendingEmergencyContactName;
+  final String? pendingEmergencyContactPhone;
   final String? devOtp;
 
   const AuthState({
@@ -44,6 +51,13 @@ class AuthState {
     this.pendingDoctorProfile,
     this.pendingOrgProfile,
     this.pendingBloodGroup,
+    this.pendingDateOfBirth,
+    this.pendingGender,
+    this.pendingAllergies,
+    this.pendingMedicalConditions,
+    this.pendingCurrentMedications,
+    this.pendingEmergencyContactName,
+    this.pendingEmergencyContactPhone,
     this.devOtp,
   });
 
@@ -69,6 +83,13 @@ class AuthState {
     DoctorProfile? pendingDoctorProfile,
     OrgProfile? pendingOrgProfile,
     String? pendingBloodGroup,
+    String? pendingDateOfBirth,
+    String? pendingGender,
+    List<String>? pendingAllergies,
+    List<String>? pendingMedicalConditions,
+    List<String>? pendingCurrentMedications,
+    String? pendingEmergencyContactName,
+    String? pendingEmergencyContactPhone,
     String? devOtp,
     bool clearDevOtp = false,
   }) {
@@ -86,6 +107,13 @@ class AuthState {
       pendingDoctorProfile: pendingDoctorProfile ?? this.pendingDoctorProfile,
       pendingOrgProfile: pendingOrgProfile ?? this.pendingOrgProfile,
       pendingBloodGroup: pendingBloodGroup ?? this.pendingBloodGroup,
+      pendingDateOfBirth: pendingDateOfBirth ?? this.pendingDateOfBirth,
+      pendingGender: pendingGender ?? this.pendingGender,
+      pendingAllergies: pendingAllergies ?? this.pendingAllergies,
+      pendingMedicalConditions: pendingMedicalConditions ?? this.pendingMedicalConditions,
+      pendingCurrentMedications: pendingCurrentMedications ?? this.pendingCurrentMedications,
+      pendingEmergencyContactName: pendingEmergencyContactName ?? this.pendingEmergencyContactName,
+      pendingEmergencyContactPhone: pendingEmergencyContactPhone ?? this.pendingEmergencyContactPhone,
       devOtp: clearDevOtp ? null : (devOtp ?? this.devOtp),
     );
   }
@@ -116,6 +144,13 @@ class AuthNotifier extends Notifier<AuthState> {
     DoctorProfile? doctorProfile,
     OrgProfile? orgProfile,
     String? bloodGroup,
+    String? dateOfBirth,
+    String? gender,
+    List<String>? allergies,
+    List<String>? medicalConditions,
+    List<String>? currentMedications,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
   }) {
     state = state.copyWith(
       pendingFullName: fullName,
@@ -126,6 +161,13 @@ class AuthNotifier extends Notifier<AuthState> {
       pendingDoctorProfile: doctorProfile,
       pendingOrgProfile: orgProfile,
       pendingBloodGroup: bloodGroup,
+      pendingDateOfBirth: dateOfBirth,
+      pendingGender: gender,
+      pendingAllergies: allergies,
+      pendingMedicalConditions: medicalConditions,
+      pendingCurrentMedications: currentMedications,
+      pendingEmergencyContactName: emergencyContactName,
+      pendingEmergencyContactPhone: emergencyContactPhone,
       isLoading: true,
       clearError: true,
     );
@@ -193,6 +235,14 @@ class AuthNotifier extends Notifier<AuthState> {
           roles: state.pendingRoles,
           doctorProfile: state.pendingDoctorProfile?.toJson(),
           orgProfile: state.pendingOrgProfile?.toJson(),
+          dateOfBirth: state.pendingDateOfBirth,
+          gender: state.pendingGender,
+          bloodGroup: state.pendingBloodGroup,
+          allergies: state.pendingAllergies,
+          medicalConditions: state.pendingMedicalConditions,
+          currentMedications: state.pendingCurrentMedications,
+          emergencyContactName: state.pendingEmergencyContactName,
+          emergencyContactPhone: state.pendingEmergencyContactPhone,
         );
 
         final userData = res['user'] as Map<String, dynamic>?;
@@ -215,7 +265,14 @@ class AuthNotifier extends Notifier<AuthState> {
           roles: effectiveRoles,
           doctorProfile: baseUser?.doctorProfile ?? state.pendingDoctorProfile,
           orgProfile: baseUser?.orgProfile ?? state.pendingOrgProfile,
-          bloodGroup: state.pendingBloodGroup,
+          bloodGroup: baseUser?.bloodGroup ?? state.pendingBloodGroup,
+          dateOfBirth: baseUser?.dateOfBirth ?? state.pendingDateOfBirth,
+          gender: baseUser?.gender ?? state.pendingGender,
+          allergies: baseUser?.allergies.isNotEmpty == true ? baseUser!.allergies : (state.pendingAllergies ?? []),
+          medicalConditions: baseUser?.medicalConditions.isNotEmpty == true ? baseUser!.medicalConditions : (state.pendingMedicalConditions ?? []),
+          currentMedications: baseUser?.currentMedications.isNotEmpty == true ? baseUser!.currentMedications : (state.pendingCurrentMedications ?? []),
+          emergencyContactName: baseUser?.emergencyContactName ?? state.pendingEmergencyContactName,
+          emergencyContactPhone: baseUser?.emergencyContactPhone ?? state.pendingEmergencyContactPhone,
         );
 
         state = state.copyWith(

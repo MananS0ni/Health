@@ -15,6 +15,7 @@ class PatientProfile(models.Model):
     # Emergency medical info
     allergies = models.JSONField(default=list, blank=True)
     medical_conditions = models.JSONField(default=list, blank=True)
+    current_medications = models.JSONField(default=list, blank=True)
     emergency_contact_name = models.CharField(max_length=150, blank=True, null=True)
     emergency_contact_phone = models.CharField(max_length=30, blank=True, null=True)
     emergency_contact_relation = models.CharField(max_length=50, blank=True, null=True)

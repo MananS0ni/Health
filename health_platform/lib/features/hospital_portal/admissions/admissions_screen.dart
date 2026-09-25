@@ -25,279 +25,325 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
 
   void _showNewAdmissionDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController(text: 'Manan Soni');
-    final patientIdController = TextEditingController(text: 'PAT-4726A2');
-    final ageController = TextEditingController(text: '28');
-    final bedController = TextEditingController(text: 'BED-102');
-    final diagnosisController = TextEditingController(text: 'High Fever Observation');
+    final nameController = TextEditingController();
+    final patientIdController = TextEditingController();
+    final ageController = TextEditingController();
+    final bedController = TextEditingController();
+    final doctorController = TextEditingController(text: 'Dr. ');
+    final diagnosisController = TextEditingController();
 
-    String ward = 'General Male Ward';
-    String doctor = 'Dr. Dhruv Patel';
+    String ward = 'General Ward';
     String gender = 'Male';
     String status = 'Admitted';
+    bool isSearchingPatient = false;
     bool isSubmitting = false;
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: Row(
-            children: const [
-              Icon(Icons.hotel_rounded, color: kHospitalAccent),
-              SizedBox(width: 10),
-              Text(
-                'New Inpatient Admission',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Form(
-              key: formKey,
-              child: SizedBox(
-                width: 440,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: kHospitalAccent.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: kHospitalAccent.withValues(alpha: 0.2)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.verified_user_rounded, color: kHospitalAccent, size: 16),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              'Patient: ${nameController.text.isNotEmpty ? nameController.text : "Inpatient"} (${patientIdController.text})',
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
-                            ),
-                          ),
-                        ],
-                      ),
+        builder: (context, setDialogState) {
+          Future<void> lookupPatient(String q) async {
+            if (q.trim().isEmpty) return;
+            setDialogState(() => isSearchingPatient = true);
+            try {
+              final list = await ApiClient().getLabPatients(q.trim());
+              if (list.isNotEmpty) {
+                final p = Map<String, dynamic>.from(list.first as Map);
+                setDialogState(() {
+                  nameController.text = p['full_name'] ?? '';
+                  patientIdController.text = p['patient_id'] ?? q;
+                  if (p['gender'] != null && ['Male', 'Female', 'Other'].contains(p['gender'])) {
+                    gender = p['gender'];
+                  }
+                  if (p['age'] != null && p['age'].toString().isNotEmpty && p['age'] != '--') {
+                    ageController.text = p['age'].toString();
+                  } else if (p['date_of_birth'] != null && p['date_of_birth'].toString().isNotEmpty) {
+                    try {
+                      final dob = DateTime.parse(p['date_of_birth'].toString());
+                      final now = DateTime.now();
+                      int calcAge = now.year - dob.year;
+                      if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+                        calcAge--;
+                      }
+                      ageController.text = calcAge.toString();
+                    } catch (_) {}
+                  }
+                });
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Found Patient: ${p['full_name']} (${p['patient_id']})'),
+                      backgroundColor: kHospitalAccent,
+                      duration: const Duration(seconds: 2),
                     ),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Patient Name *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              TextFormField(
-                                controller: nameController,
-                                decoration: _inputDec('e.g. Manan Soni'),
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-                              ),
-                            ],
+                  );
+                }
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('No patient found for that ID/Email. You can type their details manually.'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              }
+            } catch (_) {
+            } finally {
+              setDialogState(() => isSearchingPatient = false);
+            }
+          }
+
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            title: Row(
+              children: const [
+                Icon(Icons.hotel_rounded, color: kHospitalAccent),
+                SizedBox(width: 10),
+                Text(
+                  'New Inpatient Admission',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: SizedBox(
+                  width: 460,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (nameController.text.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: kHospitalAccent.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: kHospitalAccent.withValues(alpha: 0.2)),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              const Text('Patient ID / Email', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              TextFormField(
-                                controller: patientIdController,
-                                decoration: _inputDec('PAT-XXXXXX').copyWith(
-                                  suffixIcon: IconButton(
-                                    icon: const Icon(Icons.search_rounded, size: 18, color: kHospitalAccent),
-                                    tooltip: 'Lookup Patient',
-                                    onPressed: () async {
-                                      final q = patientIdController.text.trim();
-                                      if (q.isEmpty) return;
-                                      final list = await ApiClient().getLabPatients(q);
-                                      if (list.isNotEmpty) {
-                                        final p = Map<String, dynamic>.from(list.first as Map);
-                                        setDialogState(() {
-                                          nameController.text = p['full_name'] ?? '';
-                                          patientIdController.text = p['patient_id'] ?? q;
-                                        });
-                                      }
-                                    },
-                                  ),
+                              const Icon(Icons.verified_user_rounded, color: kHospitalAccent, size: 16),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Patient: ${nameController.text} (${patientIdController.text.isNotEmpty ? patientIdController.text : "Direct Admission"})',
+                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Age *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              TextFormField(
-                                controller: ageController,
-                                keyboardType: TextInputType.number,
-                                decoration: _inputDec('e.g. 28'),
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-                              ),
-                            ],
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Patient ID / Email', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                TextFormField(
+                                  controller: patientIdController,
+                                  decoration: _inputDec('PAT-XXXXXX or email').copyWith(
+                                    suffixIcon: isSearchingPatient
+                                        ? const Padding(
+                                            padding: EdgeInsets.all(12),
+                                            child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                          )
+                                        : IconButton(
+                                            icon: const Icon(Icons.search_rounded, size: 18, color: kHospitalAccent),
+                                            tooltip: 'Lookup Patient',
+                                            onPressed: () => lookupPatient(patientIdController.text),
+                                          ),
+                                  ),
+                                  onFieldSubmitted: (val) => lookupPatient(val),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Gender', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                initialValue: gender,
-                                decoration: _inputDec(''),
-                                items: ['Male', 'Female', 'Other']
-                                    .map((g) => DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(fontSize: 12))))
-                                    .toList(),
-                                onChanged: (v) => gender = v!,
-                              ),
-                            ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Patient Name *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                TextFormField(
+                                  controller: nameController,
+                                  decoration: _inputDec('Full patient name'),
+                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Ward', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              DropdownButtonFormField<String>(
-                                initialValue: ward,
-                                decoration: _inputDec(''),
-                                isExpanded: true,
-                                items: ['General Male Ward', 'General Female Ward', 'ICU / Critical Care', 'Emergency Ward', 'Cardiology Ward']
-                                    .map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 11))))
-                                    .toList(),
-                                onChanged: (v) => ward = v!,
-                              ),
-                            ],
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Age *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                TextFormField(
+                                  controller: ageController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _inputDec('e.g. 32'),
+                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Bed No. *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              const SizedBox(height: 4),
-                              TextFormField(
-                                controller: bedController,
-                                decoration: _inputDec('e.g. BED-102'),
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-                              ),
-                            ],
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Gender', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                DropdownButtonFormField<String>(
+                                  initialValue: gender,
+                                  decoration: _inputDec(''),
+                                  items: ['Male', 'Female', 'Other']
+                                      .map((g) => DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(fontSize: 12))))
+                                      .toList(),
+                                  onChanged: (v) => gender = v!,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('Attending Doctor', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    DropdownButtonFormField<String>(
-                      initialValue: doctor,
-                      decoration: _inputDec(''),
-                      isExpanded: true,
-                      items: ['Dr. Dhruv Patel', 'Dr. Hardik', 'Dr. Max Patel']
-                          .map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 12))))
-                          .toList(),
-                      onChanged: (v) => doctor = v!,
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('Primary Clinical Diagnosis *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    TextFormField(
-                      controller: diagnosisController,
-                      decoration: _inputDec('e.g. Acute Appendicitis / High Fever Observation'),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Ward', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                DropdownButtonFormField<String>(
+                                  initialValue: ['General Ward', 'General Male Ward', 'General Female Ward', 'ICU / Critical Care', 'Emergency Ward', 'Cardiology Ward'].contains(ward) ? ward : 'General Ward',
+                                  decoration: _inputDec(''),
+                                  isExpanded: true,
+                                  items: ['General Ward', 'General Male Ward', 'General Female Ward', 'ICU / Critical Care', 'Emergency Ward', 'Cardiology Ward']
+                                      .map((w) => DropdownMenuItem(value: w, child: Text(w, style: const TextStyle(fontSize: 11))))
+                                      .toList(),
+                                  onChanged: (v) => ward = v!,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Bed No. *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                                const SizedBox(height: 4),
+                                TextFormField(
+                                  controller: bedController,
+                                  decoration: _inputDec('e.g. BED-105'),
+                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text('Attending Doctor *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      TextFormField(
+                        controller: doctorController,
+                        decoration: _inputDec('e.g. Dr. Rajesh Sharma'),
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
+                      const SizedBox(height: 10),
+                      const Text('Primary Clinical Diagnosis *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      TextFormField(
+                        controller: diagnosisController,
+                        decoration: _inputDec('e.g. Acute Appendicitis / High Fever Observation'),
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: isSubmitting
-                  ? null
-                  : () async {
-                      if (formKey.currentState!.validate()) {
-                        setDialogState(() => isSubmitting = true);
-                        final newAdmission = {
-                          'patient_identifier': patientIdController.text.trim(),
-                          'patient_name': nameController.text.trim(),
-                          'age': int.tryParse(ageController.text.trim()) ?? 30,
-                          'gender': gender,
-                          'ward': ward,
-                          'bed_no': bedController.text.trim().toUpperCase(),
-                          'admission_date': DateTime.now().toString().split(' ').first,
-                          'attending_doctor': doctor,
-                          'diagnosis': diagnosisController.text.trim(),
-                          'status': status,
-                        };
+            actions: [
+              TextButton(
+                onPressed: isSubmitting ? null : () => Navigator.pop(dialogContext),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (formKey.currentState!.validate()) {
+                          setDialogState(() => isSubmitting = true);
+                          final newAdmission = {
+                            'patient_identifier': patientIdController.text.trim(),
+                            'patient_name': nameController.text.trim(),
+                            'age': int.tryParse(ageController.text.trim()) ?? 30,
+                            'gender': gender,
+                            'ward': ward,
+                            'bed_no': bedController.text.trim().toUpperCase(),
+                            'admission_date': DateTime.now().toString().split(' ').first,
+                            'attending_doctor': doctorController.text.trim(),
+                            'diagnosis': diagnosisController.text.trim(),
+                            'status': status,
+                          };
 
-                        try {
-                          await ApiClient().admitPatient(newAdmission);
-                          ref.read(hospitalAdmissionsProvider.notifier).fetchAdmissions();
-                          ref.read(recordsProvider.notifier).fetchRecords();
+                          try {
+                            await ApiClient().admitPatient(newAdmission);
+                            ref.read(hospitalAdmissionsProvider.notifier).fetchAdmissions();
+                            ref.read(recordsProvider.notifier).fetchRecords();
 
-                          if (context.mounted) {
-                            Navigator.pop(dialogContext);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Admitted ${nameController.text.trim()} to $ward (${bedController.text})'),
-                                backgroundColor: kHospitalAccent,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          setDialogState(() => isSubmitting = false);
-                          if (context.mounted) {
-                            Navigator.pop(dialogContext);
-                            ref.read(hospitalAdmissionsProvider.notifier).addAdmission(newAdmission);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Admitted ${nameController.text.trim()} to $ward (${bedController.text})'),
-                                backgroundColor: kHospitalAccent,
-                              ),
-                            );
+                            if (context.mounted) {
+                              Navigator.pop(dialogContext);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Admitted ${nameController.text.trim()} to $ward (${bedController.text.trim().toUpperCase()})'),
+                                  backgroundColor: kHospitalAccent,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() => isSubmitting = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Admission failed: ${e.toString().replaceAll("Exception: ", "")}'),
+                                  backgroundColor: AppColors.emergency,
+                                ),
+                              );
+                            }
                           }
                         }
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kHospitalAccent,
-                foregroundColor: Colors.white,
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kHospitalAccent,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text(isSubmitting ? 'Admitting...' : 'Admit Patient'),
               ),
-              child: Text(isSubmitting ? 'Admitting...' : 'Admit Patient'),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
+
 
   void _showAdmissionDetails(BuildContext context, Map<String, dynamic> admission) {
     final isCritical = admission['status'] == 'Critical Care';

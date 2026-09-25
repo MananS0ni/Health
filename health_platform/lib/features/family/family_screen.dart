@@ -9,6 +9,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
+import '../../core/network/api_client.dart';
 import '../../shared/models/family_member.dart';
 
 class FamilyScreen extends ConsumerStatefulWidget {
@@ -22,47 +23,153 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
   ListStatus _viewStatus = ListStatus.content;
 
   void _showAddMemberDialog(BuildContext context) {
+    final patientIdController = TextEditingController();
     final nameController = TextEditingController();
-    final relController = TextEditingController(text: 'Spouse');
     final bloodGroupController = TextEditingController(text: 'B+');
+    String selectedRelationship = 'Spouse';
     String selectedGender = 'Male';
+    bool isSearching = false;
+
+    final relationships = [
+      'Spouse',
+      'Child',
+      'Father',
+      'Mother',
+      'Brother',
+      'Sister',
+      'Guardian',
+      'Other',
+    ];
 
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Add Family Member Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          title: Row(
+            children: const [
+              Icon(Icons.family_restroom_rounded, color: AppColors.primary),
+              SizedBox(width: 8),
+              Text('Add Family Member Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Full Name *', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: relController,
-                  decoration: const InputDecoration(labelText: 'Relationship (e.g. Spouse, Child, Parent)', border: OutlineInputBorder()),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedGender,
-                  decoration: const InputDecoration(labelText: 'Gender', border: OutlineInputBorder()),
-                  items: const [
-                    DropdownMenuItem(value: 'Male', child: Text('Male')),
-                    DropdownMenuItem(value: 'Female', child: Text('Female')),
-                    DropdownMenuItem(value: 'Other', child: Text('Other')),
-                  ],
-                  onChanged: (val) => setDialogState(() => selectedGender = val!),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: bloodGroupController,
-                  decoration: const InputDecoration(labelText: 'Blood Group', hintText: 'e.g. O+, A+, B-', border: OutlineInputBorder()),
-                ),
-              ],
+            child: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Link by Patient ID or Email (Optional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: patientIdController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. PAT-4726A2 or email@gmail.com',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: isSearching
+                          ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
+                          : IconButton(
+                              icon: const Icon(Icons.search_rounded, color: AppColors.primary),
+                              tooltip: 'Lookup Patient Record',
+                              onPressed: () async {
+                                final q = patientIdController.text.trim();
+                                if (q.isEmpty) return;
+                                setDialogState(() => isSearching = true);
+                                try {
+                                  final list = await ApiClient().getLabPatients(q);
+                                  if (list.isNotEmpty) {
+                                    final p = Map<String, dynamic>.from(list.first as Map);
+                                    setDialogState(() {
+                                      isSearching = false;
+                                      nameController.text = p['full_name'] ?? '';
+                                      patientIdController.text = p['patient_id'] ?? q;
+                                      if (p['gender'] != null && ['Male', 'Female', 'Other'].contains(p['gender'])) {
+                                        selectedGender = p['gender'];
+                                      }
+                                      if (p['blood_group'] != null && p['blood_group'].toString().isNotEmpty) {
+                                        bloodGroupController.text = p['blood_group'];
+                                      }
+                                    });
+                                  } else {
+                                    setDialogState(() => isSearching = false);
+                                  }
+                                } catch (_) {
+                                  setDialogState(() => isSearching = false);
+                                }
+                              },
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Member Full Name *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(hintText: 'Full Name', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Relationship *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              initialValue: selectedRelationship,
+                              decoration: const InputDecoration(border: OutlineInputBorder()),
+                              items: relationships.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                              onChanged: (val) => setDialogState(() => selectedRelationship = val!),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Gender *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 6),
+                            DropdownButtonFormField<String>(
+                              initialValue: selectedGender,
+                              decoration: const InputDecoration(border: OutlineInputBorder()),
+                              items: const [
+                                DropdownMenuItem(value: 'Male', child: Text('Male')),
+                                DropdownMenuItem(value: 'Female', child: Text('Female')),
+                                DropdownMenuItem(value: 'Other', child: Text('Other')),
+                              ],
+                              onChanged: (val) => setDialogState(() => selectedGender = val!),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Blood Group', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    initialValue: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].contains(bloodGroupController.text)
+                        ? bloodGroupController.text
+                        : 'B+',
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'A+', child: Text('A+')),
+                      DropdownMenuItem(value: 'A-', child: Text('A-')),
+                      DropdownMenuItem(value: 'B+', child: Text('B+')),
+                      DropdownMenuItem(value: 'B-', child: Text('B-')),
+                      DropdownMenuItem(value: 'AB+', child: Text('AB+')),
+                      DropdownMenuItem(value: 'AB-', child: Text('AB-')),
+                      DropdownMenuItem(value: 'O+', child: Text('O+')),
+                      DropdownMenuItem(value: 'O-', child: Text('O-')),
+                    ],
+                    onChanged: (val) => setDialogState(() => bloodGroupController.text = val!),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -74,11 +181,14 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
               onPressed: () {
                 if (nameController.text.trim().isEmpty) return;
                 final now = DateTime.now();
+                final pid = patientIdController.text.trim().isNotEmpty
+                    ? patientIdController.text.trim()
+                    : 'PAT-${now.millisecondsSinceEpoch.toString().substring(7)}';
                 final newMember = FamilyMember(
                   memberId: 'mem_${now.millisecondsSinceEpoch}',
-                  patientId: 'pat_${now.millisecondsSinceEpoch}',
+                  patientId: pid,
                   fullName: nameController.text.trim(),
-                  relationship: relController.text.trim().isNotEmpty ? relController.text.trim() : 'Family',
+                  relationship: selectedRelationship,
                   dateOfBirth: 'Not specified',
                   gender: selectedGender,
                   bloodGroup: bloodGroupController.text.trim().isNotEmpty ? bloodGroupController.text.trim() : 'Unknown',
@@ -87,7 +197,7 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
                 ref.read(familyMembersProvider.notifier).addMember(newMember);
                 Navigator.pop(dialogContext);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${newMember.fullName} added to family profiles.')),
+                  SnackBar(content: Text('${newMember.fullName} linked as $selectedRelationship.')),
                 );
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),

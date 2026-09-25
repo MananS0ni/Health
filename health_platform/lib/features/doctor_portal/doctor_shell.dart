@@ -11,7 +11,7 @@ import '../../shared/widgets/global_search_dialog.dart';
 import '../notifications/notifications_provider.dart';
 import 'doctor_dashboard_screen.dart';
 import 'patient_search_screen.dart';
-import 'doctor_appointments_screen.dart';
+import 'doctor_profile_screen.dart';
 
 const Color kDoctorAccent = Color(0xFF1E40AF); // Deep Blue / Indigo
 const Color kDoctorAccentLight = Color(0xFF3B82F6);
@@ -39,7 +39,7 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
       key: ValueKey(widget.searchQuery ?? 'patient_search'),
       initialQuery: widget.searchQuery,
     ),
-    const DoctorAppointmentsScreen(),
+    const DoctorProfileScreen(),
   ];
 
   @override
@@ -207,9 +207,9 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
             label: 'Search Patients',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today_outlined),
-            activeIcon: Icon(Icons.calendar_today),
-            label: 'Appointments',
+            icon: Icon(Icons.badge_outlined),
+            activeIcon: Icon(Icons.badge),
+            label: 'My Profile',
           ),
         ],
       ),
@@ -280,9 +280,9 @@ class _DoctorSidebar extends StatelessWidget {
           label: Text('Search'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.calendar_today_outlined),
-          selectedIcon: Icon(Icons.calendar_today),
-          label: Text('Appointments'),
+          icon: Icon(Icons.badge_outlined),
+          selectedIcon: Icon(Icons.badge),
+          label: Text('My Profile'),
         ),
       ],
     );

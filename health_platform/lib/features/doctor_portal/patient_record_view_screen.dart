@@ -148,22 +148,23 @@ class _PatientRecordViewScreenState extends ConsumerState<PatientRecordViewScree
           },
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                context.go('/doctor/add-diagnosis?id=${widget.patientId}');
-              },
-              icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('Add Rx / Diagnosis'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kDoctorAccent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          if (_hasConsent)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  context.go('/doctor/add-diagnosis?id=${widget.patientId}');
+                },
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('Add Rx / Diagnosis'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kDoctorAccent,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
               ),
             ),
-          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -418,16 +419,25 @@ class _PatientRecordViewScreenState extends ConsumerState<PatientRecordViewScree
                       style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5),
                     ),
                     const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kDoctorAccent,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    if (_consentStatus == 'pending')
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.refresh_rounded, size: 16),
+                        label: const Text('Check Approval Status'),
+                        onPressed: _isLoading ? null : _loadPatientChart,
+                      )
+                    else
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD97706),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: _isRequestingConsent ? null : _requestConsent,
+                        icon: _isRequestingConsent
+                            ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.shield_outlined, size: 18),
+                        label: const Text('Send Access Request to Patient'),
                       ),
-                      onPressed: () => context.go('/doctor/add-diagnosis?id=${widget.patientId}'),
-                      icon: const Icon(Icons.edit_note_rounded, size: 18),
-                      label: const Text('Add Today\'s Consultation & Rx'),
-                    ),
                   ],
                 ),
               ),

@@ -67,6 +67,7 @@ class User {
   final String? address;
   final List<String> allergies;
   final List<String> medicalConditions;
+  final List<String> currentMedications;
   final String? emergencyContactName;
   final String? emergencyContactPhone;
 
@@ -86,6 +87,7 @@ class User {
     this.address,
     this.allergies = const [],
     this.medicalConditions = const [],
+    this.currentMedications = const [],
     this.emergencyContactName,
     this.emergencyContactPhone,
   });
@@ -120,6 +122,7 @@ class User {
     String? address,
     List<String>? allergies,
     List<String>? medicalConditions,
+    List<String>? currentMedications,
     String? emergencyContactName,
     String? emergencyContactPhone,
   }) {
@@ -139,6 +142,7 @@ class User {
       address: address ?? this.address,
       allergies: allergies ?? this.allergies,
       medicalConditions: medicalConditions ?? this.medicalConditions,
+      currentMedications: currentMedications ?? this.currentMedications,
       emergencyContactName: emergencyContactName ?? this.emergencyContactName,
       emergencyContactPhone: emergencyContactPhone ?? this.emergencyContactPhone,
     );
@@ -171,6 +175,11 @@ class User {
         ? List<String>.from(conditionsRaw)
         : <String>[];
 
+    final medsRaw = json['current_medications'];
+    final meds = medsRaw is List
+        ? List<String>.from(medsRaw)
+        : <String>[];
+
     final rawId = json['id'] as String? ?? '';
     final computedPid = json['patient_id'] as String? ??
         (rawId.isNotEmpty
@@ -197,6 +206,7 @@ class User {
       address: json['address'],
       allergies: allergies,
       medicalConditions: conditions,
+      currentMedications: meds,
       emergencyContactName: json['emergency_contact_name'],
       emergencyContactPhone: json['emergency_contact_phone'],
     );
@@ -218,6 +228,7 @@ class User {
         'address': address,
         'allergies': allergies,
         'medical_conditions': medicalConditions,
+        'current_medications': currentMedications,
         'emergency_contact_name': emergencyContactName,
         'emergency_contact_phone': emergencyContactPhone,
       };

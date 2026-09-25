@@ -76,7 +76,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final appointments = ref.watch(doctorAppointmentsProvider);
     final recentPatients = ref.watch(doctorPatientsProvider);
     final incomingRequests = ref.watch(doctorIncomingRequestsProvider);
     final pendingRequests = incomingRequests.where((r) => r['status'] == 'pending').toList();
@@ -219,26 +218,26 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
               children: [
                 Expanded(
                   child: _StatCard(
-                    title: "Today's Appts",
-                    value: "${appointments.length}",
-                    icon: Icons.calendar_today_rounded,
+                    title: "Patients",
+                    value: "${recentPatients.length}",
+                    icon: Icons.people_outline_rounded,
                     color: kDoctorAccent,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: _StatCard(
-                    title: 'Completed',
-                    value: '${appointments.where((a) => a['status'] == 'Completed').length}',
-                    icon: Icons.check_circle_outline_rounded,
+                    title: 'Active Consents',
+                    value: '${incomingRequests.where((r) => r['status'] == 'approved' || r['status'] == 'accepted').length}',
+                    icon: Icons.shield_outlined,
                     color: const Color(0xFF059669),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: _StatCard(
-                    title: 'In Queue',
-                    value: '${appointments.where((a) => a['status'] != 'Completed').length}',
+                    title: 'Pending Approvals',
+                    value: '${pendingRequests.length}',
                     icon: Icons.hourglass_top_rounded,
                     color: const Color(0xFFD97706),
                   ),
@@ -341,55 +340,6 @@ class _DoctorDashboardScreenState extends ConsumerState<DoctorDashboardScreen> {
                   )),
             const SizedBox(height: AppSpacing.lg),
 
-            // Today's Appointments Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Today's Appointments",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () => context.go('/doctor/appointments'),
-                  child: const Text(
-                    'View All',
-                    style: TextStyle(color: kDoctorAccent, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            if (appointments.isEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                margin: const EdgeInsets.only(top: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: const [
-                    Icon(Icons.calendar_today_outlined, color: AppColors.textSecondary, size: 24),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'No appointments scheduled for today.',
-                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              ...appointments.map((apt) => _AppointmentTile(appointment: apt)),
-
-            const SizedBox(height: AppSpacing.lg),
 
             // Recent Patients Viewed Section
             const Text(
@@ -482,115 +432,6 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _AppointmentTile extends StatelessWidget {
-  final Map<String, dynamic> appointment;
-
-  const _AppointmentTile({required this.appointment});
-
-  @override
-  Widget build(BuildContext context) {
-    final status = appointment['status'] as String;
-    final isCompleted = status == 'Completed';
-    final isInProgress = status == 'In Progress';
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isInProgress
-              ? kDoctorAccent.withValues(alpha: 0.5)
-              : AppColors.border,
-          width: isInProgress ? 1.5 : 1.0,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: kDoctorAccent.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              appointment['time'],
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: kDoctorAccent,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  appointment['patient_name'],
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Builder(builder: (context) {
-                  final ageStr = (appointment['age'] != null && appointment['age'] != 'null' && appointment['age'] != 'Not specified')
-                      ? (appointment['age'].toString().endsWith('yrs') ? appointment['age'].toString() : '${appointment['age']} yrs')
-                      : 'Age not specified';
-                  final genderStr = (appointment['gender'] != null && appointment['gender'] != 'null' && appointment['gender'] != '--')
-                      ? appointment['gender']
-                      : 'Not specified';
-                  final complaintStr = (appointment['chief_complaint'] != null && appointment['chief_complaint'] != 'null')
-                      ? appointment['chief_complaint']
-                      : (appointment['consultation_type'] ?? 'Consultation');
-                  return Text(
-                    '$ageStr • $genderStr • $complaintStr',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  );
-                }),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          ElevatedButton(
-            onPressed: () {
-              context.go('/doctor/patient-detail?id=${appointment['patient_id']}');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isCompleted
-                  ? Colors.grey.shade200
-                  : (isInProgress ? kDoctorAccent : Colors.white),
-              foregroundColor: isCompleted
-                  ? AppColors.textSecondary
-                  : (isInProgress ? Colors.white : kDoctorAccent),
-              elevation: 0,
-              side: isCompleted
-                  ? BorderSide.none
-                  : (isInProgress
-                      ? BorderSide.none
-                      : const BorderSide(color: kDoctorAccent)),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text(
-              isCompleted ? 'View Record' : 'Open Chart',
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _RecentPatientCard extends StatelessWidget {
   final Map<String, dynamic> patient;

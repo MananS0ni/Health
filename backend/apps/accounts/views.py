@@ -194,6 +194,35 @@ class VerifyOTPView(APIView):
                 }
             )
 
+        # Create/Update PatientProfile
+        from apps.patients.models import PatientProfile
+        date_of_birth = serializer.validated_data.get('date_of_birth')
+        gender = serializer.validated_data.get('gender')
+        blood_group = serializer.validated_data.get('blood_group')
+        allergies = serializer.validated_data.get('allergies', [])
+        medical_conditions = serializer.validated_data.get('medical_conditions', [])
+        current_medications = serializer.validated_data.get('current_medications', [])
+        emergency_contact_name = serializer.validated_data.get('emergency_contact_name')
+        emergency_contact_phone = serializer.validated_data.get('emergency_contact_phone')
+
+        pat_profile_defaults = {}
+        if date_of_birth: pat_profile_defaults['date_of_birth'] = date_of_birth
+        if gender: pat_profile_defaults['gender'] = gender
+        if blood_group: pat_profile_defaults['blood_group'] = blood_group
+        if allergies: pat_profile_defaults['allergies'] = allergies
+        if medical_conditions: pat_profile_defaults['medical_conditions'] = medical_conditions
+        if current_medications: pat_profile_defaults['current_medications'] = current_medications
+        if emergency_contact_name: pat_profile_defaults['emergency_contact_name'] = emergency_contact_name
+        if emergency_contact_phone: pat_profile_defaults['emergency_contact_phone'] = emergency_contact_phone
+
+        if pat_profile_defaults:
+            PatientProfile.objects.update_or_create(
+                user=user,
+                defaults=pat_profile_defaults
+            )
+        else:
+            PatientProfile.objects.get_or_create(user=user)
+
         # Refresh from db to ensure related objects are loaded
         user.refresh_from_db()
 

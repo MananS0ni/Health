@@ -128,14 +128,10 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   }
 
   void _initTargetPatient() {
-    final targetPid = widget.patient ?? 'PAT-4726A2';
-    _patientIdentifierController.text = targetPid;
-    _patientNameController.text = 'Manan Soni';
-    _selectedPatient = {
-      'patient_id': targetPid,
-      'full_name': 'Manan Soni',
-      'email': 'manansoni2905@gmail.com',
-    };
+    if (widget.patient != null && widget.patient!.isNotEmpty) {
+      _patientIdentifierController.text = widget.patient!;
+      _lookupPatient();
+    }
   }
 
   Future<void> _lookupPatient() async {

@@ -11,7 +11,6 @@ import '../notifications/notifications_provider.dart';
 import 'lab_dashboard/lab_dashboard_screen.dart';
 import 'pending_reports/pending_reports_screen.dart';
 import 'upload_report/upload_report_screen.dart';
-import 'integration_status/integration_status_screen.dart';
 
 const Color kLabAccent = Color(0xFF059669); // Teal-Green
 
@@ -34,7 +33,6 @@ class _LabShellState extends ConsumerState<LabShell> {
     LabDashboardScreen(),
     PendingReportsScreen(),
     UploadReportScreen(),
-    LabIntegrationStatusScreen(),
   ];
 
   @override
@@ -164,11 +162,6 @@ class _LabShellState extends ConsumerState<LabShell> {
             activeIcon: Icon(Icons.upload_file),
             label: 'Upload Report',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sync_alt_rounded),
-            activeIcon: Icon(Icons.sync_rounded),
-            label: 'LIMS Sync',
-          ),
         ],
       ),
     );
@@ -241,11 +234,6 @@ class _LabSidebar extends StatelessWidget {
           icon: Icon(Icons.upload_file_outlined),
           selectedIcon: Icon(Icons.upload_file),
           label: Text('Upload'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.sync_alt_rounded),
-          selectedIcon: Icon(Icons.sync_rounded),
-          label: Text('LIMS Sync'),
         ),
       ],
     );

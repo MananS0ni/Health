@@ -45,6 +45,14 @@ class ApiClient {
     List<String>? roles,
     Map<String, dynamic>? doctorProfile,
     Map<String, dynamic>? orgProfile,
+    String? dateOfBirth,
+    String? gender,
+    String? bloodGroup,
+    List<String>? allergies,
+    List<String>? medicalConditions,
+    List<String>? currentMedications,
+    String? emergencyContactName,
+    String? emergencyContactPhone,
   }) async {
     final payload = <String, dynamic>{
       'email': email,
@@ -65,6 +73,30 @@ class ApiClient {
     }
     if (orgProfile != null) {
       payload['org_profile'] = orgProfile;
+    }
+    if (dateOfBirth != null && dateOfBirth.isNotEmpty) {
+      payload['date_of_birth'] = dateOfBirth;
+    }
+    if (gender != null && gender.isNotEmpty) {
+      payload['gender'] = gender;
+    }
+    if (bloodGroup != null && bloodGroup.isNotEmpty) {
+      payload['blood_group'] = bloodGroup;
+    }
+    if (allergies != null && allergies.isNotEmpty) {
+      payload['allergies'] = allergies;
+    }
+    if (medicalConditions != null && medicalConditions.isNotEmpty) {
+      payload['medical_conditions'] = medicalConditions;
+    }
+    if (currentMedications != null && currentMedications.isNotEmpty) {
+      payload['current_medications'] = currentMedications;
+    }
+    if (emergencyContactName != null && emergencyContactName.isNotEmpty) {
+      payload['emergency_contact_name'] = emergencyContactName;
+    }
+    if (emergencyContactPhone != null && emergencyContactPhone.isNotEmpty) {
+      payload['emergency_contact_phone'] = emergencyContactPhone;
     }
     final response = await http.post(
       Uri.parse('$baseUrl/auth/verify-otp/'),

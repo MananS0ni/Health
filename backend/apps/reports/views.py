@@ -12,11 +12,16 @@ from apps.accounts.models import User
 def get_patient_user(request):
     if request.user and request.user.is_authenticated:
         return request.user
+    x_email = request.headers.get('X-User-Email') or request.META.get('HTTP_X_USER_EMAIL')
+    if x_email:
+        u = User.objects.filter(email__iexact=x_email.strip()).first()
+        if u:
+            return u
     email = request.query_params.get('email')
     if not email and hasattr(request, 'data') and isinstance(request.data, dict):
         email = request.data.get('patient_email')
     if email:
-        u = User.objects.filter(email__iexact=email).first()
+        u = User.objects.filter(email__iexact=email.strip()).first()
         if u:
             return u
     return User.objects.filter(email='manansoni2905@gmail.com').first() or User.objects.first()

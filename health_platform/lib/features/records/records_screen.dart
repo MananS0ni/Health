@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_colors.dart';
@@ -37,6 +38,8 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
     final doctorController = TextEditingController();
     final notesController = TextEditingController();
     String selectedType = 'prescription';
+    String? attachedFileName;
+    int? attachedFileSizeKb;
 
     showModalBottomSheet(
       context: context,
@@ -125,6 +128,50 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                       border: OutlineInputBorder(),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.picture_as_pdf_rounded, color: AppColors.emergency, size: 24),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            attachedFileName != null ? '$attachedFileName ($attachedFileSizeKb KB)' : 'Attach PDF File (e.g. Lab report, discharge summary)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: attachedFileName != null ? FontWeight.w600 : FontWeight.normal,
+                              color: attachedFileName != null ? AppColors.textPrimary : AppColors.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        TextButton.icon(
+                          icon: const Icon(Icons.upload_file_rounded, size: 16),
+                          label: Text(attachedFileName != null ? 'Change' : 'Upload PDF'),
+                          onPressed: () async {
+                            final file = await FilePicker.pickFile(
+                              type: FileType.custom,
+                              allowedExtensions: ['pdf'],
+                            );
+                            if (file != null) {
+                              final bytes = await file.readAsBytes();
+                              final size = await file.length() ?? bytes.length;
+                              setModalState(() {
+                                attachedFileName = file.name;
+                                attachedFileSizeKb = (size / 1024).round();
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   AppButton(
                     text: 'Save Record',
@@ -147,6 +194,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                         description: notesController.text.trim().isNotEmpty
                             ? notesController.text.trim()
                             : null,
+                        attachments: attachedFileName != null ? [attachedFileName!] : null,
                       );
                       ref.read(recordsProvider.notifier).addRecord(newRecord);
                       Navigator.pop(modalContext);
@@ -510,6 +558,28 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                                   const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 18),
                                 ],
                               ),
+                              if (record.attachments != null && record.attachments!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF2F2),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: const Color(0xFFFCA5A5)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.picture_as_pdf_rounded, size: 12, color: AppColors.emergency),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Attached: ${record.attachments!.first}',
+                                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.emergency),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               if (sharedInfo != null) ...[
                                 const SizedBox(height: 8),
                                 Container(

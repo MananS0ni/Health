@@ -233,7 +233,7 @@ class _PatientSearchScreenState extends ConsumerState<PatientSearchScreen> {
             return name.contains(query) || phone.contains(query) || pid.contains(query) || email.contains(query);
           }).toList();
 
-    final displayPatients = filteredPatients.isNotEmpty ? filteredPatients : allPatients;
+    final displayPatients = query.isEmpty ? allPatients : filteredPatients;
 
     final activeStatus = (_viewStatus == ListStatus.content && displayPatients.isEmpty)
         ? ListStatus.empty

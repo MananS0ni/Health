@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/widgets/app_avatar.dart' show AppAvatar, AppAvatarSize;
@@ -139,6 +141,135 @@ class EmergencyScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _callEmergency(BuildContext context, String? phone) async {
+    final cleanPhone = (phone != null && phone.trim().isNotEmpty) ? phone.trim() : '112';
+    final uri = Uri.parse('tel:$cleanPhone');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Dialing $cleanPhone directly on your device keypad.'),
+            backgroundColor: AppColors.emergency,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showShareCardModal(BuildContext context, dynamic user) {
+    final pid = user.patientId ?? user.id;
+    final shareLink = 'https://healthrecord.in/emergency/$pid';
+    final shareSummary = '''
+EMERGENCY MEDICAL CARD
+Name: ${user.fullName}
+Patient ID: $pid
+Blood Group: ${user.bloodGroup ?? 'Not specified'}
+Emergency Contact: ${user.emergencyContactName ?? 'None'} (${user.emergencyContactPhone ?? '112'})
+Allergies: ${user.allergies.isNotEmpty ? (user.allergies as List).join(', ') : 'None reported'}
+Conditions: ${user.medicalConditions.isNotEmpty ? (user.medicalConditions as List).join(', ') : 'None reported'}
+Digital Card: $shareLink
+'''.trim();
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.share_rounded, color: AppColors.emergency),
+            SizedBox(width: 8),
+            Text('Share Emergency Medical Card', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.emergencyLight,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.emergency.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    const SizedBox(height: 4),
+                    Text('Patient ID: $pid • Blood: ${user.bloodGroup ?? "--"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    const SizedBox(height: 6),
+                    Text('Emergency Contact: ${user.emergencyContactName ?? "Primary"} (${user.emergencyContactPhone ?? "112"})', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.emergencyDark)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('Public Emergency URL:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        shareLink,
+                        style: const TextStyle(fontSize: 12, color: AppColors.primary, fontFamily: 'monospace'),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy_rounded, size: 18),
+                      tooltip: 'Copy Link',
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: shareLink));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Emergency card link copied to clipboard!')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Close'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.emergency,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: shareSummary));
+              Navigator.pop(dialogCtx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Full Emergency Card text copied to clipboard!')),
+              );
+            },
+            icon: const Icon(Icons.copy_all_rounded, size: 18),
+            label: const Text('Copy Card Summary'),
+          ),
+        ],
       ),
     );
   }
@@ -392,9 +523,7 @@ class EmergencyScreen extends ConsumerWidget {
                   Expanded(
                     child: AppButton(
                       text: 'Call Emergency',
-                      onPressed: () {
-                        // Call emergency services
-                      },
+                      onPressed: () => _callEmergency(context, user.emergencyContactPhone),
                       icon: const Icon(Icons.call),
                       type: AppButtonType.primary,
                     ),
@@ -403,9 +532,7 @@ class EmergencyScreen extends ConsumerWidget {
                   Expanded(
                     child: AppButton(
                       text: 'Share Card',
-                      onPressed: () {
-                        // Share emergency card
-                      },
+                      onPressed: () => _showShareCardModal(context, user),
                       icon: const Icon(Icons.share),
                       type: AppButtonType.secondary,
                     ),

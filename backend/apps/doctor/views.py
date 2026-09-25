@@ -306,6 +306,19 @@ class DoctorPrescriptionCreateView(APIView):
             if not doctor_user:
                 doctor_user = User.objects.filter(email='sonimanan2905@gmail.com').first() or User.objects.filter(roles__icontains='doctor').first()
 
+        # Enforce consent validation
+        if doctor_user and patient_obj and doctor_user != patient_obj:
+            active_consent = ConsentRequest.objects.filter(
+                doctor=doctor_user,
+                patient=patient_obj,
+                status='approved'
+            ).order_by('-valid_until').first()
+            if not (active_consent and active_consent.is_active()):
+                return Response(
+                    {'error': 'Active patient consent is required to create a consultation or prescription. Please request access from the patient first.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
         serializer = PrescriptionSerializer(data=data)
         if serializer.is_valid():
             rx = serializer.save(doctor=doctor_user)

@@ -45,6 +45,20 @@ class InpatientAdmissionListCreateView(APIView):
             if p_name:
                 patient = User.objects.filter(full_name__icontains=p_name).first()
 
+        ward = data.get('ward', '').strip()
+        bed_no = data.get('bed_no', '').strip()
+        if ward and bed_no:
+            occupied = InpatientAdmission.objects.filter(
+                hospital=request.user,
+                ward__iexact=ward,
+                bed_no__iexact=bed_no,
+            ).exclude(status__iexact='Discharged').first()
+
+            if occupied:
+                return Response({
+                    'error': f'Bed {bed_no} in {ward} is currently occupied by patient {occupied.patient_name}. It cannot be assigned until discharged.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = InpatientAdmissionSerializer(data=data)
         if serializer.is_valid():
             admission = serializer.save(hospital=request.user, patient=patient)

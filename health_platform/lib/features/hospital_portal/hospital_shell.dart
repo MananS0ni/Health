@@ -11,7 +11,7 @@ import '../notifications/notifications_provider.dart';
 import 'hospital_dashboard/hospital_dashboard_screen.dart';
 import 'admissions/admissions_screen.dart';
 import 'discharge_summary/discharge_summary_screen.dart';
-import 'integration_status/integration_status_screen.dart';
+import 'hospital_profile_screen.dart';
 
 const Color kHospitalAccent = Color(0xFFD97706); // Warm Amber / Orange
 
@@ -34,7 +34,7 @@ class _HospitalShellState extends ConsumerState<HospitalShell> {
     HospitalDashboardScreen(),
     AdmissionsScreen(),
     DischargeSummaryScreen(),
-    HospitalIntegrationStatusScreen(),
+    HospitalProfileScreen(),
   ];
 
   @override
@@ -173,9 +173,9 @@ class _HospitalShellState extends ConsumerState<HospitalShell> {
             label: 'Discharges',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.sync_alt_rounded),
-            activeIcon: Icon(Icons.sync_rounded),
-            label: 'HIS Sync',
+            icon: Icon(Icons.local_hospital_outlined),
+            activeIcon: Icon(Icons.local_hospital),
+            label: 'Hospital Profile',
           ),
         ],
       ),
@@ -251,9 +251,9 @@ class _HospitalSidebar extends StatelessWidget {
           label: Text('Discharges'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.sync_alt_rounded),
-          selectedIcon: Icon(Icons.sync_rounded),
-          label: Text('HIS Sync'),
+          icon: Icon(Icons.local_hospital_outlined),
+          selectedIcon: Icon(Icons.local_hospital),
+          label: Text('Profile'),
         ),
       ],
     );

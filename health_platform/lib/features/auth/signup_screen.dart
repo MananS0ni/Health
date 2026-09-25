@@ -43,6 +43,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
 
+  // Patient Medical & Emergency fields
+  final _dobController = TextEditingController();
+  String _gender = 'Male';
+  String _bloodGroup = 'O+';
+  final _allergiesController = TextEditingController();
+  final _medicalConditionsController = TextEditingController();
+  final _medicationsController = TextEditingController();
+  final _emergencyContactNameController = TextEditingController();
+  final _emergencyContactPhoneController = TextEditingController();
+
   // Roles — patient is always selected
   final Set<String> _selectedRoles = {'patient'};
 
@@ -68,6 +78,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
+    _dobController.dispose();
+    _allergiesController.dispose();
+    _medicalConditionsController.dispose();
+    _medicationsController.dispose();
+    _emergencyContactNameController.dispose();
+    _emergencyContactPhoneController.dispose();
     _regNoController.dispose();
     _clinicController.dispose();
     _orgNameController.dispose();
@@ -117,6 +133,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
           roles: _selectedRoles.toList(),
           doctorProfile: docProfile,
           orgProfile: orgProfile,
+          bloodGroup: _bloodGroup,
+          dateOfBirth: _dobController.text.trim().isNotEmpty ? _dobController.text.trim() : null,
+          gender: _gender,
+          allergies: _allergiesController.text.trim().isNotEmpty
+              ? _allergiesController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+              : [],
+          medicalConditions: _medicalConditionsController.text.trim().isNotEmpty
+              ? _medicalConditionsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+              : [],
+          currentMedications: _medicationsController.text.trim().isNotEmpty
+              ? _medicationsController.text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+              : [],
+          emergencyContactName: _emergencyContactNameController.text.trim().isNotEmpty ? _emergencyContactNameController.text.trim() : null,
+          emergencyContactPhone: _emergencyContactPhoneController.text.trim().isNotEmpty ? _emergencyContactPhoneController.text.trim() : null,
         );
   }
 
@@ -236,6 +266,151 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         const _FormLabel('Phone Number (Optional)'),
                         const SizedBox(height: 7),
                         _PhoneInput(controller: _phoneController, isRequired: false),
+                        const SizedBox(height: 22),
+
+                        // ── Patient Health & Emergency Profile ─────────────
+                        const _SectionDivider(label: 'Medical & Emergency Profile'),
+                        const SizedBox(height: 14),
+
+                        // DOB and Gender row
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const _FormLabel('Date of Birth'),
+                                  const SizedBox(height: 7),
+                                  TextFormField(
+                                    controller: _dobController,
+                                    readOnly: true,
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: DateTime(1995, 1, 1),
+                                        firstDate: DateTime(1920),
+                                        lastDate: DateTime.now(),
+                                      );
+                                      if (picked != null) {
+                                        setState(() {
+                                          _dobController.text =
+                                              '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+                                        });
+                                      }
+                                    },
+                                    decoration: _dec('YYYY-MM-DD', icon: Icons.calendar_today_outlined),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 2,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const _FormLabel('Gender'),
+                                  const SizedBox(height: 7),
+                                  DropdownButtonFormField<String>(
+                                    initialValue: _gender,
+                                    decoration: _dec(''),
+                                    items: const [
+                                      DropdownMenuItem(value: 'Male', child: Text('Male')),
+                                      DropdownMenuItem(value: 'Female', child: Text('Female')),
+                                      DropdownMenuItem(value: 'Other', child: Text('Other')),
+                                    ],
+                                    onChanged: (v) => setState(() => _gender = v!),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Blood Group
+                        const _FormLabel('Blood Group'),
+                        const SizedBox(height: 7),
+                        DropdownButtonFormField<String>(
+                          initialValue: _bloodGroup,
+                          decoration: _dec(''),
+                          items: const [
+                            DropdownMenuItem(value: 'A+', child: Text('A+')),
+                            DropdownMenuItem(value: 'A-', child: Text('A-')),
+                            DropdownMenuItem(value: 'B+', child: Text('B+')),
+                            DropdownMenuItem(value: 'B-', child: Text('B-')),
+                            DropdownMenuItem(value: 'AB+', child: Text('AB+')),
+                            DropdownMenuItem(value: 'AB-', child: Text('AB-')),
+                            DropdownMenuItem(value: 'O+', child: Text('O+')),
+                            DropdownMenuItem(value: 'O-', child: Text('O-')),
+                          ],
+                          onChanged: (v) => setState(() => _bloodGroup = v!),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Allergies
+                        const _FormLabel('Known Allergies (comma separated)'),
+                        const SizedBox(height: 7),
+                        TextFormField(
+                          controller: _allergiesController,
+                          decoration: _dec('e.g. Penicillin, Peanuts, Sulfa drugs', icon: Icons.warning_amber_rounded),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Medical Conditions
+                        const _FormLabel('Chronic Medical Conditions (comma separated)'),
+                        const SizedBox(height: 7),
+                        TextFormField(
+                          controller: _medicalConditionsController,
+                          decoration: _dec('e.g. Hypertension, Type 2 Diabetes, Asthma', icon: Icons.medical_information_outlined),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Current Medications
+                        const _FormLabel('Current Medications (comma separated)'),
+                        const SizedBox(height: 7),
+                        TextFormField(
+                          controller: _medicationsController,
+                          decoration: _dec('e.g. Metformin 500mg, Paracetamol', icon: Icons.medication_outlined),
+                        ),
+                        const SizedBox(height: 14),
+
+                        // Emergency Contact Name & Phone
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const _FormLabel('Emergency Contact Name'),
+                                  const SizedBox(height: 7),
+                                  TextFormField(
+                                    controller: _emergencyContactNameController,
+                                    decoration: _dec('e.g. Anita Sharma', icon: Icons.contact_phone_outlined),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 3,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const _FormLabel('Emergency Phone'),
+                                  const SizedBox(height: 7),
+                                  TextFormField(
+                                    controller: _emergencyContactPhoneController,
+                                    keyboardType: TextInputType.phone,
+                                    decoration: _dec('+91 98765 43210', icon: Icons.phone_in_talk_outlined),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 22),
 
                         // ── Role chips ────────────────────────────────────
