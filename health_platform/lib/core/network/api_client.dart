@@ -1,8 +1,25 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
+  // Mobile devices connect to the host PC's Wi-Fi IP address:
+  static String get hostServerUrl {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8000';
+    }
+    // When running on a physical Android or iOS device over local Wi-Fi:
+    return 'http://10.98.220.191:8000';
+  }
+
+  static String get baseUrl => '$hostServerUrl/api';
+
+  static String resolveUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return '$hostServerUrl$cleanPath';
+  }
   
   static final ApiClient _instance = ApiClient._internal();
   factory ApiClient() => _instance;

@@ -9,6 +9,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
+import '../../core/network/api_client.dart';
 import '../../shared/models/lab_report.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -376,10 +377,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       AppButton(
                         text: 'Open Uploaded PDF Report',
                         onPressed: () {
-                          final rawUrl = report.fileUrl!;
-                          final fullUrl = rawUrl.startsWith('http')
-                              ? rawUrl
-                              : 'http://127.0.0.1:8000$rawUrl';
+                          final fullUrl = ApiClient.resolveUrl(report.fileUrl);
                           launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
                         },
                         isFullWidth: true,

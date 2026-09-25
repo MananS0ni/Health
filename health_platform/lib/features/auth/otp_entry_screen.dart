@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -111,6 +112,12 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final User user = authState.user ?? ref.read(userProvider);
+        // Mobile applications (Android/iOS) are strictly for Patients
+        if (!kIsWeb) {
+          ref.read(activeRoleProvider.notifier).setRole('patient');
+          context.go('/dashboard');
+          return;
+        }
         if (user.roles.length > 1) {
           context.go('/role-select');
         } else if (user.roles.contains('admin')) {

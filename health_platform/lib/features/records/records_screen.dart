@@ -10,6 +10,7 @@ import '../../shared/widgets/app_button.dart';
 import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
+import '../../core/network/api_client.dart';
 import '../../shared/models/medical_record.dart';
 
 class RecordsScreen extends ConsumerStatefulWidget {
@@ -780,10 +781,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                       AppButton(
                         text: 'Open Attached Document',
                         onPressed: () {
-                          final rawUrl = record.attachments!.first;
-                          final fullUrl = rawUrl.startsWith('http')
-                              ? rawUrl
-                              : 'http://127.0.0.1:8000$rawUrl';
+                          final fullUrl = ApiClient.resolveUrl(record.attachments?.first);
                           launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
                         },
                         isFullWidth: true,

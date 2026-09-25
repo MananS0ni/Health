@@ -1,0 +1,7 @@
+patient_id,patient_name,test_name,test_category,sample_collected_date,report_date,result_value,unit,reference_range,result_status,lab_name,lab_technician,report_file_name,notes
+HLTH-2026-00147,Rahul Mehta,Complete Blood Count (CBC),Hematology,2026-09-20,2026-09-21,Normal,,Normal,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00147_CBC_20260921.pdf,Routine checkup
+HLTH-2026-00147,Rahul Mehta,Fasting Blood Sugar,Biochemistry,2026-09-20,2026-09-21,118,mg/dL,70-100,High,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00147_FBS_20260921.pdf,Slightly elevated; recommend follow-up
+HLTH-2026-00289,Ananya Patel,Lipid Profile,Biochemistry,2026-09-18,2026-09-19,210,mg/dL,<200,High,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00289_LIPID_20260919.pdf,Total cholesterol high
+HLTH-2026-00289,Ananya Patel,Thyroid Panel (TSH),Endocrinology,2026-09-18,2026-09-19,2.4,mIU/L,0.4-4.0,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00289_TSH_20260919.pdf,Euthyroid
+HLTH-2026-00312,Vikram Nair,Urinalysis,Pathology,2026-09-22,2026-09-22,Normal,,Normal,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00312_URINE_20260922.pdf,Clear amber
+HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnormality detected,,,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00312_XRAY_20260923.pdf,Reviewed by radiologist

@@ -1,0 +1,6 @@
+patient_id,patient_name,test_name,test_category,sample_collected_date,report_date,result_value,unit,reference_range,result_status,lab_name,lab_technician,report_file_name,notes
+PAT-2026-00101,Aarav Sharma,Complete Blood Count (CBC),Hematology,2026-09-24,2026-09-25,14.8,g/dL,13.0 - 17.0,Normal,Apex Diagnostic Center,Dr. Anjali Verma,Aarav_CBC_Report.pdf,All red cell indices within normal limits
+PAT-2026-00101,Aarav Sharma,Total WBC Count,Hematology,2026-09-24,2026-09-25,6800,/cumm,4000 - 11000,Normal,Apex Diagnostic Center,Dr. Anjali Verma,Aarav_CBC_Report.pdf,Normal leukocyte count
+PAT-2026-00101,Aarav Sharma,Platelet Count,Hematology,2026-09-24,2026-09-25,245000,/cumm,150000 - 450000,Normal,Apex Diagnostic Center,Dr. Anjali Verma,Aarav_CBC_Report.pdf,Adequate platelets on smear
+PAT-2026-00101,Aarav Sharma,Fasting Blood Glucose,Biochemistry,2026-09-24,2026-09-25,92,mg/dL,70 - 100,Normal,Apex Diagnostic Center,Dr. Anjali Verma,Aarav_Glucose_Report.pdf,Fasting 10 hours confirmed
+PAT-2026-00101,Aarav Sharma,Serum Creatinine,Biochemistry,2026-09-24,2026-09-25,0.9,mg/dL,0.7 - 1.3,Normal,Apex Diagnostic Center,Dr. Anjali Verma,Aarav_Kidney_Report.pdf,Renal profile normal
