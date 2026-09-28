@@ -9,7 +9,9 @@ class ApiClient {
       return 'http://127.0.0.1:8000';
     }
     // PC Wi-Fi IP address reachable by mobile devices on the same Wi-Fi
-    return 'http://10.169.96.191:8000';
+    const envUrl = String.fromEnvironment('BACKEND_URL');
+    if (envUrl.isNotEmpty) return envUrl;
+    return 'http://10.134.152.191:8000';
   }
 
   static String get baseUrl => '$hostServerUrl/api';
