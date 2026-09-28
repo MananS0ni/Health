@@ -184,7 +184,7 @@ class AuthNotifier extends Notifier<AuthState> {
       clearError: true,
     );
     if (!isPhone) {
-      sendOtpByEmail(contact);
+      sendOtpByEmail(contact, mode: 'signup');
     } else {
       sendOtpByPhone(contact);
     }
@@ -202,7 +202,7 @@ class AuthNotifier extends Notifier<AuthState> {
     });
   }
 
-  Future<void> sendOtpByEmail(String email) async {
+  Future<void> sendOtpByEmail(String email, {String mode = 'login'}) async {
     state = state.copyWith(
       email: email,
       loginMode: LoginMode.email,
@@ -211,7 +211,7 @@ class AuthNotifier extends Notifier<AuthState> {
     );
     try {
       final role = state.pendingRoles.isNotEmpty ? state.pendingRoles.first : 'patient';
-      final res = await ApiClient().requestOtp(email: email, role: role);
+      final res = await ApiClient().requestOtp(email: email, role: role, mode: mode);
       final devOtp = res['dev_otp'] as String?;
       state = state.copyWith(isLoading: false, otpSent: true, devOtp: devOtp);
     } catch (e) {

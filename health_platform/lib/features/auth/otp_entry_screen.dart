@@ -77,7 +77,8 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
     if (_canResend) {
       final authState = ref.read(authStateProvider);
       if (authState.loginMode == LoginMode.email && authState.email != null) {
-        ref.read(authStateProvider.notifier).sendOtpByEmail(authState.email!);
+        final mode = (authState.pendingFullName != null && authState.pendingFullName!.isNotEmpty) ? 'signup' : 'login';
+        ref.read(authStateProvider.notifier).sendOtpByEmail(authState.email!, mode: mode);
       } else {
         ref.read(authStateProvider.notifier).sendOtpByPhone(authState.phoneNumber ?? '');
       }

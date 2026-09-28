@@ -42,11 +42,12 @@ class ApiClient {
   Future<Map<String, dynamic>> requestOtp({
     required String email,
     required String role,
+    String mode = 'login',
   }) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/request-otp/'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'role': role}),
+      body: jsonEncode({'email': email, 'role': role, 'mode': mode}),
     );
     final data = jsonDecode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {

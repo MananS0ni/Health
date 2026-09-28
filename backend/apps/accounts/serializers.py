@@ -4,6 +4,8 @@ from .models import User, Role, DoctorProfile, LabProfile, HospitalProfile
 
 class RequestOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    mode = serializers.CharField(required=False, default='login')
+    role = serializers.CharField(required=False, default='patient')
 
     def validate_email(self, value):
         return value.lower().strip()

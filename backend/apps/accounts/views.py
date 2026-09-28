@@ -32,6 +32,24 @@ class RequestOTPView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data['email']
+        mode = serializer.validated_data.get('mode', 'login')
+
+        # Authentication guard: If signing in, ensure the user actually exists!
+        user = User.objects.filter(email__iexact=email).first()
+        if mode == 'login' and not user:
+            return Response({
+                'success': False,
+                'error': "Account does not exist. Please create an account first.",
+                'code': 'USER_NOT_FOUND',
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if mode == 'signup' and user and user.full_name:
+            return Response({
+                'success': False,
+                'error': "An account with this email already exists. Please sign in instead.",
+                'code': 'USER_ALREADY_EXISTS',
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         otp_obj = EmailOTP.generate_otp(email)
 
         # Compose email
@@ -127,23 +145,32 @@ class VerifyOTPView(APIView):
         elif serializer.validated_data.get('role'):
             primary_role = serializer.validated_data['role']
 
-        # Get or create user
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                'is_verified': True,
-                'role': primary_role,
-                'full_name': full_name,
-                'phone_number': phone_number,
-                'roles': roles,
-            }
-        )
+        # Find or create user
+        user = User.objects.filter(email__iexact=email).first()
+        created = False
+        if not user:
+            if not full_name:
+                return Response({
+                    'success': False,
+                    'error': "Account does not exist. Please create an account first.",
+                    'code': 'USER_NOT_FOUND'
+                }, status=status.HTTP_404_NOT_FOUND)
 
-        user.is_verified = True
-        if full_name:
-            user.full_name = full_name
-        if phone_number:
-            user.phone_number = phone_number
+            user = User.objects.create(
+                email=email,
+                is_verified=True,
+                role=primary_role,
+                full_name=full_name,
+                phone_number=phone_number,
+                roles=roles,
+            )
+            created = True
+        else:
+            user.is_verified = True
+            if full_name:
+                user.full_name = full_name
+            if phone_number:
+                user.phone_number = phone_number
 
         # Merge roles to preserve existing professional access
         merged_roles = set(user.roles or [])
