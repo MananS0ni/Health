@@ -1,3 +1,7 @@
+import re
+from django.core import mail
+from django.utils import timezone
+from apps.doctor.models import ConsentRequest
 from rest_framework.test import APITestCase
 from rest_framework import status
 from apps.accounts.models import User, Role, EmailOTP
@@ -37,14 +41,19 @@ class FullSystemAPITests(APITestCase):
             is_verified=True
         )
 
+        for provider in (self.doctor, self.lab, self.hospital):
+            provider.professional_verified = True
+            provider.save()
+            ConsentRequest.objects.create(doctor=provider, patient=self.patient, status='approved', valid_until=timezone.now()+timezone.timedelta(hours=1))
+
     def test_auth_otp_flow(self):
         # Request OTP
-        resp = self.client.post('/api/auth/request-otp/', {'email': 'newuser@test.com'}, format='json')
+        resp = self.client.post('/api/auth/request-otp/', {'email': 'newuser@test.com', 'mode': 'signup'}, format='json')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
         otp_obj = EmailOTP.objects.get(email='newuser@test.com')
         # Verify OTP
-        resp_verify = self.client.post('/api/auth/verify-otp/', {'email': 'newuser@test.com', 'otp': otp_obj.otp}, format='json')
+        resp_verify = self.client.post('/api/auth/verify-otp/', {'email': 'newuser@test.com', 'full_name': 'Test Account', 'otp': re.search(r'\b\d{6}\b', mail.outbox[-1].body).group()}, format='json')
         self.assertEqual(resp_verify.status_code, status.HTTP_200_OK)
         self.assertIn('tokens', resp_verify.json())
 

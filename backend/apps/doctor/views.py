@@ -1,627 +1,196 @@
-import uuid
-from rest_framework import status, permissions
+from apps.care.services import notify, audit
+from apps.care.services import notify, audit
+from datetime import timedelta
+from django.db import transaction
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from rest_framework import permissions, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.db.models import Q
-
 from .models import Appointment, Prescription, ConsentRequest
 from .serializers import AppointmentSerializer, PrescriptionSerializer, ConsentRequestSerializer
-from apps.accounts.models import User, Role
+from apps.accounts.models import User
+from apps.accounts.permissions import IsDoctor, VerifiedProfessional, resolve_patient, require_patient_access, can_access_patient
 from apps.patients.models import PatientProfile, HealthVital
+from apps.patients.serializers import PatientProfileSerializer, HealthVitalSerializer
 from apps.reports.models import MedicalRecord, LabReport
-from apps.patients.serializers import HealthVitalSerializer
 from apps.reports.serializers import MedicalRecordSerializer, LabReportSerializer
 
 
-def resolve_patient_user(val):
-    """
-    Robustly resolves a patient User object by:
-    - UUID string
-    - Email address
-    - Phone number
-    - Formatted patient code (e.g. PAT-4726A2)
-    - Full name
-    """
-    if not val:
-        return None
-    s = str(val).strip()
-
-    # 1. Try UUID
-    try:
-        uid = uuid.UUID(s)
-        u = User.objects.filter(id=uid).first()
-        if u:
-            return u
-    except (ValueError, AttributeError):
-        pass
-
-    # 2. Try Email
-    u = User.objects.filter(email__iexact=s).first()
-    if u:
-        return u
-
-    # 3. Try Phone
-    u = User.objects.filter(phone_number__iexact=s).first()
-    if u:
-        return u
-
-    # 4. Try PAT- code prefix or match
-    if s.upper().startswith('PAT-'):
-        prefix = s[4:].strip().upper()
-        for p in User.objects.all():
-            if str(p.id).upper().startswith(prefix) or f"PAT-{str(p.id)[:6].upper()}" == s.upper():
-                return p
-
-    # 5. Try Full Name
-    u = User.objects.filter(full_name__iexact=s).first()
-    if u:
-        return u
-
-    return None
+def resolve_patient_user(value):
+    return resolve_patient(value)
 
 
 def resolve_current_doctor(request):
-    """
-    Robustly identifies the current doctor User object from:
-    1. 'X-User-Email' request header
-    2. Authenticated request.user
-    3. Query parameter or request body doctor_email / doctor_id
-    4. Fallback doctor account (Dr. Rana Parthil or any doctor role user)
-    """
-    user_header = request.headers.get('X-User-Email')
-    if user_header:
-        u = resolve_patient_user(user_header)
-        if u:
-            return u
-
-    if request.user and request.user.is_authenticated:
-        return request.user
-
-    param_email = request.query_params.get('doctor_email') or request.query_params.get('email')
-    if param_email:
-        u = resolve_patient_user(param_email)
-        if u:
-            return u
-
-    if hasattr(request, 'data') and isinstance(request.data, dict):
-        body_val = request.data.get('doctor_email') or request.data.get('doctor_id') or request.data.get('doctor')
-        if body_val:
-            u = resolve_patient_user(body_val)
-            if u:
-                return u
-
-    return (
-        User.objects.filter(email='23ci2020115@gmail.com').first() or
-        User.objects.filter(roles__icontains='doctor').first() or
-        User.objects.filter(email='sonimanan2905@gmail.com').first() or
-        User.objects.first()
-    )
+    return request.user
 
 
 class DoctorAppointmentListCreateView(APIView):
-    """
-    GET /api/doctor/appointments/ — List all appointments for the logged-in doctor.
-    POST /api/doctor/appointments/ — Schedule an appointment.
-    """
-    permission_classes = [permissions.AllowAny]
-
     def get(self, request):
-        patient_email = request.query_params.get('patient_email')
-        doc = resolve_current_doctor(request)
-        if patient_email:
-            patient_user = resolve_patient_user(patient_email)
-            appointments = Appointment.objects.filter(patient=patient_user) if patient_user else Appointment.objects.none()
-        elif request.user.is_authenticated and ('patient' in (request.user.roles or []) or request.user.role == Role.PATIENT):
+        context = request.query_params.get('context', 'patient')
+        if context == 'doctor':
+            if not IsDoctor().has_permission(request, self):
+                return Response({'error': 'Verified doctor access required.'}, status=403)
+            appointments = Appointment.objects.filter(doctor=request.user)
+        else:
             appointments = Appointment.objects.filter(patient=request.user)
-        else:
-            appointments = Appointment.objects.filter(doctor=doc) if doc else Appointment.objects.none()
-        serializer = AppointmentSerializer(appointments, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(AppointmentSerializer(appointments[:200], many=True).data)
 
+    @transaction.atomic
     def post(self, request):
-        doc = resolve_current_doctor(request)
-        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
-        patient_val = data.get('patient') or data.get('patient_id')
-        if patient_val:
-            patient_obj = resolve_patient_user(patient_val)
-            if patient_obj:
-                data['patient'] = patient_obj.id
-            else:
-                data['patient'] = doc.id
-        else:
-            data['patient'] = doc.id
+        if not IsDoctor().has_permission(request, self):
+            return Response({'error': 'Use patient booking to reserve a provider slot.'}, status=403)
+        patient = resolve_patient(request.data.get('patient') or request.data.get('patient_id'))
+        require_patient_access(request.user, patient)
+        data = request.data.copy()
+        data['patient'] = str(patient.pk)
+        data['patient_name'] = patient.full_name
         serializer = AppointmentSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save(doctor=doc)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        date = serializer.validated_data.get('appointment_date', timezone.localdate())
+        slot = serializer.validated_data.get('time_slot', '10:00 AM')
+        # Serialize schedule mutations on the provider account.
+        User.objects.select_for_update().get(pk=request.user.pk)
+        if Appointment.objects.filter(doctor=request.user, appointment_date=date, time_slot=slot).exclude(status='Cancelled').exists():
+            return Response({'error': 'This appointment slot is already reserved.'}, status=409)
+        appointment = serializer.save(doctor=request.user)
+        notify(patient, 'An appointment has been booked for you.', 'appointment', appointment.pk)
+        audit(request.user, 'appointment.created', appointment.pk)
+        return Response(serializer.data, status=201)
+
+
+class AppointmentActionView(APIView):
+    @transaction.atomic
+    def post(self, request, appointment_id):
+        appt = get_object_or_404(Appointment.objects.select_for_update().filter(Q(patient=request.user)|Q(doctor=request.user)), pk=appointment_id)
+        if request.data.get('action') != 'cancel':
+            return Response({'error': 'Supported action: cancel.'}, status=400)
+        if appt.status == 'Cancelled': return Response({'success': True})
+        if appt.status == 'Completed': return Response({'error': 'Completed appointment cannot be cancelled.'}, status=400)
+        appt.status = 'Cancelled'
+        appt.save(update_fields=['status'])
+        notify(appt.patient, 'Your appointment was cancelled.', 'appointment', appt.pk)
+        audit(request.user, 'appointment.cancelled', appt.pk)
+        return Response({'success': True})
 
 
 class DoctorPatientSearchView(APIView):
-    """
-    GET /api/doctor/patients/?q=patient@example.com&email=patient@example.com
-    Search patient directory by email (or name/phone) from the database.
-    Privacy rule: Only returns records when an email or search query is explicitly provided.
-    """
-    permission_classes = [permissions.AllowAny]
-
+    permission_classes = [IsDoctor]
     def get(self, request):
-        email = request.query_params.get('email', '').strip()
-        query = request.query_params.get('q', '').strip()
-        search_term = (email or query).lower().strip()
-
-        # Strict privacy enforcement: do NOT dump patients if no email / query is provided
-        if not search_term:
-            return Response([], status=status.HTTP_200_OK)
-
-        all_users = User.objects.all()
-        patients = [
-            u for u in all_users
-            if u.role == Role.PATIENT or 'patient' in (u.roles or [])
-        ]
-        
-        matched_patients = []
-        for p in patients:
-            p_email = (p.email or '').lower()
-            p_phone = (p.phone_number or '').lower()
-            p_name = (p.full_name or '').lower()
-            p_id = str(p.id).lower()
-            pat_code = f"pat-{str(p.id)[:6].lower()}"
-
-            if (search_term == p_email or
-                search_term in p_email or
-                search_term == p_phone or
-                search_term == pat_code or
-                search_term in p_name):
-                matched_patients.append(p)
-
-        results = []
-        from django.utils import timezone
-        for p in matched_patients[:25]:
-            profile = getattr(p, 'patient_profile', None)
-            latest_consultation = Appointment.objects.filter(patient=p).order_by('-appointment_date').first()
-            last_visit_str = latest_consultation.appointment_date.strftime('%Y-%m-%d') if latest_consultation else 'First Consultation (New Patient)'
-            results.append({
-                'id': str(p.id),
-                'patient_id': f"PAT-{str(p.id)[:6].upper()}",
-                'full_name': p.full_name or 'Anonymous Patient',
-                'email': p.email,
-                'phone_number': p.phone_number or '--',
-                'gender': (profile.gender if profile and profile.gender else 'Not specified'),
-                'blood_group': (profile.blood_group if profile and profile.blood_group else '--'),
-                'age': profile.date_of_birth if profile and profile.date_of_birth else 'Not specified',
-                'last_visit': last_visit_str,
-                'last_diagnosis': (latest_consultation.consultation_type if latest_consultation else 'Routine Checkup'),
-                'allergies': profile.allergies if profile else [],
-                'chronic_conditions': profile.medical_conditions if profile else [],
-            })
-
-        return Response(results, status=status.HTTP_200_OK)
+        q = (request.query_params.get('q') or request.query_params.get('email') or '').strip()
+        if len(q) < 3:
+            return Response([])
+        qs = User.objects.filter(is_active=True, is_staff=False).filter(Q(email__iexact=q)|Q(full_name__icontains=q))[:25]
+        return Response([{'id':str(u.pk), 'patient_id':f'PAT-{u.pk}', 'full_name':u.full_name, 'email':u.email} for u in qs])
 
     def post(self, request):
-        """
-        POST /api/doctor/patients/
-        Register a new patient from the Doctor Portal with email, phone, age, and blood group.
-        """
-        data = request.data
-        email = data.get('email', '').strip().lower()
-        full_name = data.get('full_name', '').strip()
-        phone_number = data.get('phone_number', '').strip()
-        age = data.get('age')
-        gender = data.get('gender', 'Not specified')
-        blood_group = data.get('blood_group', '--')
-
-        if not email:
-            import time
-            email = f"patient_{int(time.time())}@health.local"
-
-        patient, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                'full_name': full_name or 'New Patient',
-                'phone_number': phone_number,
-                'role': Role.PATIENT,
-                'roles': ['patient'],
-                'is_verified': True,
-            }
-        )
-        if not created:
-            if full_name:
-                patient.full_name = full_name
-            if phone_number:
-                patient.phone_number = phone_number
-            patient.save()
-
-        profile, _ = PatientProfile.objects.get_or_create(user=patient)
-        if gender:
-            profile.gender = gender
-        if blood_group and blood_group != '--':
-            profile.blood_group = blood_group
-        if age:
-            profile.date_of_birth = f"{age} yrs"
-        profile.save()
-
-        # Pre-authorize this doctor for 24 hours so clinical chart is immediately unlocked!
-        doc = request.user if request.user.is_authenticated else (
-            User.objects.filter(email='sonimanan2905@gmail.com').first() or
-            User.objects.filter(roles__icontains='doctor').first() or
-            User.objects.first()
-        )
-        from datetime import timedelta
-        from django.utils import timezone
-        ConsentRequest.objects.update_or_create(
-            doctor=doc,
-            patient=patient,
-            defaults={
-                'purpose': 'Initial Clinical Registration & Consultation',
-                'status': 'approved',
-                'valid_until': timezone.now() + timedelta(hours=24),
-            }
-        )
-
-        patient_code = f"PAT-{str(patient.id)[:6].upper()}"
-        return Response({
-            'id': str(patient.id),
-            'patient_id': patient_code,
-            'full_name': patient.full_name,
-            'email': patient.email,
-            'phone_number': patient.phone_number,
-            'gender': profile.gender,
-            'blood_group': profile.blood_group,
-            'age': profile.date_of_birth,
-            'last_visit': 'First Consultation (New Patient)',
-            'last_diagnosis': 'General Registration',
-        }, status=status.HTTP_201_CREATED)
+        email = serializers.EmailField().run_validation(request.data.get('email')) .lower()
+        if User.objects.filter(email__iexact=email).exists():
+            return Response({'error': 'Patient already registered. Request their consent instead.'}, status=409)
+        name = serializers.CharField(max_length=255).run_validation(request.data.get('full_name'))
+        patient = User.objects.create_user(email=email, full_name=name, roles=['patient'], is_verified=False)
+        PatientProfile.objects.create(user=patient)
+        return Response({'id':str(patient.pk), 'patient_id':f'PAT-{patient.pk}', 'full_name':name, 'email':email}, status=201)
 
 
 class DoctorPrescriptionCreateView(APIView):
-    """
-    POST /api/doctor/prescriptions/
-    Saves a clinical diagnosis and electronic prescription.
-    Automatically adds a corresponding record to the patient's personal health locker!
-    """
-    permission_classes = [permissions.AllowAny]
-
+    permission_classes = [IsDoctor]
+    @transaction.atomic
     def post(self, request):
-        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
-        patient_val = data.get('patient') or data.get('patient_id')
-        patient_obj = None
-        if patient_val:
-            patient_obj = resolve_patient_user(patient_val)
-
-        if not patient_obj:
-            if request.user.is_authenticated:
-                patient_obj = request.user
-            else:
-                patient_obj = User.objects.filter(email='manansoni2905@gmail.com').first() or User.objects.first()
-
-        data['patient'] = str(patient_obj.id)
-
-        # Resolve doctor
-        doctor_user = request.user if request.user.is_authenticated else None
-        if not doctor_user:
-            doc_email = data.get('doctor_email')
-            if doc_email:
-                doctor_user = resolve_patient_user(doc_email)
-            if not doctor_user:
-                doctor_user = User.objects.filter(email='sonimanan2905@gmail.com').first() or User.objects.filter(roles__icontains='doctor').first()
-
-        # Enforce consent validation
-        if doctor_user and patient_obj and doctor_user != patient_obj:
-            active_consent = ConsentRequest.objects.filter(
-                doctor=doctor_user,
-                patient=patient_obj,
-                status='approved'
-            ).order_by('-valid_until').first()
-            if not (active_consent and active_consent.is_active()):
-                return Response(
-                    {'error': 'Active patient consent is required to create a consultation or prescription. Please request access from the patient first.'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-
+        patient = resolve_patient(request.data.get('patient') or request.data.get('patient_id'))
+        require_patient_access(request.user, patient)
+        data = request.data.copy()
+        data['patient'] = str(patient.pk)
         serializer = PrescriptionSerializer(data=data)
-        if serializer.is_valid():
-            rx = serializer.save(doctor=doctor_user)
-
-            # Auto-sync to the Patient's personal Medical Records locker
-            med_list = ", ".join([m.medicine_name for m in rx.medicines.all()])
-            facility = 'Patel Clinic'
-            if hasattr(doctor_user, 'doctor_profile') and doctor_user.doctor_profile.clinic_name:
-                facility = doctor_user.doctor_profile.clinic_name
-
-            MedicalRecord.objects.create(
-                patient=rx.patient,
-                title=f"Prescription: {rx.diagnosis}",
-                record_type="Prescription",
-                record_date=rx.prescribed_date,
-                doctor_name=doctor_user.full_name or "Dr. Dhruv Patel",
-                facility_name=facility,
-                description=f"Diagnosis: {rx.diagnosis}\nMedicines: {med_list}\nNotes: {rx.clinical_notes or 'None'}",
-            )
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        rx = serializer.save(doctor=request.user)
+        notify(patient, 'A new prescription is available in your records.', 'prescription', rx.pk)
+        audit(request.user, 'prescription.created', rx.pk)
+        instructions = '\n'.join(f'{m.medicine_name}: {m.dosage}, {m.duration}. {m.instructions or ""}' for m in rx.medicines.all())
+        profile = getattr(request.user, 'doctor_profile', None)
+        MedicalRecord.objects.create(source='professional', created_by=request.user, patient=patient, title=f'Prescription: {rx.diagnosis}', record_type='Prescription', record_date=rx.prescribed_date, doctor_name=request.user.full_name, facility_name=profile.clinic_name if profile else '', description=f'Diagnosis: {rx.diagnosis}\n{instructions}\nNotes: {rx.clinical_notes or ""}')
+        return Response(serializer.data, status=201)
 
 
 class DoctorPatientDetailChartView(APIView):
-    """
-    GET /api/doctor/patients/<str:patient_id>/chart/
-    Retrieves full clinical chart: vitals, allergies, conditions, and previous records.
-    Enforces patient consent: if no active consent is granted, sensitive clinical records remain locked.
-    """
-    permission_classes = [permissions.AllowAny]
-
     def get(self, request, patient_id):
-        patient = resolve_patient_user(patient_id)
-        if not patient:
-            return Response({'error': f'Patient "{patient_id}" not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        profile, _ = PatientProfile.objects.get_or_create(user=patient)
-        vitals = HealthVital.objects.filter(patient=patient)[:6]
-        prescriptions = Prescription.objects.filter(patient=patient)
-        reports = LabReport.objects.filter(patient=patient)
-
-        doc = resolve_current_doctor(request)
-
-        # Check active consent
-        active_consent = ConsentRequest.objects.filter(
-            doctor=doc,
-            patient=patient,
-            status='approved'
-        ).order_by('-valid_until').first()
-
-        has_active_consent = active_consent is not None and active_consent.is_active()
-
-        # Check pending consent
-        pending_consent = ConsentRequest.objects.filter(
-            doctor=doc,
-            patient=patient,
-            status='pending'
-        ).first()
-
-        consent_status = 'approved' if has_active_consent else ('pending' if pending_consent else 'none')
-
-        base_data = {
-            'patient_id': str(patient.id),
-            'full_name': patient.full_name or 'Patient',
-            'email': patient.email,
-            'phone_number': patient.phone_number or '--',
-            'gender': profile.gender or '--',
-            'blood_group': profile.blood_group or '--',
-            'allergies': profile.allergies,
-            'chronic_conditions': profile.medical_conditions,
-            'has_consent': has_active_consent or (request.user == patient),
-            'consent_status': consent_status,
-            'consent_id': str(active_consent.id) if active_consent else (str(pending_consent.id) if pending_consent else None),
-            'consent_valid_until': active_consent.valid_until if active_consent else None,
-        }
-
-        if has_active_consent or request.user == patient:
-            base_data['vitals'] = HealthVitalSerializer(vitals, many=True).data
-            base_data['prescriptions'] = PrescriptionSerializer(prescriptions, many=True).data
-            base_data['reports'] = LabReportSerializer(reports, many=True).data
-        else:
-            base_data['vitals'] = []
-            base_data['prescriptions'] = []
-            base_data['reports'] = []
-
-        return Response(base_data, status=status.HTTP_200_OK)
+        patient = resolve_patient(patient_id)
+        if request.user != patient and not VerifiedProfessional().has_permission(request, self):
+            return Response({'error': 'Professional access required.'}, status=403)
+        consent = ConsentRequest.objects.filter(doctor=request.user, patient=patient).order_by('-created_at').first()
+        permitted = can_access_patient(request.user, patient)
+        if permitted and request.user.pk != patient.pk: audit(request.user, 'clinical_chart.viewed', patient.pk)
+        data = {'patient_id':str(patient.pk), 'full_name':patient.full_name, 'has_consent':permitted, 'consent_status':'approved' if permitted else ('pending' if consent and consent.status == 'pending' else 'none'), 'consent_id':str(consent.pk) if consent else None, 'vitals':[], 'prescriptions':[], 'reports':[], 'records':[]}
+        if permitted:
+            profile, _ = PatientProfile.objects.get_or_create(user=patient)
+            data.update(PatientProfileSerializer(profile).data)
+            data['chronic_conditions'] = profile.medical_conditions
+            data['vitals'] = HealthVitalSerializer(HealthVital.objects.filter(patient=patient)[:20], many=True).data
+            data['prescriptions'] = PrescriptionSerializer(Prescription.objects.filter(patient=patient).prefetch_related('medicines')[:100], many=True).data
+            data['reports'] = LabReportSerializer(LabReport.objects.filter(patient=patient).prefetch_related('parameters')[:100], many=True).data
+            data['records'] = MedicalRecordSerializer(MedicalRecord.objects.filter(patient=patient)[:100], many=True).data
+        return Response(data)
 
 
 class DoctorRequestConsentView(APIView):
-    """
-    POST /api/doctor/consent/request/
-    Doctor submits an access request to view a patient's historical records.
-    """
-    permission_classes = [permissions.AllowAny]
-
+    permission_classes = [VerifiedProfessional]
+    @transaction.atomic
     def post(self, request):
-        patient_id = request.data.get('patient_id') or request.data.get('patient')
-        patient_email = request.data.get('patient_email') or request.data.get('email')
-        purpose = request.data.get('purpose', 'Clinical Consultation & Medical History Review')
-
-        patient = resolve_patient_user(patient_id or patient_email)
-
-        if not patient:
-            return Response({'error': f'Patient account "{patient_id or patient_email}" not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        doc = resolve_current_doctor(request)
-
-        # Check existing active consent
-        existing_active = ConsentRequest.objects.filter(
-            doctor=doc,
-            patient=patient,
-            status='approved'
-        ).first()
-
-        if existing_active and existing_active.is_active():
-            return Response({
-                'success': True,
-                'message': 'Active consent is already granted for this patient.',
-                'consent': ConsentRequestSerializer(existing_active).data
-            }, status=status.HTTP_200_OK)
-
-        # Create or refresh pending request
-        consent_obj, _ = ConsentRequest.objects.update_or_create(
-            doctor=doc,
-            patient=patient,
-            defaults={
-                'purpose': purpose,
-                'status': 'pending',
-                'valid_until': None,
-            }
-        )
-
-        return Response({
-            'success': True,
-            'message': f'Consent request sent to {patient.full_name or patient.email}.',
-            'consent': ConsentRequestSerializer(consent_obj).data
-        }, status=status.HTTP_201_CREATED)
+        patient = resolve_patient(request.data.get('patient_id') or request.data.get('patient') or request.data.get('patient_email'))
+        if patient == request.user:
+            return Response({'error': 'Self-consent is unnecessary.'}, status=400)
+        User.objects.select_for_update().get(pk=request.user.pk)
+        existing = ConsentRequest.objects.filter(doctor=request.user, patient=patient).filter(Q(status='pending')|Q(status='approved', valid_until__gt=timezone.now())).first()
+        if existing:
+            return Response({'success':True, 'consent':ConsentRequestSerializer(existing).data})
+        purpose = serializers.CharField(max_length=200).run_validation(request.data.get('purpose', 'Clinical consultation'))
+        consent = ConsentRequest.objects.create(doctor=request.user, patient=patient, purpose=purpose)
+        notify(patient, 'A professional requested access to your medical records. Review it in your consent inbox.', 'consent', consent.pk)
+        audit(request.user, 'consent.requested', consent.pk)
+        return Response({'success':True, 'message':'Consent request sent.', 'consent':ConsentRequestSerializer(consent).data}, status=201)
 
 
 class PatientConsentListView(APIView):
-    """
-    GET /api/patients/consents/
-    Returns all incoming doctor access requests for the logged-in patient.
-    """
-    permission_classes = [permissions.AllowAny]
-
     def get(self, request):
-        patient = request.user if request.user.is_authenticated else (User.objects.filter(email='manansoni2905@gmail.com').first() or User.objects.first())
-        consents = ConsentRequest.objects.filter(patient=patient).order_by('-created_at')
-        return Response(ConsentRequestSerializer(consents, many=True).data, status=status.HTTP_200_OK)
-
+        return Response(ConsentRequestSerializer(ConsentRequest.objects.filter(patient=request.user).select_related('doctor','patient')[:200], many=True).data)
     def post(self, request):
-        return Response({
-            'error': 'Patients cannot initiate links from their side. Healthcare providers (Doctors, Diagnostic Labs, Hospitals) must send access requests, which you can approve or deny from your dashboard.'
-        }, status=status.HTTP_403_FORBIDDEN)
+        return Response({'error':'Approve a provider request from your consent inbox.'}, status=403)
 
 
 class PatientConsentActionView(APIView):
-    """
-    POST /api/patients/consents/<str:consent_id>/action/
-    Patient approves, rejects, or revokes a doctor's access request.
-    """
-    permission_classes = [permissions.AllowAny]
-
+    @transaction.atomic
     def post(self, request, consent_id):
-        from datetime import timedelta
-        from django.utils import timezone
-
-        action = request.data.get('action', '').lower()
-        if action not in ('approve', 'reject', 'deny', 'revoke'):
-            return Response({'error': 'Invalid action. Must be "approve", "reject", or "revoke".'}, status=status.HTTP_400_BAD_REQUEST)
-
-        patient = request.user if request.user.is_authenticated else (User.objects.filter(email='manansoni2905@gmail.com').first() or User.objects.first())
-        consent = ConsentRequest.objects.filter(id=consent_id, patient=patient).first()
-        if not consent:
-            return Response({'error': 'Consent request not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if action == 'approve':
-            consent.status = 'approved'
-            consent.valid_until = timezone.now() + timedelta(hours=24)
-            msg = 'Access granted to doctor for 24 hours.'
-        else:
-            consent.status = 'revoked'
-            consent.valid_until = None
-            msg = 'Doctor access request rejected / revoked.'
-
-        consent.save(update_fields=['status', 'valid_until', 'updated_at'])
-
-        return Response({
-            'success': True,
-            'message': msg,
-            'consent': ConsentRequestSerializer(consent).data
-        }, status=status.HTTP_200_OK)
+        consent = get_object_or_404(ConsentRequest.objects.select_for_update(), pk=consent_id, patient=request.user)
+        action = request.data.get('action')
+        if action not in ('approve','reject','deny','revoke'):
+            return Response({'error':'Invalid action.'}, status=400)
+        if action == 'approve' and consent.status != 'pending':
+            return Response({'error':'Only a pending request can be approved. Request new consent to renew.'}, status=409)
+        consent.status = 'approved' if action == 'approve' else ('revoked' if action == 'revoke' else 'rejected')
+        consent.valid_until = timezone.now()+timedelta(hours=24) if action == 'approve' else None
+        consent.save()
+        notify(consent.doctor, f'Patient access request {consent.status}.', 'consent', consent.pk)
+        audit(request.user, 'consent.'+consent.status, consent.pk)
+        return Response({'success':True, 'consent':ConsentRequestSerializer(consent).data})
 
 
 class DoctorIncomingConsentListView(APIView):
-    """
-    GET /api/doctor/incoming-requests/
-    Returns all patient connection and access requests sent to the active doctor.
-    """
-    permission_classes = [permissions.AllowAny]
-
+    permission_classes = [VerifiedProfessional]
     def get(self, request):
-        doc = resolve_current_doctor(request)
-        if not doc:
-            return Response([], status=status.HTTP_200_OK)
-
-        consents = ConsentRequest.objects.filter(doctor=doc).order_by('-created_at')
-        return Response(ConsentRequestSerializer(consents, many=True).data, status=status.HTTP_200_OK)
+        return Response(ConsentRequestSerializer(ConsentRequest.objects.filter(doctor=request.user).select_related('doctor','patient')[:200], many=True).data)
 
 
 class DoctorIncomingConsentActionView(APIView):
-    """
-    POST /api/doctor/incoming-requests/<str:consent_id>/action/
-    Doctor accepts or declines patient connection and record sharing request.
-    """
-    permission_classes = [permissions.AllowAny]
-
+    permission_classes = [VerifiedProfessional]
     def post(self, request, consent_id):
-        from datetime import timedelta
-        from django.utils import timezone
-
-        action = request.data.get('action', '').lower()
-        if action not in ('accept', 'approve', 'decline', 'reject'):
-            return Response({'error': 'Invalid action. Must be "accept" or "decline".'}, status=status.HTTP_400_BAD_REQUEST)
-
-        consent = ConsentRequest.objects.filter(id=consent_id).first()
-        if not consent:
-            return Response({'error': 'Request not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if action in ('accept', 'approve'):
-            consent.status = 'approved'
-            consent.valid_until = timezone.now() + timedelta(hours=24)
-            msg = f"Request accepted. You now have 24-hour access to {consent.patient.full_name or 'patient'}'s medical chart."
-        else:
-            consent.status = 'rejected'
-            consent.valid_until = None
-            msg = f"Request from {consent.patient.full_name or 'patient'} was declined."
-
-        consent.save(update_fields=['status', 'valid_until', 'updated_at'])
-
-        return Response({
-            'success': True,
-            'message': msg,
-            'consent': ConsentRequestSerializer(consent).data
-        }, status=status.HTTP_200_OK)
+        return Response({'error':'Only the patient can approve or reject clinical access.'}, status=403)
 
 
 class DoctorDirectoryView(APIView):
-    """
-    GET /api/doctor/directory/?email=doctor@example.com (or ?q=...)
-    Search registered doctors by email from the database.
-    Privacy rule: Only returns records when an email or search query is explicitly provided.
-    """
-    permission_classes = [permissions.AllowAny]
-
     def get(self, request):
-        email = request.query_params.get('email', '').strip().lower()
-        query = request.query_params.get('q', '').strip().lower()
-        search_term = email or query
-
-        # Strict privacy enforcement: do NOT dump doctors if no email / query is provided
-        if not search_term:
-            return Response([], status=status.HTTP_200_OK)
-
-        all_users = User.objects.all()
-        doctors = [
-            u for u in all_users
-            if u.role == Role.DOCTOR or 'doctor' in (u.roles or [])
-        ]
-
-        matched_doctors = []
-        for d in doctors:
-            d_email = (d.email or '').lower()
-            d_name = (d.full_name or '').lower()
-            doc_prof = getattr(d, 'doctor_profile', None)
-            d_spec = (getattr(doc_prof, 'specialization', None) or getattr(doc_prof, 'specialty', None) or '').lower()
-            d_clinic = (getattr(doc_prof, 'clinic_name', None) or getattr(doc_prof, 'hospital_affiliation', None) or '').lower()
-            
-            if (search_term == d_email or
-                search_term in d_email or
-                search_term in d_name or
-                search_term in d_spec or
-                search_term in d_clinic):
-                matched_doctors.append(d)
-
-        results = []
-        for d in matched_doctors:
-            profile = getattr(d, 'doctor_profile', None)
-            spec = getattr(profile, 'specialization', None) or getattr(profile, 'specialty', None) or 'General Medicine'
-            clinic = getattr(profile, 'clinic_name', None) or getattr(profile, 'hospital_affiliation', None) or 'Metro Health Clinic'
-            license_no = getattr(profile, 'registration_number', None) or getattr(profile, 'license_number', None) or 'MCI-REG'
-            
-            results.append({
-                'id': str(d.id),
-                'name': d.full_name or d.email,
-                'email': d.email,
-                'specialty': spec,
-                'clinic': clinic,
-                'registration_number': license_no,
-                'subtext': f"Reg: {license_no} • {clinic}",
-                'type': 'doctor',
-            })
-        return Response(results, status=status.HTTP_200_OK)
-
+        q = (request.query_params.get('q') or request.query_params.get('email') or '').strip()
+        if len(q) < 2:
+            return Response([])
+        doctors = User.objects.filter(is_active=True, professional_verified=True, doctor_profile__isnull=False).filter(Q(full_name__icontains=q)|Q(email__iexact=q)|Q(doctor_profile__specialization__icontains=q)).select_related('doctor_profile')[:25]
+        return Response([{'id':str(d.pk), 'name':d.full_name, 'specialty':d.doctor_profile.specialization, 'clinic':d.doctor_profile.clinic_name, 'type':'doctor'} for d in doctors])

@@ -1,0 +1,187 @@
+{
+  "files": 532,
+  "categories": {
+    "first-party text / config": 269,
+    "PDF documentation": 14,
+    "binary asset": 139,
+    "private local data": 2,
+    "local uploaded media": 108
+  },
+  "text_lines": 37771,
+  "excluded_directories": [
+    ".git",
+    "audit",
+    "__pycache__",
+    "backend\\venv",
+    "backend\\apps\\__pycache__",
+    "backend\\apps\\accounts\\__pycache__",
+    "backend\\apps\\accounts\\migrations\\__pycache__",
+    "backend\\apps\\doctor\\__pycache__",
+    "backend\\apps\\doctor\\migrations\\__pycache__",
+    "backend\\apps\\hospital\\__pycache__",
+    "backend\\apps\\hospital\\migrations\\__pycache__",
+    "backend\\apps\\lab\\__pycache__",
+    "backend\\apps\\lab\\migrations\\__pycache__",
+    "backend\\apps\\patients\\__pycache__",
+    "backend\\apps\\patients\\migrations\\__pycache__",
+    "backend\\apps\\reports\\__pycache__",
+    "backend\\apps\\reports\\migrations\\__pycache__",
+    "backend\\config\\__pycache__",
+    "health_platform\\.dart_tool",
+    "health_platform\\.idea",
+    "health_platform\\build",
+    "health_platform\\android\\.gradle",
+    "health_platform\\ios\\Flutter\\ephemeral",
+    "health_platform\\linux\\flutter\\ephemeral",
+    "health_platform\\macos\\Flutter\\ephemeral",
+    "health_platform\\windows\\flutter\\ephemeral"
+  ],
+  "python_syntax_errors": [],
+  "pdf_summaries": [
+    {
+      "file": "3_Week_Progress_Report_Frontend_Healthcare_Platform.pdf.pdf",
+      "pages": 22,
+      "excerpt": "DIGITAL HEALTH PLATFORM\nPatient Data & Multi-Role UI Verification\nReport\nComplete responsive layout verification across Desktop (1440x900) & Mobile\n(390x844) viewports for Patient Health Records, Doctor Consultations, Laboratory\nDiagnostics, and Hospital Admissions.\n1. Authentication & Role Switcher",
+      "claims": [
+        "Instant emergency access displaying blood group, emergency contacts, allergies, and critical vitals."
+      ]
+    },
+    {
+      "file": "DHealth_Platform_Implementation_Report.pdf",
+      "pages": 4,
+      "excerpt": "\u25cf ENTERPRISE SYSTEM ARCHITECTURE & INTEGRATION REPORT\nDate: September 2026\nStatus: Production Ready\ndHealth Unified Health Platform\nVersion: 1.0.0 Stable\nTarget: Web, iOS, Android\nComplete End-to-End Real Backend Implementation, Multi-Role Architecture,\nReal-Time Cross-Portal Auto-Synchronization, a",
+      "claims": [
+        "Status: Production Ready",
+        "Auth: 100% Free Gmail SMTP",
+        "Tests: 12/12 Passed (100%)",
+        "dependencies, ABHA/ABDM overhead, or paid SMS gateways. Authentication is secured by automated Gmail SMTP OTP",
+        "100% private, standalone digital health record system. Eliminates external government registry",
+        "100% free Google Gmail SMTP (dhealth2026@gmail.com with App Password). Direct email OTP",
+        "delivery with TLS encryption on port 587.",
+        "dHealth Private Healthcare Record System \u007f Production-Grade Deployment",
+        "dHealth Private Healthcare Record System \u007f Production-Grade Deployment",
+        "dHealth Private Healthcare Record System \u007f Production-Grade Deployment",
+        "100% PASS",
+        "Status: Verified & Production Ready"
+      ]
+    },
+    {
+      "file": "Digital_Health_Platform_Complete_30Page_Audit_Report.pdf",
+      "pages": 10,
+      "excerpt": "Digital Health Record Platform \u2014 Complete\nSystem Audit & Comprehensive Review\nExhaustive Inspection of Patient, Doctor, Diagnostic Lab & Hospital Portals, Email Features, Surgery\nData & System Errors\n1. Executive System Audit Summary\nA full-scale, deep-dive architectural audit was performed across a",
+      "claims": []
+    },
+    {
+      "file": "Digital_Health_Platform_Complete_Workflow_Guide.pdf",
+      "pages": 3,
+      "excerpt": "Digital Health Record Platform \u2014 Full Workflow\nGuide\nA Complete Non-Technical & Deep-Dive Explanation of System Architecture, Portals & Capabilities\n1. System Overview & Core Purpose\nThe Digital Health Record Platform is a unified healthcare management ecosystem designed to eliminate paper record lo",
+      "claims": [
+        "\u007f Login & Verification: The patient enters their email or phone number. The backend instantly generates a secure 6-digit",
+        "\u007f Emergency Card: Designed for critical situations, presenting Blood Group, Known Allergies, Emergency Contacts, and a",
+        "browsers. It never talks directly to the raw database; it communicates via secure API requests."
+      ]
+    },
+    {
+      "file": "Digital_Health_Platform_DFD_SFD_Report.pdf",
+      "pages": 4,
+      "excerpt": "DIGITAL HEALTH PLATFORM\n LEVEL 0 DFD, LEVEL 1 DFD & SYSTEM FLOW DIAGRAM (SFD)\nPlatform Scope:\nPatient, Doctor, Diagnostic Lab & Hospital Inpatient Modules\nSecurity Standard:\nHIPAA / ABDM Compliant 24-Hour Clinical Consent Protocol\nDiscovery Engine:\nStrict Email-Based Verification (Zero Public Direct",
+      "claims": []
+    },
+    {
+      "file": "Digital_Health_Platform_Hardcore_Testing_Report.pdf",
+      "pages": 9,
+      "excerpt": "Digital Health Platform \u2014 Hardcore System Audit &\nVerification Report\nFull Project Review, Portal Field Breakdown, Automated End-to-End Test Suite & Embedded Proof Screenshots\n1. Executive Audit Summary\nA rigorous, hardcore system audit was performed across all 4 core portals (Patient, Doctor, Lab, ",
+      "claims": [
+        "27 / 27 (100% Pass)",
+        "100% Healthy (Django REST Engine)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)",
+        "Verification Status: WORKING (100% Verified)"
+      ]
+    },
+    {
+      "file": "Digital_Health_Platform_Implementation_Report.pdf",
+      "pages": 4,
+      "excerpt": "DIGITAL HEALTH RECORD PLATFORM\nComplete Implementation & Engineering Report\nEnd-to-end documentation of frontend dummy data elimination and the new native Django REST\nbackend.\nPLATFORM: Digital Health Platform\nSTATUS: Frontend Cleaned & Backend Scaffolding Verified\nBACKEND TECH: Django + DRF + SQLit",
+      "claims": [
+        "This project transitions the Digital Health Record Platform from a static, mock-driven prototype into a production-ready, real-life",
+        "Text-based summary of critical patient information (Blood group, allergies, chronic conditions, and emergency contacts),"
+      ]
+    },
+    {
+      "file": "Digital_Health_Platform_Product_Presentation.pdf",
+      "pages": 5,
+      "excerpt": "DHealth Platform\nNext-Generation Unified Health Record & Clinical Operations Platform\nExecutive Summary for Prospective Buyers:\nHealthcare operations today suffer from severe fragmentation. Patient records are trapped in paper files, diagnostic lab\nslips are easily misplaced, clinic consultations la",
+      "claims": [
+        "Delayed Emergency Care: In critical road accidents, doctors",
+        "The DHealth Breakthrough: Patient clinical histories remain encrypted and locked behind a privacy shield. When a",
+        "The DHealth Breakthrough: The Emergency Medical Card is 100% pure text displayed directly on screen. It presents",
+        "Blood Group, Critical Drug Allergies, Chronic Conditions (e.g., Diabetes, Cardiac Stent), and 1-Touch Emergency",
+        "Total Paper Used: Zero. Total Phone Inquiries: Zero. Result: 100% Patient Delight.",
+        "100% Free Login Auth",
+        "Uses free, secure email verification (Gmail SMTP). Zero costly",
+        "\u007f 100% Ready for Turnkey Deployment: The complete frontend client and backend API are fully built, automated, and",
+        "production-tested digital health ecosystem ready for immediate launch."
+      ]
+    },
+    {
+      "file": "Digital_Health_Platform_Role_and_Auth_Guide.pdf",
+      "pages": 3,
+      "excerpt": "DIGITAL HEALTH RECORD PLATFORM\nSystem Architecture, Multi-Role Login & Access\nGuide\nComprehensive technical reference for Patient, Doctor, Diagnostic Lab, and Hospital workflows.\nPROJECT: Digital Health Platform\nAUTH METHOD: Free Email SMTP OTP\nTECH STACK: Django / DRF + PostgreSQL\nCONSTRAINTS: Zero",
+      "claims": [
+        "\u007f Zero External ABHA / ABDM Dependency: The platform operates 100% independently as your private digital health record",
+        "\u007f 100% Free Email SMTP Authentication: No paid SMS gateways (Twilio, MSG91, Fast2SMS). The Django backend",
+        "dispatches secure, time-limited (5-min) 6-digit OTP codes straight to the user's email inbox using Gmail App Password or"
+      ]
+    },
+    {
+      "file": "Digital_Health_Platform_Testing_And_Verification_Report.pdf",
+      "pages": 6,
+      "excerpt": "Digital Health Platform\nComprehensive Multi-Portal Verification & End-to-End System Testing Report\nTarget Platform: Unified Health Web Application\nTest Execution Date: September 11, 2026\nBackend API: Django REST Framework 5.2.17 (Port 8000)\nDatabase Engine: SQLite (db.sqlite3)\nVerified Patient Subje",
+      "claims": [
+        "Overall Verification Status: 100% PASSED (All 11 Portals Functional)",
+        "\u007f Zero-Error Flutter Compilation: flutter analyze verified clean with 0 issues, running a production web build.",
+        "During verification, four critical defects were identified and permanently resolved in both backend and frontend layers:",
+        "System Sign-Off Verdict: READY FOR PRODUCTION USE",
+        "Platform Build: Version 1.0.0+1 (Production Release Bundle)"
+      ]
+    },
+    {
+      "file": "Digital_Health_Platform_Verification_Report.pdf",
+      "pages": 7,
+      "excerpt": "Digital Health Platform: Verification & Audit\n Report\n Comprehensive Clinical Architecture, Patient-Doctor Sync & UI Proof\n1. Executive Summary & Problem Resolution\nThis report documents the resolution of the patient linking, consent protocol, and UI consistency issues. Previously, the doctor\nappoin",
+      "claims": []
+    },
+    {
+      "file": "Digital_Health_Record_Platform_Summary.pdf",
+      "pages": 2,
+      "excerpt": "Digital Health Record Platform\nFull-Stack Engineering, Mobile OTP Auth, UI/UX & Django Backend Implementation Report\nPrepared For: Manan Soni & Project Team\nDate: September 01, 2026\nTech Stack: Flutter, Python (Django REST), PostgreSQL,\nRedis\nGitHub Repo: github.com/MananS0ni/Health\n1. Executive Sum",
+      "claims": [
+        "Secure login via 6-digit SMS OTP code sent directly to patient's mobile number (+91 98765 43210).",
+        "We built a modular, production-ready Django REST Framework (DRF) backend server under D:\\Health\\backend. It",
+        "provides secure RESTful APIs, dual PostgreSQL/SQLite database support, SimpleJWT token authentication, and CORS"
+      ]
+    },
+    {
+      "file": "health_platform/Health_Platform_UI_Report.pdf",
+      "pages": 22,
+      "excerpt": "DIGITAL HEALTH PLATFORM\nPatient Data & Multi-Role UI Verification\nReport\nComplete responsive layout verification across Desktop (1440x900) & Mobile\n(390x844) viewports for Patient Health Records, Doctor Consultations, Laboratory\nDiagnostics, and Hospital Admissions.\n1. Authentication & Role Switcher",
+      "claims": [
+        "Instant emergency access displaying blood group, emergency contacts, allergies, and critical vitals."
+      ]
+    },
+    {
+      "file": "test_samples/comprehensive_clinical_lab_report.pdf",
+      "pages": 1,
+      "excerpt": "METRO CARE DIAGNOSTICS & RESEARCH CENTER\n ACCORD # NABL-2026-MC\n ISO 15189:2022 Certified\nPlot 42, Health City Avenue, Medical District \u007f Tel: +91 22 2847 9000 \u007f contact@metrocarelab.com\n Verified Digital Laboratory EHR\nPatient Name:\nSample Record\nPatient ID:\nPAT-2026-99999\nAge / Gender:\n34 Yrs / Ma",
+      "claims": []
+    }
+  ]
+}

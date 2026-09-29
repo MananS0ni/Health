@@ -1,0 +1,193 @@
+PAGE 1
+DIGITAL HEALTH PLATFORM
+Patient Data & Multi-Role UI Verification
+Report
+Complete responsive layout verification across Desktop (1440x900) & Mobile
+(390x844) viewports for Patient Health Records, Doctor Consultations, Laboratory
+Diagnostics, and Hospital Admissions.
+1. Authentication & Role Switcher
+Phone/Email entry, multi-role signup & dynamic portal
+chooser screen.
+2. Patient Health Data Module
+Personal health records, lab test reports, clinical
+timeline, family members & emergency card.
+3. Doctor Portal (Deep Indigo)
+Appointments, patient directory, clinical chart view &
+prescription entry.
+4. Lab Staff Portal (Teal-Green)
+Pending test orders (privacy-masked), parameter entry,
+PDF scan uploads & LIMS sync.
+5. Hospital Staff Portal (Warm Amber)
+Bed occupancy dashboard, inpatient admissions directory, "+ Admit Patient" modal form & discharge summaries.
+
+PAGE 2
+1. Authentication & Role Selection Module
+01. Phone & Email Authentication Entry
+Segmented entry for Phone (+91 prefixed OTP) or Email auth with max-width 420px centered card.
+/#/phone
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 3
+02. New Account Multi-Role Registration
+Registration form with role selection (Patient, Doctor, Lab Staff, Hospital Staff).
+/#/signup
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 4
+03. Post-Login Portal Choice ("Continue As...")
+Displayed when a logged-in user holds multiple professional or patient roles.
+/#/role-select
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 5
+2. Patient Portal & Health Data Module (Patient Context)
+04. Patient Health Dashboard
+Personal health overview, vitals summary, recent records, active appointments & quick access.
+/#/dashboard
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 6
+05. Personal Health Records Directory
+Filterable list of digital health records, clinical prescriptions, and doctor consultations.
+/#/records
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 7
+06. Diagnostic Reports & Lab Results View
+Detailed view of lab diagnostic reports, blood test parameters, and PDF document downloads.
+/#/reports
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 8
+07. Chronological Medical Timeline
+Complete longitudinal clinical history showing consultations, hospital stays, and lab tests.
+/#/timeline
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 9
+08. Family Members & Dependents Health Management
+Manage health profiles, digital records, and linked accounts for family members.
+/#/family
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 10
+09. Emergency Medical Card
+Instant emergency access displaying blood group, emergency contacts, allergies, and critical vitals.
+/#/emergency
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 11
+3. Doctor Portal Module (Clinical Context)
+10. Doctor Portal Dashboard
+Today's appointment queue, patient quick search bar, recent patients, and consultation stats.
+/#/doctor
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 12
+11. Patient Directory & Search Screen
+Directory search by phone, patient name, or ID with direct clinical chart links.
+/#/doctor/patients
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 13
+12. Patient Clinical Chart & Record View
+Complete EHR chart showing vitals grid, allergy tags, prescriptions, and lab history.
+/#/doctor/patient-detail?id=PAT001
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 14
+13. Add Diagnosis & Prescription (Rx) Form
+Form for primary diagnosis, repeatable medicine dosages, follow-up date picker.
+/#/doctor/add-diagnosis?id=PAT001
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 15
+4. Laboratory Portal Module (Diagnostic Context)
+14. Laboratory Portal Dashboard
+Summary cards for pending reports, daily uploads, LIMS gateway uptime, quick nav cards.
+/#/lab
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 16
+15. Pending Test Orders Queue
+Category filter chips with privacy-masked patient names (e.g. "Rahul S.") and urgency chips.
+/#/lab/pending
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 17
+16. Upload Report & Parameters Entry Form
+Form to enter test parameters {name, value, unit, range, flag} and attach PDF scans.
+/#/lab/upload
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 18
+17. LIMS Gateway & Data-Push Status
+Automated data-push health status, uptime metrics, and HL7 ORU_R01 transmission logs.
+/#/lab/integration
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 19
+5. Hospital Portal Module (Inpatient Context)
+18. Hospital Management Dashboard
+Bed occupancy metrics (88/120), current admissions preview, pending discharge summaries.
+/#/hospital
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 20
+19. Inpatient Admissions Directory & New Admission
+Ward-by-ward filter chips, bed locations, detail modals, and "+ Admit Patient" modal form.
+/#/hospital/admissions
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 21
+20. Discharge Summary Note Entry
+Official hospital discharge note entry with treatment course, medications & advice.
+/#/hospital/discharge
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)
+
+
+PAGE 22
+21. HIS Gateway & FHIR ADT Sync Health
+Automated HIS integration status, uptime, and HL7 ADT message transmission logs.
+/#/hospital/integration
+DESKTOP VIEWPORT (1440 x 900)
+ MOBILE VIEWPORT (390 x 844)

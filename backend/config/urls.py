@@ -35,8 +35,9 @@ urlpatterns = [
     path('api/doctor/', include('apps.doctor.urls')),
     path('api/hospital/', include('apps.hospital.urls')),
     path('api/lab/', include('apps.lab.urls')),
+    path('api/care/', include('apps.care.urls')),
     path('api/search/', GlobalSearchView.as_view(), name='global-search'),
     path('api/admin-portal/overview/', AdminPortalOverviewView.as_view(), name='admin-portal-overview'),
     path('api/admin-portal/users/', AdminPortalUsersView.as_view(), name='admin-portal-users'),
-    path('api/admin-portal/users/<str:user_id>/toggle-verify/', AdminPortalToggleVerifyView.as_view(), name='admin-portal-toggle-verify'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('api/admin-portal/users/<uuid:user_id>/toggle-verify/', AdminPortalToggleVerifyView.as_view(), name='admin-portal-toggle-verify'),
+]

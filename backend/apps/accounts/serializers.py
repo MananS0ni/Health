@@ -4,7 +4,7 @@ from .models import User, Role, DoctorProfile, LabProfile, HospitalProfile
 
 class RequestOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    mode = serializers.CharField(required=False, default='login')
+    mode = serializers.ChoiceField(choices=['login', 'signup'], default='login')
     role = serializers.CharField(required=False, default='patient')
 
     def validate_email(self, value):
@@ -35,7 +35,15 @@ class VerifyOTPSerializer(serializers.Serializer):
         return value.lower().strip()
 
     def validate_otp(self, value):
+        if not value.isdigit():
+            raise serializers.ValidationError('Enter six digits.')
         return value.strip()
+
+    def validate(self, data):
+        allowed = {'patient', 'doctor', 'lab', 'hospital', 'lab_staff', 'hospital_staff'}
+        if any(r not in allowed for r in data.get('roles', []) + [data.get('role', 'patient')]):
+            raise serializers.ValidationError('Unsupported registration role.')
+        return data
 
 
 class DoctorProfileSerializer(serializers.ModelSerializer):
@@ -57,6 +65,12 @@ class HospitalProfileSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    notification_preferences = serializers.DictField(child=serializers.BooleanField(), required=False)
+    def validate_notification_preferences(self, value):
+        if set(value) - {'lab_report','appointment','admission','prescription'}:
+            raise serializers.ValidationError('Unknown notification category.')
+        return value
+
     doctor_profile = DoctorProfileSerializer(read_only=True)
     lab_profile = LabProfileSerializer(read_only=True)
     hospital_profile = HospitalProfileSerializer(read_only=True)
@@ -82,6 +96,9 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
             'roles',
             'is_verified',
+            'professional_verified',
+            'pending_roles',
+            'notification_preferences',
             'blood_group',
             'gender',
             'date_of_birth',
@@ -95,7 +112,7 @@ class UserSerializer(serializers.ModelSerializer):
             'hospital_profile',
             'created_at',
         ]
-        read_only_fields = ['id', 'patient_id', 'email', 'is_verified', 'created_at']
+        read_only_fields = ['id', 'patient_id', 'email', 'role', 'roles', 'is_verified', 'professional_verified', 'pending_roles', 'created_at']
 
     def get_blood_group(self, obj):
         prof = getattr(obj, 'patient_profile', None)
@@ -130,7 +147,7 @@ class UserSerializer(serializers.ModelSerializer):
         return prof.emergency_contact_phone if prof and prof.emergency_contact_phone else ''
 
     def get_patient_id(self, obj):
-        return f"PAT-{str(obj.id)[:6].upper()}"
+        return f"PAT-{str(obj.id).upper()}"
 
     def get_roles(self, obj):
         roles = list(obj.roles or [])
@@ -146,6 +163,8 @@ class UserSerializer(serializers.ModelSerializer):
             roles.append('hospital')
         if 'patient' not in roles:
             roles.insert(0, 'patient')
+        roles = [r for r in roles if r != 'admin']
+        if obj.is_superuser: roles.append('admin')
         return roles
 
 

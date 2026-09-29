@@ -1,3 +1,10 @@
+import '../../features/care/demo_screen.dart';
+import '../../features/care/conditions_screen.dart';
+import '../../features/lab_portal/upload_report/upload_report_screen.dart';
+import '../../features/lab_portal/integration_status/integration_status_screen.dart';
+import '../../features/hospital_portal/integration_status/integration_status_screen.dart';
+import 'package:flutter/foundation.dart';
+import '../network/api_client.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/phone_entry_screen.dart';
 import '../../features/auth/otp_entry_screen.dart';
@@ -15,10 +22,30 @@ import '../../features/hospital_portal/hospital_shell.dart';
 import '../../features/admin_portal/admin_portal_screen.dart';
 
 import '../../features/notifications/notifications_screen.dart';
+import '../../features/care/care_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
+  refreshListenable: ApiClient(),
+  redirect: (context, state) {
+    final api = ApiClient();
+    final path = state.uri.path;
+    if (['/', '/phone', '/otp', '/signup', '/demo'].contains(path)) return null;
+    if (api.accessToken == null) return '/';
+    final pro = path.startsWith('/doctor') ? 'doctor' : path.startsWith('/lab') ? 'lab' : path.startsWith('/hospital') ? 'hospital' : path.startsWith('/admin') ? 'admin' : null;
+    if (pro != null) {
+      if (!kIsWeb) return '/dashboard';
+      if (!api.currentRoles.contains(pro) || (pro != 'admin' && !api.professionalVerified)) return '/dashboard';
+    }
+    return null;
+  },
   routes: [
+    GoRoute(path:'/demo',builder:(context,state)=>const DemoScreen()),
+    GoRoute(path:'/conditions',builder:(context,state)=>const ConditionsScreen()),
+    GoRoute(path:'/care',builder:(context,state)=>const CareScreen()),
+    GoRoute(path:'/doctor/bookings',builder:(context,state)=>const CareScreen(professional:true)),
+    GoRoute(path:'/lab/bookings',builder:(context,state)=>const CareScreen(professional:true)),
+    GoRoute(path:'/hospital/bookings',builder:(context,state)=>const CareScreen(professional:true)),
     GoRoute(
       path: '/notifications',
       builder: (context, state) => const NotificationsScreen(),
@@ -97,13 +124,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/doctor/patient-detail',
       builder: (context, state) => PatientRecordViewScreen(
-        patientId: state.uri.queryParameters['id'] ?? 'PAT001',
+        patientId: state.uri.queryParameters['id'] ?? '',
       ),
     ),
     GoRoute(
       path: '/doctor/add-diagnosis',
       builder: (context, state) => AddDiagnosisScreen(
-        patientId: state.uri.queryParameters['id'] ?? 'PAT001',
+        patientId: state.uri.queryParameters['id'] ?? '',
       ),
     ),
 
@@ -118,11 +145,11 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/lab/upload',
-      builder: (context, state) => const LabShell(initialIndex: 2),
+      builder: (context, state) => UploadReportScreen(orderId:state.uri.queryParameters['order'],patient:state.uri.queryParameters['patient'],test:state.uri.queryParameters['test'],category:state.uri.queryParameters['category']),
     ),
     GoRoute(
       path: '/lab/integration',
-      builder: (context, state) => const LabShell(initialIndex: 3),
+      builder: (context, state) => const LabIntegrationStatusScreen(),
     ),
 
     // ── Hospital Portal Routes ──────────────────────────────────────
@@ -140,7 +167,7 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/hospital/integration',
-      builder: (context, state) => const HospitalShell(initialIndex: 3),
+      builder: (context, state) => const HospitalIntegrationStatusScreen(),
     ),
     GoRoute(
       path: '/admin',

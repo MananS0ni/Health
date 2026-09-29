@@ -161,4 +161,6 @@ def reset_and_seed():
     print(f"Total Inpatient Admissions: {InpatientAdmission.objects.count()}")
 
 if __name__ == '__main__':
+    if os.environ.get('CONFIRM_HEALTH_DATA_RESET') != 'YES':
+        raise SystemExit('Refusing to delete health data. Set CONFIRM_HEALTH_DATA_RESET=YES only after selecting a disposable database and verifying a backup.')
     reset_and_seed()

@@ -72,6 +72,7 @@ class _HospitalShellState extends ConsumerState<HospitalShell> {
       titleSpacing: 16,
       title: const RoleContextSwitcher(accentColor: kHospitalAccent),
       actions: [
+        IconButton(onPressed:()=>context.push('/hospital/bookings'),icon:const Icon(Icons.calendar_month),tooltip:'Services, offers and bookings'),
         Stack(
           alignment: Alignment.center,
           children: [

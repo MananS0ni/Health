@@ -41,6 +41,12 @@ class _LabShellState extends ConsumerState<LabShell> {
     _currentIndex = widget.initialIndex;
   }
 
+  @override
+  void didUpdateWidget(LabShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) _currentIndex = widget.initialIndex;
+  }
+
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
   }
@@ -62,6 +68,7 @@ class _LabShellState extends ConsumerState<LabShell> {
       titleSpacing: 16,
       title: const RoleContextSwitcher(accentColor: kLabAccent),
       actions: [
+        IconButton(onPressed:()=>context.push('/lab/bookings'),icon:const Icon(Icons.calendar_month),tooltip:'Services, offers and bookings'),
         Stack(
           alignment: Alignment.center,
           children: [

@@ -20,6 +20,11 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Timer? _consentPollTimer;
 
+  Future<bool> _consent(String id,String action)async{
+    try{await ref.read(patientConsentsProvider.notifier).actionConsent(id,action);return true;}
+    catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Consent was not changed: $e')));return false;}
+  }
+
   @override
   void initState() {
     super.initState();
@@ -29,8 +34,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ref.read(reportsProvider.notifier).fetchReports();
       ref.read(timelineProvider.notifier).fetchTimeline();
     });
-    // Auto-poll every 3 seconds so doctor requests and new prescriptions sync in real time
-    _consentPollTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    // Refresh while this dashboard is mounted; avoid repeated bulk clinical reads every few seconds.
+    _consentPollTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (mounted) {
         ref.read(patientConsentsProvider.notifier).fetchConsents();
         ref.read(recordsProvider.notifier).fetchRecords();
@@ -228,7 +233,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       visualDensity: VisualDensity.compact,
                                     ),
-                                    onPressed: () => ref.read(patientConsentsProvider.notifier).actionConsent(consentId, 'reject'),
+                                    onPressed: () => _consent(consentId, 'reject'),
                                     child: const Text('Deny', style: TextStyle(fontSize: 12)),
                                   ),
                                   const SizedBox(width: 8),
@@ -240,7 +245,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                       visualDensity: VisualDensity.compact,
                                     ),
-                                    onPressed: () => ref.read(patientConsentsProvider.notifier).actionConsent(consentId, 'approve'),
+                                    onPressed: () => _consent(consentId, 'approve'),
                                     child: const Text('Approve (24h)', style: TextStyle(fontSize: 12)),
                                   ),
                                 ],
@@ -465,7 +470,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                         );
                                         if (confirm == true) {
                                           if (consentId.isNotEmpty) {
-                                            await ref.read(patientConsentsProvider.notifier).actionConsent(consentId, 'revoke');
+                                            if(!await _consent(consentId, 'revoke'))return;
                                           }
                                           ref.read(linkedProvidersProvider.notifier).removeProvider(providerName);
                                           if (context.mounted) {

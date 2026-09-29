@@ -10,21 +10,7 @@ from apps.accounts.models import User
 
 
 def get_patient_user(request):
-    if request.user and request.user.is_authenticated:
-        return request.user
-    x_email = request.headers.get('X-User-Email') or request.META.get('HTTP_X_USER_EMAIL')
-    if x_email:
-        u = User.objects.filter(email__iexact=x_email.strip()).first()
-        if u:
-            return u
-    email = request.query_params.get('email')
-    if not email and hasattr(request, 'data') and isinstance(request.data, dict):
-        email = request.data.get('patient_email')
-    if email:
-        u = User.objects.filter(email__iexact=email.strip()).first()
-        if u:
-            return u
-    return User.objects.filter(email='manansoni2905@gmail.com').first() or User.objects.first()
+    return request.user
 
 
 class MedicalRecordListCreateView(APIView):
@@ -32,7 +18,7 @@ class MedicalRecordListCreateView(APIView):
     GET /api/reports/records/ — List all patient medical records and prescriptions.
     POST /api/reports/records/ — Add a new medical record.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         patient = get_patient_user(request)
@@ -48,7 +34,7 @@ class MedicalRecordListCreateView(APIView):
         patient = get_patient_user(request)
         serializer = MedicalRecordSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(patient=patient)
+            serializer.save(patient=patient, created_by=request.user, source='patient')
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -58,7 +44,7 @@ class LabReportListCreateView(APIView):
     GET /api/reports/lab/ — List all diagnostic lab reports.
     POST /api/reports/lab/ — Upload or record a diagnostic lab report.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         patient = get_patient_user(request)
@@ -73,7 +59,7 @@ class LabReportListCreateView(APIView):
         patient = get_patient_user(request)
         serializer = LabReportSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(patient=patient)
+            serializer.save(patient=patient, created_by=request.user, source='patient', status='Patient supplied')
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -83,7 +69,7 @@ class TimelineView(APIView):
     GET /api/reports/timeline/ — Unified chronological health feed.
     Combines prescriptions, lab tests, doctor visits, and hospital notes into one seamless stream.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         patient = get_patient_user(request)
@@ -130,7 +116,7 @@ class GlobalSearchView(APIView):
     GET /api/search/?q=<query>
     Instant global search across prescriptions, lab reports, test parameters, and doctors.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         from django.db.models import Q
@@ -147,7 +133,7 @@ class GlobalSearchView(APIView):
                 'doctors': [],
             }, status=status.HTTP_200_OK)
 
-        records_qs = MedicalRecord.objects.filter(
+        records_qs = MedicalRecord.objects.filter(patient=request.user).filter(
             Q(title__icontains=q) |
             Q(description__icontains=q) |
             Q(doctor_name__icontains=q) |
@@ -170,7 +156,7 @@ class GlobalSearchView(APIView):
                 'snippet': (r.description[:120] + '...') if r.description and len(r.description) > 120 else (r.description or ''),
             })
 
-        reports_qs = LabReport.objects.filter(
+        reports_qs = LabReport.objects.filter(patient=request.user).filter(
             Q(report_name__icontains=q) |
             Q(category__icontains=q) |
             Q(facility_name__icontains=q) |
@@ -227,3 +213,22 @@ class GlobalSearchView(APIView):
             'doctors': doctors,
         }, status=status.HTTP_200_OK)
 
+
+
+class PatientDocumentDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def delete(self, request, kind, identifier):
+        from django.shortcuts import get_object_or_404
+        from django.db import transaction
+        from apps.care.services import audit
+        from rest_framework.exceptions import PermissionDenied
+        if kind not in ('records','lab-reports','lab'): return Response({'error':'Unknown document kind.'},status=404)
+        model = MedicalRecord if kind == 'records' else LabReport
+        key = 'record_id' if kind == 'records' else 'report_id'
+        with transaction.atomic():
+            document = get_object_or_404(model.objects.select_for_update(), patient=request.user, **{key:identifier})
+            if document.source != 'patient':
+                raise PermissionDenied('Professional and legacy records require a correction request to their author.')
+            audit(request.user,'patient_document.deleted',identifier,kind=kind)
+            document.delete()
+        return Response(status=204)

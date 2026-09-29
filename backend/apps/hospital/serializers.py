@@ -31,7 +31,7 @@ class InpatientAdmissionSerializer(serializers.ModelSerializer):
 
     def get_patient_id(self, obj):
         if obj.patient:
-            return f"PAT-{str(obj.patient.id)[:6].upper()}"
+            return f"PAT-{str(obj.patient.id).upper()}"
         return 'PAT-UNLINKED'
 
     def get_patient_email(self, obj):

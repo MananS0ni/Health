@@ -12,21 +12,7 @@ from .serializers import (
 
 
 def get_patient_user(request):
-    if request.user and request.user.is_authenticated:
-        return request.user
-    x_email = request.headers.get('X-User-Email') or request.META.get('HTTP_X_USER_EMAIL')
-    if x_email:
-        u = User.objects.filter(email__iexact=x_email.strip()).first()
-        if u:
-            return u
-    email = request.query_params.get('email')
-    if not email and hasattr(request, 'data') and isinstance(request.data, dict):
-        email = request.data.get('patient_email')
-    if email:
-        u = User.objects.filter(email__iexact=email.strip()).first()
-        if u:
-            return u
-    return User.objects.filter(email='manansoni2905@gmail.com').first() or User.objects.first()
+    return request.user
 
 
 class PatientMeView(APIView):
@@ -34,7 +20,7 @@ class PatientMeView(APIView):
     GET /api/patients/me/ — Retrieve the current patient profile, emergency details, allergies.
     PATCH /api/patients/me/ — Update blood group, allergies, conditions, emergency contacts.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = get_patient_user(request)
@@ -57,7 +43,7 @@ class FamilyMemberListCreateView(APIView):
     GET /api/patients/family/ — List all family members linked to patient.
     POST /api/patients/family/ — Add a dependent / family member.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = get_patient_user(request)
@@ -78,7 +64,7 @@ class FamilyMemberDetailView(APIView):
     """
     DELETE /api/patients/family/<id>/ — Remove a linked family member.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request, member_id):
         user = get_patient_user(request)
@@ -97,7 +83,7 @@ class HealthVitalsView(APIView):
     GET /api/patients/vitals/ — Get latest recorded health vitals.
     POST /api/patients/vitals/ — Record a new vital metric.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = get_patient_user(request)

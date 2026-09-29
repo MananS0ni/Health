@@ -1,4 +1,6 @@
 class MedicalRecord {
+  final String source;
+  String get sourceLabel => source == 'patient' ? 'Patient supplied · not professionally verified' : source == 'professional' ? 'Professional authored' : 'Source not verified';
   final String recordId;
   final String patientId;
   final String recordType;
@@ -10,6 +12,7 @@ class MedicalRecord {
   final List<String>? attachments;
 
   MedicalRecord({
+    this.source = 'unknown',
     required this.recordId,
     required this.patientId,
     required this.recordType,
@@ -23,6 +26,7 @@ class MedicalRecord {
 
   factory MedicalRecord.fromJson(Map<String, dynamic> json) {
     return MedicalRecord(
+      source: json['source'] ?? 'unknown',
       recordId: json['record_id']?.toString() ?? json['id']?.toString() ?? '',
       patientId: json['patient_id']?.toString() ?? json['patient']?.toString() ?? '',
       recordType: json['record_type'] ?? '',

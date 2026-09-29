@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -10,7 +11,6 @@ import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
 import '../../core/network/api_client.dart';
-import '../../shared/models/lab_report.dart';
 
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
@@ -27,7 +27,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     final labController = TextEditingController();
     final doctorController = TextEditingController();
     final notesController = TextEditingController();
-    String selectedStatus = 'completed';
+    String selectedStatus = 'pending';
+    List<int>? documentBytes; String? documentName; bool saving=false; DateTime reportDate=DateTime.now();
 
     showModalBottomSheet(
       context: context,
@@ -115,34 +116,34 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  TextButton.icon(onPressed:saving?null:()async{
+                    try{
+                      final file=await FilePicker.pickFile(type:FileType.custom,allowedExtensions:['pdf','png','jpg','jpeg','doc','docx']);
+                      if(file==null)return;
+                      final bytes=await file.readAsBytes();
+                      if(bytes.length>10*1024*1024)throw Exception('File exceeds 10 MB.');
+                      if(context.mounted)setModalState((){documentBytes=bytes;documentName=file.name;});
+                    }catch(e){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString())));}
+                  },icon:const Icon(Icons.attach_file),label:Text(documentName??'Attach old report (max 10 MB)')),
+                  TextButton(onPressed:saving?null:()async{
+                    final date=await showDatePicker(context:context,initialDate:reportDate,firstDate:DateTime(1900),lastDate:DateTime.now());
+                    if(date!=null&&context.mounted)setModalState(()=>reportDate=date);
+                  },child:Text('Report date: ${reportDate.toIso8601String().split('T').first}')),
+                  const Text('Patient supplied; not professionally verified.'),
                   AppButton(
-                    text: 'Save Report',
-                    onPressed: () {
-                      if (nameController.text.trim().isEmpty) return;
-                      final now = DateTime.now();
-                      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-                      final newReport = LabReport(
-                        reportId: 'rep_${now.millisecondsSinceEpoch}',
-                        patientId: 'patient_self',
-                        reportName: nameController.text.trim(),
-                        facilityName: labController.text.trim().isNotEmpty
-                            ? labController.text.trim()
-                            : 'Direct Upload',
-                        reportDate: dateStr,
-                        status: selectedStatus,
-                        doctorName: doctorController.text.trim().isNotEmpty
-                            ? doctorController.text.trim()
-                            : null,
-                        testParameters: [],
-                      );
-                      ref.read(reportsProvider.notifier).addReport(newReport);
-                      Navigator.pop(modalContext);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Lab report saved successfully.'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                    text: saving ? 'Saving…' : 'Save Report',
+                    onPressed: saving ? null : () async {
+                      if(nameController.text.trim().isEmpty)return;
+                      setModalState(()=>saving=true);
+                      try {
+                        final fields=<String,String>{'report_name':nameController.text.trim(),'facility_name':labController.text.trim(),'doctor_name':doctorController.text.trim(),'summary':notesController.text.trim(),'report_date':reportDate.toIso8601String().split('T').first,'status':selectedStatus};
+                        if(documentBytes!=null){await ApiClient().uploadDocument('/reports/lab-reports/',fields,documentName!,documentBytes!,field:'file_url');}
+                        else{await ApiClient().createLabReport(fields);}
+                        await ref.read(reportsProvider.notifier).fetchReports();
+                        if(!context.mounted)return;
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Report saved as patient supplied.')));
+                        Navigator.pop(modalContext);
+                      }catch(e){if(context.mounted){setModalState(()=>saving=false);ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Not saved: $e')));}}
                     },
                     isFullWidth: true,
                   ),
@@ -367,7 +368,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Certified Electronic Report File Attached',
+                                'Patient supplied; not professionally verified',
                                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                               ),
                             ),
@@ -376,8 +377,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                       ),
                       AppButton(
                         text: 'Open Uploaded PDF Report',
-                        onPressed: () {
-                          final fullUrl = ApiClient.resolveUrl(report.fileUrl);
+                        onPressed: () async {
+                          final fullUrl = await ApiClient().documentUrl(report.fileUrl!);
                           launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
                         },
                         isFullWidth: true,

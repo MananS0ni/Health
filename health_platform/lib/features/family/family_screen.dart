@@ -10,7 +10,6 @@ import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
 import '../../core/network/api_client.dart';
-import '../../shared/models/family_member.dart';
 
 class FamilyScreen extends ConsumerStatefulWidget {
   const FamilyScreen({super.key});
@@ -23,190 +22,21 @@ class _FamilyScreenState extends ConsumerState<FamilyScreen> {
   ListStatus _viewStatus = ListStatus.content;
 
   void _showAddMemberDialog(BuildContext context) {
-    final patientIdController = TextEditingController();
-    final nameController = TextEditingController();
-    final bloodGroupController = TextEditingController(text: 'B+');
-    String selectedRelationship = 'Spouse';
-    String selectedGender = 'Male';
-    bool isSearching = false;
-
-    final relationships = [
-      'Spouse',
-      'Child',
-      'Father',
-      'Mother',
-      'Brother',
-      'Sister',
-      'Guardian',
-      'Other',
-    ];
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: Row(
-            children: const [
-              Icon(Icons.family_restroom_rounded, color: AppColors.primary),
-              SizedBox(width: 8),
-              Text('Add Family Member Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: SizedBox(
-              width: 420,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Link by Patient ID or Email (Optional)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: patientIdController,
-                    decoration: InputDecoration(
-                      hintText: 'e.g. PAT-4726A2 or email@gmail.com',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: isSearching
-                          ? const SizedBox(width: 20, height: 20, child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator(strokeWidth: 2)))
-                          : IconButton(
-                              icon: const Icon(Icons.search_rounded, color: AppColors.primary),
-                              tooltip: 'Lookup Patient Record',
-                              onPressed: () async {
-                                final q = patientIdController.text.trim();
-                                if (q.isEmpty) return;
-                                setDialogState(() => isSearching = true);
-                                try {
-                                  final list = await ApiClient().getLabPatients(q);
-                                  if (list.isNotEmpty) {
-                                    final p = Map<String, dynamic>.from(list.first as Map);
-                                    setDialogState(() {
-                                      isSearching = false;
-                                      nameController.text = p['full_name'] ?? '';
-                                      patientIdController.text = p['patient_id'] ?? q;
-                                      if (p['gender'] != null && ['Male', 'Female', 'Other'].contains(p['gender'])) {
-                                        selectedGender = p['gender'];
-                                      }
-                                      if (p['blood_group'] != null && p['blood_group'].toString().isNotEmpty) {
-                                        bloodGroupController.text = p['blood_group'];
-                                      }
-                                    });
-                                  } else {
-                                    setDialogState(() => isSearching = false);
-                                  }
-                                } catch (_) {
-                                  setDialogState(() => isSearching = false);
-                                }
-                              },
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('Member Full Name *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(hintText: 'Full Name', border: OutlineInputBorder()),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Relationship *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              initialValue: selectedRelationship,
-                              decoration: const InputDecoration(border: OutlineInputBorder()),
-                              items: relationships.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                              onChanged: (val) => setDialogState(() => selectedRelationship = val!),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Gender *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              initialValue: selectedGender,
-                              decoration: const InputDecoration(border: OutlineInputBorder()),
-                              items: const [
-                                DropdownMenuItem(value: 'Male', child: Text('Male')),
-                                DropdownMenuItem(value: 'Female', child: Text('Female')),
-                                DropdownMenuItem(value: 'Other', child: Text('Other')),
-                              ],
-                              onChanged: (val) => setDialogState(() => selectedGender = val!),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text('Blood Group', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    initialValue: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].contains(bloodGroupController.text)
-                        ? bloodGroupController.text
-                        : 'B+',
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
-                    items: const [
-                      DropdownMenuItem(value: 'A+', child: Text('A+')),
-                      DropdownMenuItem(value: 'A-', child: Text('A-')),
-                      DropdownMenuItem(value: 'B+', child: Text('B+')),
-                      DropdownMenuItem(value: 'B-', child: Text('B-')),
-                      DropdownMenuItem(value: 'AB+', child: Text('AB+')),
-                      DropdownMenuItem(value: 'AB-', child: Text('AB-')),
-                      DropdownMenuItem(value: 'O+', child: Text('O+')),
-                      DropdownMenuItem(value: 'O-', child: Text('O-')),
-                    ],
-                    onChanged: (val) => setDialogState(() => bloodGroupController.text = val!),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.trim().isEmpty) return;
-                final now = DateTime.now();
-                final pid = patientIdController.text.trim().isNotEmpty
-                    ? patientIdController.text.trim()
-                    : 'PAT-${now.millisecondsSinceEpoch.toString().substring(7)}';
-                final newMember = FamilyMember(
-                  memberId: 'mem_${now.millisecondsSinceEpoch}',
-                  patientId: pid,
-                  fullName: nameController.text.trim(),
-                  relationship: selectedRelationship,
-                  dateOfBirth: 'Not specified',
-                  gender: selectedGender,
-                  bloodGroup: bloodGroupController.text.trim().isNotEmpty ? bloodGroupController.text.trim() : 'Unknown',
-                  totalRecords: 0,
-                );
-                ref.read(familyMembersProvider.notifier).addMember(newMember);
-                Navigator.pop(dialogContext);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('${newMember.fullName} linked as $selectedRelationship.')),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-              child: const Text('Save Member'),
-            ),
-          ],
-        ),
-      ),
-    );
+    final name=TextEditingController(),relationship=TextEditingController();
+    bool saving=false;
+    showDialog(context:context,builder:(dialogContext)=>StatefulBuilder(builder:(ctx,change)=>AlertDialog(
+      title:const Text('Add family contact'),
+      content:Column(mainAxisSize:MainAxisSize.min,children:[const Text('A personal family contact. This does not link another patient account or grant access to their medical records.'),TextField(controller:name,decoration:const InputDecoration(labelText:'Full name')),TextField(controller:relationship,decoration:const InputDecoration(labelText:'Relationship'))]),
+      actions:[TextButton(onPressed:saving?null:()=>Navigator.pop(ctx),child:const Text('Cancel')),FilledButton(onPressed:saving?null:()async{
+        if(name.text.trim().isEmpty||relationship.text.trim().isEmpty)return;
+        change(()=>saving=true);
+        try{
+          await ApiClient().createFamilyMember({'full_name':name.text.trim(),'relationship':relationship.text.trim()});
+          await ref.read(familyMembersProvider.notifier).fetchMembers();
+          if(ctx.mounted)Navigator.pop(ctx);
+        }catch(e){if(ctx.mounted){change(()=>saving=false);ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(content:Text('Not saved: $e')));}}
+      },child:Text(saving?'Saving…':'Save contact'))],
+    )));
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +29,8 @@ class _DischargeSummaryScreenState extends ConsumerState<DischargeSummaryScreen>
   final _followUpController = TextEditingController();
 
   Map<String, dynamic>? _selectedAdmission;
+  List<int>? _documentBytes;
+  String? _documentName;
   bool _isSubmitting = false;
   bool _isSubmitted = false;
 
@@ -35,27 +38,25 @@ class _DischargeSummaryScreenState extends ConsumerState<DischargeSummaryScreen>
   void initState() {
     super.initState();
     _dischargeDateController.text = DateTime.now().toString().split(' ').first;
-    _treatmentController.text =
-        'Clinical course stable. Monitored vitals daily. Administered scheduled therapy and responsive to treatment. Vitals normal on discharge.';
-    _followUpController.text =
-        '1. Review at OPD clinic in 7 days.\n2. Complete prescribed oral medication course.\n3. Return immediately to emergency if fever or severe pain recurs.';
+    _treatmentController.text = '';
+    _followUpController.text = '';
   }
 
   void _selectInpatient(Map<String, dynamic> adm) {
     setState(() {
       _selectedAdmission = adm;
       _patientNameController.text = adm['patient_name'] ?? '';
-      _patientIdController.text = adm['patient_id'] ?? 'PAT-LOCAL';
+      _patientIdController.text = adm['patient_id'] ?? '';
       _admissionDateController.text = adm['admission_date'] ?? DateTime.now().toString().split(' ').first;
-      _diagnosisController.text = adm['diagnosis'] ?? 'Post-Op Recovery';
+      _diagnosisController.text = adm['diagnosis'] ?? '';
     });
   }
 
   Future<void> _handleDischarge() async {
-    if (_selectedAdmission == null && _patientNameController.text.trim().isEmpty) {
+    if (_selectedAdmission == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select an active inpatient or enter patient details.'),
+          content: Text('Please select an active inpatient.'),
           backgroundColor: AppColors.emergency,
         ),
       );
@@ -67,12 +68,13 @@ class _DischargeSummaryScreenState extends ConsumerState<DischargeSummaryScreen>
     setState(() => _isSubmitting = true);
 
     try {
-      final admissionId = _selectedAdmission?['admission_id'] ?? 'ADM_SAMPLE';
+      final admissionId = _selectedAdmission!['admission_id'] as String;
       final notes = '${_treatmentController.text.trim()}\n\nFollow-up Instructions:\n${_followUpController.text.trim()}';
 
-      await ApiClient().dischargePatient(admissionId, {
-        'discharge_notes': notes,
-      });
+      final fields = {'discharge_notes':notes,'discharge_date':_dischargeDateController.text.trim()};
+      if (_documentBytes != null) {
+        await ApiClient().uploadDocument('/hospital/admissions/$admissionId/discharge/',fields,_documentName!,_documentBytes!);
+      } else { await ApiClient().dischargePatient(admissionId,fields); }
 
       // Refresh stores so patient records and hospital admissions reflect immediately
       ref.read(hospitalAdmissionsProvider.notifier).fetchAdmissions();
@@ -87,9 +89,7 @@ class _DischargeSummaryScreenState extends ConsumerState<DischargeSummaryScreen>
     } catch (e) {
       if (mounted) {
         setState(() => _isSubmitting = false);
-        // Even if server returns non-200, update local state for presentation resilience
-        setState(() => _isSubmitted = true);
-        ref.read(recordsProvider.notifier).fetchRecords();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Discharge failed: $e')));
       }
     }
   }
@@ -118,6 +118,15 @@ class _DischargeSummaryScreenState extends ConsumerState<DischargeSummaryScreen>
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        actions:[TextButton.icon(onPressed:_isSubmitting ? null : () async {
+          try {
+            final file=await FilePicker.pickFile(type:FileType.custom,allowedExtensions:['pdf','doc','docx']);
+            if(file==null)return;
+            final bytes=await file.readAsBytes();
+            if(bytes.length>10*1024*1024)throw Exception('File exceeds 10 MB.');
+            if(mounted)setState((){_documentBytes=bytes;_documentName=file.name;});
+          }catch(e){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString())));}
+        },icon:const Icon(Icons.attach_file),label:Text(_documentName ?? 'Attach Word/PDF'))],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/hospital'),

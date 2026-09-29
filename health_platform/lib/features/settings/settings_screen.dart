@@ -1,3 +1,5 @@
+import '../../core/network/api_client.dart';
+import '../../shared/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +24,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _appointmentReminderNotif = true;
   bool _admissionUpdateNotif = true;
   bool _prescriptionIssuedNotif = true;
+
+  @override
+  void initState(){super.initState();_loadPreferences();}
+  Future<void> _loadPreferences()async{
+    try{final result=await ApiClient().getData('/auth/me/');final p=result['user']['notification_preferences'] as Map? ?? {};if(mounted)setState((){_reportReadyNotif=p['lab_report']??true;_appointmentReminderNotif=p['appointment']??true;_admissionUpdateNotif=p['admission']??true;_prescriptionIssuedNotif=p['prescription']??true;});}
+    catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Unable to load preferences: $e')));}
+  }
+  Future<void> _savePreference(String key,bool value)async{
+    final preferences={'lab_report':_reportReadyNotif,'appointment':_appointmentReminderNotif,'admission':_admissionUpdateNotif,'prescription':_prescriptionIssuedNotif,key:value};
+    try{await ApiClient().patchData('/auth/me/',{'notification_preferences':preferences});await _loadPreferences();}
+    catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Preference not saved: $e')));}
+  }
 
   void _showEditProfileDialog(BuildContext context, dynamic user) {
     final nameController = TextEditingController(text: user.fullName);
@@ -49,6 +63,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: emailController,
+                readOnly: true,
                 decoration: const InputDecoration(labelText: 'Email Address', border: OutlineInputBorder()),
               ),
             ],
@@ -60,11 +75,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Profile details updated successfully!')),
-              );
+            onPressed: () async {
+              try {
+                final result=await ApiClient().patchData('/auth/me/',{'full_name':nameController.text.trim(),'phone_number':phoneController.text.trim()});
+                ref.read(authStateProvider.notifier).updateCurrentUser(User.fromJson(Map<String,dynamic>.from(result['user'])));
+                if (!dialogContext.mounted) return;
+                Navigator.pop(dialogContext);
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Profile saved.')));
+              } catch(e) { if(context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Not saved: $e'))); }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
             child: const Text('Save Changes'),
@@ -92,11 +110,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () {
               Navigator.pop(dialogContext);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Role verification request submitted.')),
+                const SnackBar(content: Text('No request submitted. Professional credential registration is required.')),
               );
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            child: const Text('Submit Verification'),
+            child: const Text('Close'),
           ),
         ],
       ),
@@ -151,31 +169,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
         content: const Text(
-          'This action is irreversible. All health records, linked portal credentials, and personal history will be permanently deleted.',
+          'Account deletion is not available in this build. Contact the platform administrator to request deletion and review any record-retention requirements.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              ref.read(authStateProvider.notifier).logout();
-              Navigator.pop(dialogContext);
-              context.go('/phone');
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Account permanently deleted.'),
-                  backgroundColor: AppColors.error,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete Permanently'),
-          ),
+
         ],
       ),
     );
@@ -187,6 +188,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final rolesList = List<String>.from(user.roles);
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(heroTag:null,onPressed:()=>context.push('/conditions'),icon:const Icon(Icons.health_and_safety),label:const Text('Health conditions')),
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text('Profile & Settings'),
@@ -382,28 +384,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: const Text('Lab Report Notifications', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     subtitle: const Text('Alert when test results are published by laboratory', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _reportReadyNotif,
-                    onChanged: (v) => setState(() => _reportReadyNotif = v),
+                    onChanged: (v) => _savePreference('lab_report',v),
                   ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Appointment Reminders', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     subtitle: const Text('Reminders for upcoming consultations', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _appointmentReminderNotif,
-                    onChanged: (v) => setState(() => _appointmentReminderNotif = v),
+                    onChanged: (v) => _savePreference('appointment',v),
                   ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Inpatient Admission Updates', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     subtitle: const Text('Bed allocations and ward transfer alerts', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _admissionUpdateNotif,
-                    onChanged: (v) => setState(() => _admissionUpdateNotif = v),
+                    onChanged: (v) => _savePreference('admission',v),
                   ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Prescription Issued Alerts', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                     subtitle: const Text('Alert when a doctor issues a digital prescription', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
                     value: _prescriptionIssuedNotif,
-                    onChanged: (v) => setState(() => _prescriptionIssuedNotif = v),
+                    onChanged: (v) => _savePreference('prescription',v),
                   ),
                 ],
               ),

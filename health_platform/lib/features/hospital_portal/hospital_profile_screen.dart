@@ -1,3 +1,5 @@
+import '../../core/network/api_client.dart';
+import '../../shared/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,8 +20,8 @@ class _HospitalProfileScreenState extends ConsumerState<HospitalProfileScreen> {
   void _showEditFacilityDialog() {
     final user = ref.read(userProvider);
     final orgProfile = user.orgProfile;
-    final nameController = TextEditingController(text: orgProfile?.organizationName ?? 'Apex Multi-Speciality Hospital');
-    final regController = TextEditingController(text: orgProfile?.employeeId ?? 'HOSP-REG-2026-9921');
+    final nameController = TextEditingController(text: orgProfile?.organizationName ?? '');
+    final regController = TextEditingController(text: orgProfile?.employeeId ?? '');
     final contactController = TextEditingController(text: user.phoneNumber);
 
     showDialog(
@@ -72,15 +74,18 @@ class _HospitalProfileScreenState extends ConsumerState<HospitalProfileScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(dialogCtx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Hospital profile updated successfully.'),
-                  backgroundColor: Color(0xFF059669),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+            onPressed: () async {
+              try {
+                final result=await ApiClient().postData('/auth/register-profile/',{'full_name':user.fullName,'role':'hospital','hospital_name':nameController.text.trim(),'hospital_reg_id':regController.text.trim(),'phone_number':contactController.text.trim()});
+                final data=Map<String,dynamic>.from(result['user']);
+                ApiClient().professionalVerified=data['professional_verified']==true;
+                ref.read(authStateProvider.notifier).updateCurrentUser(User.fromJson(data));
+                if(!dialogCtx.mounted)return;
+                Navigator.pop(dialogCtx);
+                if(!mounted)return;
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Credentials saved for administrator review.')));
+                context.go('/dashboard');
+              }catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Not saved: $e')));}
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kHospitalAccent,
@@ -99,15 +104,14 @@ class _HospitalProfileScreenState extends ConsumerState<HospitalProfileScreen> {
     final orgProfile = user.orgProfile;
     final hospitalName = (orgProfile != null && orgProfile.organizationName.isNotEmpty)
         ? orgProfile.organizationName
-        : 'Apex Multi-Speciality Hospital';
+        : 'Hospital name not provided';
     final regNo = (orgProfile != null && orgProfile.employeeId != null && orgProfile.employeeId!.isNotEmpty)
         ? orgProfile.employeeId!
-        : 'CEA-GJ-2026-0814';
+        : 'Registration not provided';
 
     final admissions = ref.watch(hospitalAdmissionsProvider);
     final activeInpatients = admissions.where((p) => p['status'] != 'Discharged').length;
-    const totalBeds = 60;
-    final availableBeds = (totalBeds - activeInpatients).clamp(0, totalBeds);
+
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -237,7 +241,7 @@ class _HospitalProfileScreenState extends ConsumerState<HospitalProfileScreen> {
                 Expanded(
                   child: _MetricCard(
                     title: 'Available Beds',
-                    value: '$availableBeds',
+                    value: 'Not configured',
                     icon: Icons.meeting_room_outlined,
                     color: const Color(0xFF059669),
                   ),
@@ -266,18 +270,18 @@ class _HospitalProfileScreenState extends ConsumerState<HospitalProfileScreen> {
                   icon: Icons.badge_outlined,
                 ),
                 _DetailRow(
-                  label: 'Facility Category',
-                  value: 'Multi-Speciality Inpatient & Critical Care',
+                  label: 'Facility type',
+                  value: 'Not configured',
                   icon: Icons.local_hospital_outlined,
                 ),
                 _DetailRow(
-                  label: 'Active Clinical Wards',
-                  value: 'General Ward, Semi-Private, ICU, Emergency',
+                  label: 'Ward inventory',
+                  value: 'Not configured',
                   icon: Icons.meeting_room_outlined,
                 ),
                 _DetailRow(
-                  label: 'Total Certified Beds',
-                  value: '$totalBeds Operational Beds',
+                  label: 'Configured bed capacity',
+                  value: 'Not configured',
                   icon: Icons.hotel_outlined,
                 ),
               ],
@@ -289,19 +293,9 @@ class _HospitalProfileScreenState extends ConsumerState<HospitalProfileScreen> {
               title: 'Clinical Departments',
               icon: Icons.medical_services_outlined,
               children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: const [
-                    _DeptChip(name: 'General Medicine'),
-                    _DeptChip(name: 'Emergency & Trauma'),
-                    _DeptChip(name: 'Intensive Care Unit (ICU)'),
-                    _DeptChip(name: 'Cardiology'),
-                    _DeptChip(name: 'Orthopedics'),
-                    _DeptChip(name: 'Pediatrics'),
-                    _DeptChip(name: 'General Surgery'),
-                  ],
-                ),
+                if ((user.hospitalProfile?.departments ?? '').trim().isNotEmpty)
+                  Wrap(spacing:8,runSpacing:8,children:user.hospitalProfile!.departments!.split(',').map((d)=>_DeptChip(name:d.trim())).where((d)=>d.name.isNotEmpty).toList())
+                else const Text('No departments configured.'),
               ],
             ),
             const SizedBox(height: AppSpacing.md),

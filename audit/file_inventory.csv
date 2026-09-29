@@ -1,0 +1,533 @@
+path,bytes,sha256,category,lines,review
+.gitignore,417,ce4bbb16c320671c1c8b26ca842a245b0040c2afe5404729534450b88477c9cd,first-party text / config,30,automated full-file read; targeted manual review (see report)
+3_Week_Progress_Report_Frontend_Healthcare_Platform.pdf.pdf,3901150,ac132b181083b7d03cf20adfaff4d27e143da6b89565aac8ce72063ed1899129,PDF documentation,,text extracted: 22 pages; no visual/layout audit
+DHealth_Platform_Implementation_Report.pdf,13534,4305bcf449628ee9a19532265392649d09a53ebc4237603d12beec27a581da0a,PDF documentation,,text extracted: 4 pages; no visual/layout audit
+Digital_Health_Platform_Complete_30Page_Audit_Report.pdf,728660,dc06f66270afb752e992079b7b2f07868c1385c3e4e3809f3500835163be1f0f,PDF documentation,,text extracted: 10 pages; no visual/layout audit
+Digital_Health_Platform_Complete_Workflow_Guide.pdf,9254,4d8c1710b3d4e304e42f344789bf7bbd2298f34fc1864e947272b80de2d3cc38,PDF documentation,,text extracted: 3 pages; no visual/layout audit
+Digital_Health_Platform_DFD_SFD_Report.pdf,325504,109d981dd6679b0e29246c3a304fbc212c9bf7da0da3e006e825237619635c6e,PDF documentation,,text extracted: 4 pages; no visual/layout audit
+Digital_Health_Platform_Hardcore_Testing_Report.pdf,729514,a7774838e34838da81033949bc36aead868e1c01c5482740b18a506b8dad3409,PDF documentation,,text extracted: 9 pages; no visual/layout audit
+Digital_Health_Platform_Implementation_Report.pdf,11004,c246c045498d3d0865b5bdb0bce6007a7a886c34211b5400ec7ccbe5c7993494,PDF documentation,,text extracted: 4 pages; no visual/layout audit
+Digital_Health_Platform_Product_Presentation.pdf,18107,983c7d11e5bcb4b3128db343722ec4ad27971db8473273cc06eea2a6177d75d4,PDF documentation,,text extracted: 5 pages; no visual/layout audit
+Digital_Health_Platform_Role_and_Auth_Guide.pdf,9905,71f2e47b8e23e0c3a141590e3d3dc972775223d4b58231604ea790ee4ec56a1b,PDF documentation,,text extracted: 3 pages; no visual/layout audit
+Digital_Health_Platform_Testing_And_Verification_Report.pdf,629628,88c1d0164d75dd50bd64c144790019b3dd28e6e7c81886d1a7914b2be9201197,PDF documentation,,text extracted: 6 pages; no visual/layout audit
+Digital_Health_Platform_Verification_Report.pdf,523642,5b5b086c605b13f1bfd1a6ea57804bfc828225ea543413412897bd68a47f14eb,PDF documentation,,text extracted: 7 pages; no visual/layout audit
+Digital_Health_Record_Platform_Summary.pdf,5741,1c88ef564b7b469ac4840fabc15b611a82a17b00c872913405ca5c42aa50129e,PDF documentation,,text extracted: 2 pages; no visual/layout audit
+Role_Architecture_Guide.html,20768,420f10fe672fcd32e918c3fbea7e794dbd97d690510a6a56c25dd4d4ee7bbf6a,first-party text / config,572,automated full-file read; targeted manual review (see report)
+backend/.env,388,redacted,private local data,,not exported; content excluded
+backend/apps/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/admin.py,1330,5156ed5e6a97c8dc59de677f55bf432106bdf5e85988833f36bab568b867769d,first-party text / config,31,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/admin_views.py,5326,56a320fb16a2734db98c86d2705fb8b35978bf6e0d2409ff255552517eda9c94,first-party text / config,137,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/apps.py,159,912b49f16c7b7a79e0c48c2a8b8d2132fbac10d8fe95e27bc70381e194d17c0e,first-party text / config,6,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/migrations/0001_initial.py,5069,bdf8fe3ca0d065dae301e9ed20907533728a1e9b83f78aec6a16124c17776f3b,first-party text / config,88,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/migrations/0002_user_roles.py,401,6fc5b72c38be3a1edb888e6b15c3f5bcd839a3d55140c888780a27679b0fe833,first-party text / config,18,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/migrations/0003_alter_user_role.py,562,0d1315c0ba8d92b1fdeff17b9973b38c279fc3f06c735b6b7001fd4a6ddd59f2,first-party text / config,18,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/migrations/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/models.py,4362,b58fb9b9160c214ea69f83bc5611dde3f74f65e126b701ecdb2a2d77e588d25c,first-party text / config,119,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/serializers.py,7407,b0bf9c425bbf599e127b6bde90d2a410d8e7e52209949282fd59cf29d49d9595,first-party text / config,170,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/test_full_system.py,6070,e2c62e85991a2e183c3680e1c8adb1aa8738efc365bf803822728acdcc6df41e,first-party text / config,148,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/tests.py,1949,43b953441004e68bae979c8dcd16bf50bb77869daacf5de25107a5e0386a1678,first-party text / config,45,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/urls.py,405,651c6dbcf1a4fe4e9f5ec5b6edb572e8e59d588968dfaca2c37e591459270cff,first-party text / config,9,automated full-file read; targeted manual review (see report)
+backend/apps/accounts/views.py,14496,25e5c4887cc7b089c2b3cf036b7b99fef84fa557bd1aa395011e15a4bc1e527a,first-party text / config,353,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/admin.py,1006,9973ee8aef5b832016d5269d82c51f77cacf65addc8bdb65d69ce494153b4f62,first-party text / config,24,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/apps.py,155,b7e850fe9ed3676936fcbe78bb0f1a2c069538de03c9afb57a42e50ff05f2545,first-party text / config,6,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/migrations/0001_initial.py,3246,2b0fd4abd91c9b5e86f49777f1c148aa9281fc425e7c8358e7d2191adede06d1,first-party text / config,61,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/migrations/0002_alter_appointment_appointment_date_and_more.py,1882,2a5cf4ded353616f0ac91db87b9aac5bf63c323f7ce593080cc67564bb7446b2,first-party text / config,44,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/migrations/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/models.py,3268,f0444877734609ed2d05edf027091b21e79a1eac1b98551d918e61093e33c43c,first-party text / config,74,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/serializers.py,4239,cc7846fb3add390bb35a911cbafdfee70d9cdadf1267745890fc3a99ec816331,first-party text / config,118,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/tests.py,63,dae0da7efdcdb3a7fb572d5e914b60631099122d4a4727ac6434c016161c5fe1,first-party text / config,3,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/urls.py,1151,bf9bfab19a76c05f29df6c831469533f70664aeeb7ef43462aa801b26385dae9,first-party text / config,22,automated full-file read; targeted manual review (see report)
+backend/apps/doctor/views.py,25544,7a945367735f4e287bec4e8fb39250fe223cd7acd53d501a3481b8345c0aabc9,first-party text / config,627,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/admin.py,385,184ec43369e20ea97a8090844ba9c8cac318263b02ffede761b02ea5397ef606,first-party text / config,8,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/apps.py,159,ab7ae4ff89577ddbaf1a5de5c08b975484c67f4f34378c621097b9ee4681f5b3,first-party text / config,6,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/migrations/0001_initial.py,2116,74fd0e481666873c20fea12b91edb4bb23683e835e3ffd094419b0e969d48f06,first-party text / config,43,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/migrations/0002_alter_inpatientadmission_admission_date.py,471,f868c6f18b85d3337596e3167f844829139222ee3e350b89ba740e30490a02e6,first-party text / config,19,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/migrations/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/models.py,1416,8442ab83297cff77833a699df3d36a05ff54c3170e7e35965389fdd66c70fe65,first-party text / config,30,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/serializers.py,1075,0bd2465c982f0ba88747782354e5de7fa36b7f2d58c953ad84d58084d3929e02,first-party text / config,38,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/tests.py,63,dae0da7efdcdb3a7fb572d5e914b60631099122d4a4727ac6434c016161c5fe1,first-party text / config,3,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/urls.py,336,b0d4d7c41f0556d6f91e6bd98f160fd97691d167fd8990579f214c480ba54f9c,first-party text / config,7,automated full-file read; targeted manual review (see report)
+backend/apps/hospital/views.py,5968,e67efa8df87db1c54b517e61a3a3851cb0f4aa078ec22131b7bc2914cffbe84a,first-party text / config,123,automated full-file read; targeted manual review (see report)
+backend/apps/lab/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/lab/admin.py,362,fd90765d696207416135e6bef5d35e9a940751241899e22e4c628d1dcec1f142,first-party text / config,8,automated full-file read; targeted manual review (see report)
+backend/apps/lab/apps.py,149,b86f0c8fd3eed780d75c8a55c85b99f69f8a0cbb634f15380923f49e44eea6d4,first-party text / config,6,automated full-file read; targeted manual review (see report)
+backend/apps/lab/migrations/0001_initial.py,1696,f4f2c797c84982e8d86353c09ab1a3d600ebfbb2b577dff1b3b89b5940c4fe79,first-party text / config,38,automated full-file read; targeted manual review (see report)
+backend/apps/lab/migrations/0002_alter_labtestorder_order_date.py,456,a24713fbc144afdeed1a7686fb20b3362ce4e32b364ba058d27302ee4e7a66ec,first-party text / config,19,automated full-file read; targeted manual review (see report)
+backend/apps/lab/migrations/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/lab/models.py,1083,37fc381722e5485fdf46fecc0aea90f9ef7ed23df374eeaee93adadd41168ad0,first-party text / config,25,automated full-file read; targeted manual review (see report)
+backend/apps/lab/serializers.py,510,854244600624253f08b2667a5110d44181e0c8ab18b6843308b2da2f5a513393,first-party text / config,20,automated full-file read; targeted manual review (see report)
+backend/apps/lab/tests.py,63,dae0da7efdcdb3a7fb572d5e914b60631099122d4a4727ac6434c016161c5fe1,first-party text / config,3,automated full-file read; targeted manual review (see report)
+backend/apps/lab/urls.py,612,8e15f50f81a38292485e7a5f3f3b8990ec272fcec33d8ee138d6a8dcf72ec99b,first-party text / config,16,automated full-file read; targeted manual review (see report)
+backend/apps/lab/views.py,23095,407d1b54cc97909ef4a2a6ce59e1f6f3c4a1da8b6621f21b45528fbcf8ac72ec,first-party text / config,498,automated full-file read; targeted manual review (see report)
+backend/apps/patients/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/patients/admin.py,804,c8308568e12d8e7c14d0bbee2a706282551801a25ed2a5a37be2cb1ba5300cc3,first-party text / config,18,automated full-file read; targeted manual review (see report)
+backend/apps/patients/apps.py,159,8a179643d51490f4175c1b799acceef2e2f19d1bbec86947c5ac0df842b50a19,first-party text / config,6,automated full-file read; targeted manual review (see report)
+backend/apps/patients/migrations/0001_initial.py,3667,30a9aaa9bc4dce64c31d783058b022b4d2a294ee85bf81d9a60f345ecfa76773,first-party text / config,69,automated full-file read; targeted manual review (see report)
+backend/apps/patients/migrations/0002_patientprofile_current_medications.py,425,7885f0839f2cea3a1d9502d7ff85b245edb3a4f4d9e90017761f8f2e4e7e5753,first-party text / config,18,automated full-file read; targeted manual review (see report)
+backend/apps/patients/migrations/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/patients/models.py,2629,d29401eab68d6723b0d982839aef6efc3230ab0992c30d23c9908f2f6f11613e,first-party text / config,60,automated full-file read; targeted manual review (see report)
+backend/apps/patients/serializers.py,1607,98fa4e12ec289408fb85b18dc951d1b139854935f96ca52f16ba0d61bc4f684b,first-party text / config,53,automated full-file read; targeted manual review (see report)
+backend/apps/patients/tests.py,63,dae0da7efdcdb3a7fb572d5e914b60631099122d4a4727ac6434c016161c5fe1,first-party text / config,3,automated full-file read; targeted manual review (see report)
+backend/apps/patients/urls.py,769,406ae8522f2bf4a5fe3f194b4087a18a19e526820e84cab89d56dcfef3155e70,first-party text / config,20,automated full-file read; targeted manual review (see report)
+backend/apps/patients/views.py,4556,bbcc75f652ff6aa7014d11fc78e393d8236bb73b6a81a4be8b80e859d54ac8fa,first-party text / config,114,automated full-file read; targeted manual review (see report)
+backend/apps/reports/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/reports/admin.py,803,518b070a86a8cee2c11158ff01c112d0388551aa5a1df4e065c34b6773ecae63,first-party text / config,19,automated full-file read; targeted manual review (see report)
+backend/apps/reports/apps.py,157,6a704de2c207ac579da79ad3f48aab584898475bc9d54fb608489fef3d43f960,first-party text / config,6,automated full-file read; targeted manual review (see report)
+backend/apps/reports/migrations/0001_initial.py,3727,a59785646746f06e5a8d1155125dcb676880e6ba7164e3ae36964626c171f298,first-party text / config,70,automated full-file read; targeted manual review (see report)
+backend/apps/reports/migrations/0002_alter_labreport_report_date_and_more.py,654,c53f967277dcb46ac97d95aaca44f76d583010b776b5368ed31951a1f287d01e,first-party text / config,24,automated full-file read; targeted manual review (see report)
+backend/apps/reports/migrations/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/apps/reports/models.py,2592,a4d5d2d1073548dd48887a639875621fa7afabe026ace08ad92c261e13227872,first-party text / config,57,automated full-file read; targeted manual review (see report)
+backend/apps/reports/serializers.py,1593,5bc97e274b69815f55aee7f7209bc4e1f636b232a3dafc564d4d54325a946720,first-party text / config,55,automated full-file read; targeted manual review (see report)
+backend/apps/reports/tests.py,8362,3175263de1c393d52dd3cd53fd64f2db51d49e433a88cc767b5ff90a257268df,first-party text / config,193,automated full-file read; targeted manual review (see report)
+backend/apps/reports/urls.py,479,670599a1efbba753357e19770660583a9ef9fb73b742a094c008fbd096e28283,first-party text / config,13,automated full-file read; targeted manual review (see report)
+backend/apps/reports/views.py,8943,cd1eb220b602e1ef57569cb533507aae0798c6fec53e02d63deb1f4aef3e9db4,first-party text / config,229,automated full-file read; targeted manual review (see report)
+backend/config/__init__.py,0,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,first-party text / config,0,automated full-file read; targeted manual review (see report)
+backend/config/asgi.py,405,1658329613455854c3542dc02a72264db6a17bc35b64ecfcf35266ad0670abb0,first-party text / config,16,automated full-file read; targeted manual review (see report)
+backend/config/settings.py,4423,5480122796ad710745afa82e05f2f1aeda8c1e09e6e30f1094f745d73032f92b,first-party text / config,151,automated full-file read; targeted manual review (see report)
+backend/config/urls.py,1560,8f98ff3448f4d94826f61df6e14bdac3e07046ed1beac5f660411ddcd79fe8e0,first-party text / config,42,automated full-file read; targeted manual review (see report)
+backend/config/wsgi.py,405,a4b32d6f00a10618fd08ff7a48a5be8bd7053e6a698ff494f60d14ec3592e4aa,first-party text / config,16,automated full-file read; targeted manual review (see report)
+backend/db.sqlite3,380928,redacted,private local data,,not exported; content excluded
+backend/generate_pdf_report.py,29325,0cc47559ea042475b87f2bb14deb329ddc2905dcf2c98b6aa5b9e73daf4e559c,first-party text / config,577,automated full-file read; targeted manual review (see report)
+backend/generate_sample_pdf.py,13515,5b7200210cb0146c950231100d08d166827fb0dc859341300d25753623a7fe11,first-party text / config,352,automated full-file read; targeted manual review (see report)
+backend/inspect_db.py,872,27945d0d54279ae09b7ea6fdee031e42c77f25c217588f9031fd797793b1a2b5,first-party text / config,24,automated full-file read; targeted manual review (see report)
+backend/manage.py,684,b30eeb4890cb6f315cc238313808f636db29e9906b61cc6f6051567156a0097b,first-party text / config,22,automated full-file read; targeted manual review (see report)
+backend/media/records/batch_multi_patient_reports.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/batch_multi_patient_reports_6cqGeIk.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/batch_multi_patient_reports_PPQkChl.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/batch_multi_patient_reports_UAU3qJS.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/batch_multi_patient_reports_X0W57tz.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/batch_multi_patient_reports_lB9jy7t.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test_3tnt3ln.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test_76jT4st.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test_AcILWcP.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test_JjzlB0d.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test_UAUZSXp.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test_VxhWufN.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/cbc_hemogram_test_tDJLEJz.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/lab_reports_template.csv,1295,3eb8123184c469910a25e1446194d6ea41e3bbaee28485a2fb32fa8df9fb3553,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_0t62xDB.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_9wN6uoR.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_HVIDT4I.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_Jvet3Wj.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_JxpZruS.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_LehJGQu.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_NXlaWpJ.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_RZEpAu7.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_WTQmq6U.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_ga9GgxX.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_icgNAMv.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_ppRpiCb.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/new_clinical_lab_report_uYRPjHC.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_16VfCIr.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_2bc0QCe.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_2imruaX.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_6AXbrv0.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_9wMcPIg.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_AvXYori.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_DAGg3WB.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_EuekNTY.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_JNr0B0K.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_P9piEJh.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_Qv0zk4F.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_W4x7BdY.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_aFeAL5p.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_mB53D4T.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_mTIN0qp.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_n4crKA8.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_nE4pqtd.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_qTztHcK.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_s0kE1Fr.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_s9buyh4.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_tBE0flY.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_uqOXAlW.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_wF51ka4.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/records/single_patient_report_zLXgvv6.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/batch_multi_patient_reports.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/batch_multi_patient_reports_F5beqM7.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/batch_multi_patient_reports_WdLJiym.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/batch_multi_patient_reports_cOQ6zwT.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/batch_multi_patient_reports_jacE5YV.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/batch_multi_patient_reports_u0TFA1b.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test_1qj8Pt7.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test_9ib8mP5.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test_DRyp1rh.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test_SXRnxS8.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test_Xt5MYMT.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test_eHOkGPZ.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/cbc_hemogram_test_zQAw2me.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/lab_reports_template.csv,1295,3eb8123184c469910a25e1446194d6ea41e3bbaee28485a2fb32fa8df9fb3553,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_2F877T4.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_BkbhsXb.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_JQ6NTY0.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_JS3WTc7.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_RjLBEAC.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_TTrlogg.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_ijwrHH2.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_lkzzXJh.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_mmD2Hze.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_o8SSeiV.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_vGTUdLb.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_xndpMkD.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/new_clinical_lab_report_y5VEHNB.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_3sKUNFy.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_3zsZJTv.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_5Q4Ze2k.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_5liE2wW.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_Hih3lw7.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_IXZs24N.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_MrerEpG.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_PlDYwDK.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_Qr1v9JP.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_U6YnDf8.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_Vt1E5EL.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_W3EXvL7.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_XhqbB3F.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_ZCuGYvC.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_dNso7gb.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_dztiCSr.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_fh2t4VQ.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_gQPUDAr.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_nWwDmJi.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_ohJVN9b.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_rMqOfHn.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_slbhBmM.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_sn7rp6l.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/media/reports/single_patient_report_zAToVAq.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,local uploaded media,,metadata only; clinical contents not exported
+backend/requirements.txt,157,5a247cb9b05286560dba18b29132c44d129db623704843591cd947f840ea057a,first-party text / config,6,automated full-file read; targeted manual review (see report)
+backend/reset_and_seed_clean_db.py,5710,ee8a1951873ee25b532549afd50313fdf2fcea8978814d1b76f2c0418abfb592,first-party text / config,164,automated full-file read; targeted manual review (see report)
+capture_all.ps1,1593,fa5be0094ac93ce06214c9dd0da46323e2267af361100a247bebf2dae66177d4,first-party text / config,27,automated full-file read; targeted manual review (see report)
+capture_dashboards.js,2129,7fd607f17e3ab24213bd66f0ebecb76bb7c1e87c460be9762fd9842302439234,first-party text / config,51,automated full-file read; targeted manual review (see report)
+dfd_level_0.png,99558,179d4d6cb855d176994529788031a43a16b0568b4f489cc237b557dc73b0342e,binary asset,,inventory only
+dfd_level_1.png,91097,18133c9c892b6308e12d0f8ab0a34b10a52039390e77170c06454700d53cd17a,binary asset,,inventory only
+generate_30page_report.py,19015,d41d6a37842121132c930acc312d4a3db5b59d24c169b411f5c9f1a37b9f77b4,first-party text / config,311,automated full-file read; targeted manual review (see report)
+generate_dfd_sfd_pdf.py,29861,f961339d4e534899694936d27df934301ab64360e062047263095c4ff4ba846e,first-party text / config,594,automated full-file read; targeted manual review (see report)
+generate_hardcore_testing_report_pdf.py,18963,3bd58e17200a2ee2556ff85cc2e422612933801cd21d6f64efc6e4da002eb743,first-party text / config,327,automated full-file read; targeted manual review (see report)
+generate_implementation_pdf.py,20052,abdce3edce3e1abefee4ad481d6698ae555df00e0d590f9470659ff09a744f71,first-party text / config,408,automated full-file read; targeted manual review (see report)
+generate_pdf_guide.py,17640,3d518b5dd4d9a0eac8c23013b213a13b99db356b49b464f63d1a3c54493883d9,first-party text / config,374,automated full-file read; targeted manual review (see report)
+generate_product_presentation_pdf.py,32658,c7c4a0657f831f6ba0c38abc6acbfbc093def32676d405fee547e3e435ec9a27,first-party text / config,573,automated full-file read; targeted manual review (see report)
+generate_simple_workflow_pdf.py,14920,1b6a4dfd7820b5a209fc65fd3f48a7b3e590ae6217d67a9ec642a92309171c85,first-party text / config,247,automated full-file read; targeted manual review (see report)
+generate_summary_pdf.py,9101,f7b01a0f75dccdcbeeaf8c8586dd108c7630df891f49f4f9d1a6c97c898aaba7,first-party text / config,199,automated full-file read; targeted manual review (see report)
+generate_testing_report_pdf.py,28458,8819e33fff21ca30360cbf29e8bd2c06e4451847c9db924d54688f017181b644,first-party text / config,558,automated full-file read; targeted manual review (see report)
+generate_verification_pdf.py,8374,3e84b5fcb2a9828e33e00a88dda7759a529088fc9b9788675f3c64098ec05ea6,first-party text / config,173,automated full-file read; targeted manual review (see report)
+hardcore_test_results.json,5822,1e7a41a0e4bf9e38552db096cba93a1a2d1fea7e2231a30f075b9ed7560a141a,first-party text / config,218,automated full-file read; targeted manual review (see report)
+health_platform/.flutter-plugins-dependencies,3665,afc6cb1e0830c8ad177259431360e0b3941f9f240d55d1c749272635ef9567d3,binary asset,,inventory only
+health_platform/.gitignore,748,1e725ca8cb4e6c2a19dc889d0cebb497d954f091aba3b08d53df20edd0a98cdb,first-party text / config,45,automated full-file read; targeted manual review (see report)
+health_platform/.metadata,1706,6e92d03badcc96982d145443bf39760c3bc74b25ba4a6303d86629aade7a1c37,first-party text / config,45,automated full-file read; targeted manual review (see report)
+health_platform/Health_Platform_UI_Report.pdf,3901150,ac132b181083b7d03cf20adfaff4d27e143da6b89565aac8ce72063ed1899129,PDF documentation,,text extracted: 22 pages; no visual/layout audit
+health_platform/README.md,654,6fdf46cb9962fbbf7a807a23c2798a21b310aa79323a461b5b6834cb1433adcc,first-party text / config,17,automated full-file read; targeted manual review (see report)
+health_platform/analysis_options.yaml,1448,b63207cf529949ec4727b68c23dbb38ce255b6f6f4ae1effcb5c1dcf2852d238,first-party text / config,28,automated full-file read; targeted manual review (see report)
+health_platform/android/.gitignore,267,c9af75dbc2c8aa867476a09426c80b178c4aeed8b9393ae48503eedfa3273d71,first-party text / config,14,automated full-file read; targeted manual review (see report)
+health_platform/android/.kotlin/errors/errors-1790330264032.log,65,aa7c778f174f425413915b130c1d8b495ee56ebff5ede2a4b7913cecfe1c1d48,binary asset,,inventory only
+health_platform/android/.kotlin/errors/errors-1790330301803.log,65,aa7c778f174f425413915b130c1d8b495ee56ebff5ede2a4b7913cecfe1c1d48,binary asset,,inventory only
+health_platform/android/app/build.gradle.kts,1451,37750b83aa3a2d334f8edb0af6854dbf31d347eae5f398a9cbf1dc8b943a4089,first-party text / config,45,automated full-file read; targeted manual review (see report)
+health_platform/android/app/src/debug/AndroidManifest.xml,385,b01a4541a8144c15bc617bab7eb267c99fa1476368fbbda5a12cdbf4e316a34c,first-party text / config,7,automated full-file read; targeted manual review (see report)
+health_platform/android/app/src/main/AndroidManifest.xml,2909,4e3283a3c0af7b57a4d7a9ce0d59d7a4cef233aea39cff68aa3d32823cc2329e,first-party text / config,57,automated full-file read; targeted manual review (see report)
+health_platform/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java,1033,f9ee9edebd8152a5d7c4bfd75fc38763ddcef6728597d9909515742fb82c0884,binary asset,,inventory only
+health_platform/android/app/src/main/kotlin/com/health/health_platform/MainActivity.kt,133,6a98b805ac35188100fe18c045e9cb0ba6d721db6e9491f04133b13995167a1b,binary asset,,inventory only
+health_platform/android/app/src/main/res/drawable-v21/launch_background.xml,450,dca312ec77de83e43ef70a825c299b51451247286c29167d62f19165750b8793,first-party text / config,12,automated full-file read; targeted manual review (see report)
+health_platform/android/app/src/main/res/drawable/launch_background.xml,446,2df60e2cfbee873ce2858088cf003e6b93498f2f568476da437610467ea1a9d7,first-party text / config,12,automated full-file read; targeted manual review (see report)
+health_platform/android/app/src/main/res/mipmap-hdpi/ic_launcher.png,544,6a7c8f0d703e3682108f9662f813302236240d3f8f638bb391e32bfb96055fef,binary asset,,inventory only
+health_platform/android/app/src/main/res/mipmap-mdpi/ic_launcher.png,442,c7c0c0189145e4e32a401c61c9bdc615754b0264e7afae24e834bb81049eaf81,binary asset,,inventory only
+health_platform/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png,721,e14aa40904929bf313fded22cf7e7ffcbf1d1aac4263b5ef1be8bfce650397aa,binary asset,,inventory only
+health_platform/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png,1031,4d470bf22d5c17d84edc5f82516d1ba8a1c09559cd761cefb792f86d9f52b540,binary asset,,inventory only
+health_platform/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png,1443,3c34e1f298d0c9ea3455d46db6b7759c8211a49e9ec6e44b635fc5c87dfb4180,binary asset,,inventory only
+health_platform/android/app/src/main/res/values-night/styles.xml,1013,ea763597dc1a84c8034251caee98d7753e0fbf57340ffc94677427de4b537516,first-party text / config,18,automated full-file read; targeted manual review (see report)
+health_platform/android/app/src/main/res/values/styles.xml,1014,cca15a99b59380a548bf6a890f7ca5380ee509b1f9bbb2f5f9ec3589fa25c2f7,first-party text / config,18,automated full-file read; targeted manual review (see report)
+health_platform/android/app/src/profile/AndroidManifest.xml,385,b01a4541a8144c15bc617bab7eb267c99fa1476368fbbda5a12cdbf4e316a34c,first-party text / config,7,automated full-file read; targeted manual review (see report)
+health_platform/android/build.gradle.kts,561,218f400e3fff31c9c986a2535dfb974560e1b4d33cc27b7c1fee96a2b7e44454,first-party text / config,24,automated full-file read; targeted manual review (see report)
+health_platform/android/gradle.properties,456,7afbb44338eab4383cd2ed4c28f0a78419782b6dba72e979321830918b847806,first-party text / config,11,automated full-file read; targeted manual review (see report)
+health_platform/android/gradle/wrapper/gradle-wrapper.jar,53636,16caeaf66d57a0d1d2087fef6a97efa62de8da69afa5b908f40db35afc4342da,binary asset,,inventory only
+health_platform/android/gradle/wrapper/gradle-wrapper.properties,207,670071e5c2e25f86f82bc9db52f5d8d7c8f7b1788686a9d4c967753c69d9a2b4,first-party text / config,5,automated full-file read; targeted manual review (see report)
+health_platform/android/gradlew,4971,ec56c02543666d92d9ac5ae7fcc48f88ce4de0deb8b7f9b39928ca46f68c1b2b,first-party text / config,160,automated full-file read; targeted manual review (see report)
+health_platform/android/gradlew.bat,2404,c13c6e91b9a517783976de213d46398c661ea9e17651376d7301e839eaedcc62,first-party text / config,90,automated full-file read; targeted manual review (see report)
+health_platform/android/health_platform_android.iml,1630,c8e0091edeca4e766e9dcf948e59c86a0427381fb5e31768ae396eedde5f1dfc,first-party text / config,29,automated full-file read; targeted manual review (see report)
+health_platform/android/local.properties,150,01a50aaf225e11f2b6a986fe1e3ca68377e35d131d2a70d4e2824af185ea4a77,first-party text / config,5,automated full-file read; targeted manual review (see report)
+health_platform/android/settings.gradle.kts,797,d6b16579d5f6a6066cc22323c4e34adb82020f7b75378bffed7f0358bc949ce3,first-party text / config,26,automated full-file read; targeted manual review (see report)
+health_platform/health_platform.iml,859,d2052ef022de364483e3823043cb6a5be1c3f33217cae65c1a40b48b17669199,first-party text / config,17,automated full-file read; targeted manual review (see report)
+health_platform/ios/.gitignore,603,e85b4db8ba6ed14708e5f7d3c60336e5a3067ce11329b84aa8ba5d98603ee253,first-party text / config,34,automated full-file read; targeted manual review (see report)
+health_platform/ios/Flutter/AppFrameworkInfo.plist,744,e51cfa76fca1ae586244b43bf97423577315d2906394c1e7768ef43b8d23e161,first-party text / config,24,automated full-file read; targeted manual review (see report)
+health_platform/ios/Flutter/Debug.xcconfig,31,c0d1da54718e75f2028962b689258ecc741abf7cdaed50483aa5225264d0a7d7,first-party text / config,1,automated full-file read; targeted manual review (see report)
+health_platform/ios/Flutter/Generated.xcconfig,600,f96bf1fe37bead6d185f93598e03580a5517c0d06346d444dd6dd8dca0b41fe2,first-party text / config,15,automated full-file read; targeted manual review (see report)
+health_platform/ios/Flutter/Release.xcconfig,31,c0d1da54718e75f2028962b689258ecc741abf7cdaed50483aa5225264d0a7d7,first-party text / config,1,automated full-file read; targeted manual review (see report)
+health_platform/ios/Flutter/flutter_export_environment.sh,639,d0ab45246b34c68ccf42988b25ae4f1f2a244fb89a9270192f4493e104e8792d,binary asset,,inventory only
+health_platform/ios/Runner.xcodeproj/project.pbxproj,26282,5fdd8da2b2d00342a2af51fcfbe21f183de5bd90fb9cd00447cfd675725358ba,first-party text / config,644,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata,142,ac28b35c2b940210bec0fff8e424b07fd0efe9112ab178a10533583f251a386c,first-party text / config,7,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist,246,d557c2c32fc6258ec28981fa45dc847b76c9968beb90a2e26d13ef9c4ea45c30,first-party text / config,8,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings,234,dd64c0308ab2971c456871b990b24a008bdc3ece09833e8dbe9675e33a496e74,first-party text / config,8,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme,4836,a46c0d064503db8bf9f452b492c61fdf76f9febb8894005fe30b2facec21e550,first-party text / config,119,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner.xcworkspace/contents.xcworkspacedata,159,706a4c812f2a1e220e6785c27580020d58048e2ae4d30d1280f3c43344ce6b38,first-party text / config,7,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist,246,d557c2c32fc6258ec28981fa45dc847b76c9968beb90a2e26d13ef9c4ea45c30,first-party text / config,8,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings,234,dd64c0308ab2971c456871b990b24a008bdc3ece09833e8dbe9675e33a496e74,first-party text / config,8,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/AppDelegate.swift,555,54a5e98d6c3e8a79413ad50607b83aac8ded8828bc913eda1fe86bb33a66cd5d,first-party text / config,16,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json,2641,5f8b941b774bde4496d73347c1f79cbdd786bb76fbdab9ed1f3f0cb78a0fb0d3,first-party text / config,122,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png,10932,7770183009e914112de7d8ef1d235a6a30c5834424858e0d2f8253f6b8d31926,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png,295,cab10a0d391ec5bc09ef50ce49e8ad401cee7ef03707ec0923a222c5c2b3d212,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png,406,b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png,450,c6e6d3b215ae744a9c391f4c4d44157eff5e739d6ad6c39f9bfa5df66dddd267,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png,282,5dee24dc104ac76dc162e42ae0beb163d426bf365562ee28ba7b3ad368559a60,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png,462,a9b21eb6f4271385655a8771f76e29eef8c1107d7879cbcfc567e6619d1f716a,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png,704,e677d701ffe4af7bc2935098d6b3984cc9ab7ace573e6900955a5535b12410cf,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png,406,b9ad02cf6576a04d1b6806ac02a2431481b448dd0c2e505ce25842d1f7c4730b,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png,586,7c61c42fc7b657d9cf314d32a4ec458f0647c3aaf360be1b9377857266ec2499,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png,862,19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png,862,19be171481dc71a0b2803ebcd01dd8b0c5fd5778dee34c0a3cabc948c225f24e,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png,1674,4209a49e44a92ec40a327d3455eb1b1c153ee83d75de1c2be0a12ab18b2ff9de,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png,762,836c918cb613249eba0483a6b02fa3df3c1c0a89a315ee4d3b88509b83c7ab73,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png,1226,41c7d42f6e61f8fe7f30b1ffa2256aecbc9682be06d18c4a3062043e1a2e547c,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png,1418,5d7e5bdf01b93802bc973345b3a78c038907147625035952a08a115a563b7f81,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json,414,fbd112a9f3b541a1d811f71ac8e4fe68b6176687d973a5f4d99b7aa4a722e94e,first-party text / config,23,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png,68,93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png,68,93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png,68,93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20,binary asset,,inventory only
+health_platform/ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md,340,853ac958e2416fe2540f6f61165283a3618b71a7ba5f85f65ac41c2158dfcd21,first-party text / config,5,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/Base.lproj/LaunchScreen.storyboard,2414,bc3644fbb251ff1e18de25a4932c927850ae1a025be3dd1447940429633fe4b2,first-party text / config,37,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/Base.lproj/Main.storyboard,1631,dcea4686c02065e56217fd19fcfb73d7509b41872e7486126149d47a18559363,first-party text / config,26,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/GeneratedPluginRegistrant.h,378,a5f88cc6415d2e639d2cb549348b84e02a7fdd0261603b0063abef6fa11f075a,first-party text / config,19,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/GeneratedPluginRegistrant.m,709,a7a0a775d8c1225ed48f69282f37a2a662fdd102e7e462938792769216027de3,binary asset,,inventory only
+health_platform/ios/Runner/Info.plist,2298,9995c70626d9bbbf95988890e2ba97523edf8b90938bf258580d19beee2c73ca,first-party text / config,70,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/Runner-Bridging-Header.h,39,efe657d8b27f7f8595a0d416bffb33fe7d93bd2869d81f7353b556c439d7a1a7,first-party text / config,1,automated full-file read; targeted manual review (see report)
+health_platform/ios/Runner/SceneDelegate.swift,82,edce811c671ca0a6ccb14753e14e16deb0d89a0adf4f1b685e362d87d8f4c366,first-party text / config,6,automated full-file read; targeted manual review (see report)
+health_platform/ios/RunnerTests/RunnerTests.swift,297,c0e04141287eb7f9c9f3d31cf5be8cb626a9ea71351206c9121578e8b8f480c3,first-party text / config,12,automated full-file read; targeted manual review (see report)
+health_platform/lib/core/config/providers.dart,30739,ff719c52d3c30dc7b0fa092034ad4e158b0e4681d553371a54f2ecb5490a87f8,first-party text / config,930,automated full-file read; targeted manual review (see report)
+health_platform/lib/core/config/router.dart,4962,3165d98d24c9a6e42efb231b8a682ab3d397ab9bf8758b9b23db14b71b4ff602,first-party text / config,154,automated full-file read; targeted manual review (see report)
+health_platform/lib/core/network/api_client.dart,21936,094ffe5b06b6a201663ac8a9defa63a279a3b563934ff8b94e2a0ba641b142fb,first-party text / config,636,automated full-file read; targeted manual review (see report)
+health_platform/lib/core/theme/app_colors.dart,2353,2c1a547c3d7640b566feff02cd00ce4d4e19bffb9faf9cf6ed77b1552e4096a9,first-party text / config,51,automated full-file read; targeted manual review (see report)
+health_platform/lib/core/theme/app_spacing.dart,1176,e98b4eb0a68fcae8e209f5ddc25f88e8106b8d031afc1f8135696cd8a0f7f82f,first-party text / config,39,automated full-file read; targeted manual review (see report)
+health_platform/lib/core/theme/app_text_styles.dart,2849,0d1ce3dfb0524d7c3ea27041f1576420a4a9559e8b2ef65f3a40f816746ad7f8,first-party text / config,135,automated full-file read; targeted manual review (see report)
+health_platform/lib/core/theme/app_theme.dart,10677,537804a43f71c1cbda89bb283f7f9ca7d6902e4c0d80491edd5685970f9cf178,first-party text / config,278,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/admin_portal/admin_portal_screen.dart,30328,635810567d2b0643746e561cc55b1ade7324be2fecf2beeb677d003866da75e8,first-party text / config,744,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/auth/otp_entry_screen.dart,19906,b0a8f58e31b063591d7477a6a66833c554879479303c583e7d04ec80766b769a,first-party text / config,464,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/auth/phone_entry_screen.dart,17965,7ffbfb2c4e983181020393b48da7a4a558318b5272938e404231b77941226749,first-party text / config,417,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/auth/role_select_screen.dart,11328,abc9a0decf1d0c4860c949f8d1f7454daaa10495f0ba38ed76a9bf608e510b0e,first-party text / config,296,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/auth/signup_screen.dart,41786,5f3f6761c71522866429b673532d905dc6c2355b3e85b6b87b1a30aef0b1a1b9,first-party text / config,958,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/dashboard/dashboard_screen.dart,36673,0b972f205ec853feb2bf1475711a9055d059a11f6e397984a25afeef845204a7,first-party text / config,765,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/doctor_portal/add_diagnosis_screen.dart,17616,768fc05674317cd0dce9e2a6d9022239c817cec22b81cfa48e8debbf109d33e5,first-party text / config,435,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/doctor_portal/doctor_appointments_screen.dart,21042,7d7bb4d447c1c22b9cef435905426efe13cb953d4173d16ea0d3f7584bc2019f,first-party text / config,487,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/doctor_portal/doctor_dashboard_screen.dart,27483,284e6ecfea9a73d69260bdc14ca30b676b2d17cea82bf28082a16baf822eb761,first-party text / config,701,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/doctor_portal/doctor_profile_screen.dart,17992,e2cc7fd518152504c3525f63b1353c1657207977a155f4476bfb4b3167326372,first-party text / config,497,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/doctor_portal/doctor_shell.dart,9130,77630a58a5d4774981c77188d2811b2fbd6ca716fb602a94d1ee628bb72615dd,first-party text / config,290,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/doctor_portal/patient_record_view_screen.dart,30325,ce89176f3653f1640044140acb12331740b3fe1f3454fe38664e1ca786ca33f3,first-party text / config,759,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/doctor_portal/patient_search_screen.dart,24811,1278c067caf3f8158b756a7160bc4902ae779bd3131719b4242a4ac10b667e0b,first-party text / config,576,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/emergency/emergency_screen.dart,34944,38f712b64a4c19f4ec1c2acf3a9f35f69f18c176c4a36d9381e687c603666478,first-party text / config,928,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/family/family_screen.dart,16286,5cd6fc812d78153831e7bb3ff06dde8c37e710a93ae6987d80787ab0f8db4f0f,first-party text / config,356,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/hospital_portal/admissions/admissions_screen.dart,31086,1d988ad56ac0a1632940455d372035fc49236358a4d7f23e0710d5a3261c9c35,first-party text / config,659,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/hospital_portal/discharge_summary/discharge_summary_screen.dart,22038,f54280ab71abb58e5038ce5cc9e11aed06c6abcae468f77c938906abffc91ee3,first-party text / config,486,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/hospital_portal/hospital_dashboard/hospital_dashboard_screen.dart,13885,8ee7c7a7cebbca31c8e45a68cefc9825fedc249fbdfea10151fbffa35bd2184a,first-party text / config,378,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/hospital_portal/hospital_profile_screen.dart,18527,e5dd703ac6474306510784a1ce3c144df9e77cb750961ffb8e4625da8af154f5,first-party text / config,516,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/hospital_portal/hospital_shell.dart,8047,eb9c2b8c1c18214830baf608074c2ce75f4d9c54a31ddba602e95866cec13a6a,first-party text / config,261,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/hospital_portal/integration_status/integration_status_screen.dart,4986,b862394bebceb8c9fa21014b2f8e8afab7f708273466e7f13ce87c1606ab3a95,first-party text / config,133,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/lab_portal/integration_status/integration_status_screen.dart,5011,5f7a0bf18115c9f6b98ec1835a9a15641a9e2f8809987e5d72bd7c3a3dafc4ad,first-party text / config,133,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/lab_portal/lab_dashboard/lab_dashboard_screen.dart,18396,e4bf47e6fc762714525c13976ae89d63f52af4e76eef73dde514d11dadc20379,first-party text / config,483,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/lab_portal/lab_shell.dart,7274,deee0cb1f5ca3d46d0d0c9d7ba91f6a36660f340e9ba1bfa6e1ef9f1487e1ef7,first-party text / config,241,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/lab_portal/pending_reports/pending_reports_screen.dart,15564,e8cf7f51b99331fed3a806ce9063913a66a4d770c25a4bd6447019b881dbd28c,first-party text / config,358,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/lab_portal/upload_report/upload_report_screen.dart,50278,7d5ed5403b4414b292474cbade3d905774f12931efae80f54c2218f4933f61ff,first-party text / config,1204,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/notifications/notifications_provider.dart,2630,b7de852c1a2be18375999e68fe68335cb9f9d57c0d9d1443092229820e0227f2,first-party text / config,101,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/notifications/notifications_screen.dart,8154,92ade724ccede2318693b06265455bc951d118051428e6fdf620e782772b2343,first-party text / config,216,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/records/records_screen.dart,38479,e4a4aa7660321d2301801611f82ef657d71956e5bc4d1600d8dc619a7f0b885f,first-party text / config,832,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/reports/reports_screen.dart,21795,399ca87d3f69700160c8228d6c18c6cc8dd4a4181b04dbb3fa1d25ba3111be6f,first-party text / config,537,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/settings/settings_screen.dart,19998,d13e76f8d9f93c8a815871a7e79f0e591650143105ffd6a41ab13db93482b228,first-party text / config,448,automated full-file read; targeted manual review (see report)
+health_platform/lib/features/timeline/timeline_screen.dart,7058,a318bb08281d4258575270ae194ba94677e809676a18174211b00da383f9345b,first-party text / config,223,automated full-file read; targeted manual review (see report)
+health_platform/lib/main.dart,684,e5cdf8db7faedd2e1a68f3f169f30af7e8e67a4c4c0f31cfebd999e5429e295f,first-party text / config,28,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_dashboard.dart,1824,09e9d9b3884d8b33d869f54f1dea92d1a235e1e47348443b68b868b0ee88bf06,first-party text / config,63,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_doctor_data.dart,5016,ccf02d2ce5dcde93e958218d3f21c69c1670dc563a91b0beb62c9b38a0353cf1,first-party text / config,164,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_family.dart,929,8c2628b981e3b437258930a75db915d638db17e161890d3c97102d6978b8a1de,first-party text / config,38,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_hospital_data.dart,3433,20c640bf3a6b61ec57b7d72f6f04dc6f4ea7797af359ab612d414e9f7a5f601e,first-party text / config,119,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_lab_data.dart,3174,7a70f2f930cee62f234763800b494bce8992fc926be827dbf71a3ef79a216306,first-party text / config,110,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_records.dart,2175,8dbefd3d582b5c61a741c26c43e701c7633cae4dfa7ef5228060ae138db240f8,first-party text / config,63,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_reports.dart,5233,4bdc2c29cd953f10a288a6793c583fb1bfad8118767320cf829fefe8f9936870,first-party text / config,180,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_timeline.dart,3494,6aa250445f229d178d6ec84285802cf9e11ee2a785905764b8454c688c26748b,first-party text / config,108,automated full-file read; targeted manual review (see report)
+health_platform/lib/mock_data/mock_user.dart,1188,98cfe154d27f8548df7f4032f6c2526b5e7a45a95963e09fc8a2d65ba97f9d3a,first-party text / config,43,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/models/family_member.dart,1431,a0826a2ef8a26e1a9a69c854bb4144e15e3df386c4496738313404638cdda46e,first-party text / config,49,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/models/lab_report.dart,2896,4709c2e3246add071e5ec204bbde427cfb048ba9049eafc43797f36f7ace9854,first-party text / config,106,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/models/medical_record.dart,1645,fb8a4936c1ef3d5207a8d593cb729c6fef9ad21053d70aea41ee5d94ae61237a,first-party text / config,55,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/models/timeline_event.dart,1508,57b3d50d786d361bc1b554b68eb4d94968f7c67f6f80e3c84f4fc69d3fe3b2e0,first-party text / config,51,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/models/user.dart,9886,bcbd8dc07339a2023b6fac52dec1a95983f1a69aee7fe3905343657cd2b54f3b,first-party text / config,317,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/adaptive_nav.dart,4737,b4abf6d75ca0b5034370bd44f9dc48da85c81b87cd7a8f5c4afdc8dd2b377bca,first-party text / config,166,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/app_avatar.dart,2145,33a1708d36449fec00b38e420016073c35cec6c4836ea65a3fa80b36172c3e59,first-party text / config,91,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/app_badge.dart,1795,6ac865f8fa006e8528c1611165868a227aeb55c6dd5686fac90b66dd89c62822,first-party text / config,57,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/app_button.dart,2459,fdacd70dd6bcc73635753ca1bdc072b6fb9568a9f5ba951444c277b355d1d4e3,first-party text / config,95,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/app_card.dart,1241,5323681afac7c709a3b2dc477135ac215aa617b9f3e5edc30b0685d26f505082,first-party text / config,54,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/app_input.dart,2165,74c281fb8a42601143882fb962731835d5d7be546f30b3a0f327e5aa5089ff5a,first-party text / config,79,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/app_list_state.dart,6487,00b99156c38b98b373e298f94ec8c1d1266ccf691f2dbf0e1efe1d71bd68df84,first-party text / config,200,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/app_snackbar.dart,1994,f469eb20b817e24de09fc5249e4ec02d522792d6409b0e8a29b6f5317e43eef0,first-party text / config,74,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/badge.dart,1759,83689d5b3abd5510db3c89c73372f8de8e813ab25e9e87dd7881d8c3cf7039af,first-party text / config,55,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/empty_state.dart,1856,641458f962d5a3087da99ac2c617d963fc2f0de1deb27ef120d71239030783c5,first-party text / config,67,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/global_search_dialog.dart,14818,65c8290ab0307da3369dcb56bd9a434bd0757dbb5e2ce4aebf70662a68697965,first-party text / config,387,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/main_shell.dart,5223,c3620dc0546385abbf601e0bda31d49b765872f2299cb96622898906158d8b6c,first-party text / config,172,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/role_context_switcher.dart,5731,2e0fb90771cf4b111f308e6434d745fa63840a73d4d3676f4ae1777763a3c0f6,first-party text / config,202,automated full-file read; targeted manual review (see report)
+health_platform/lib/shared/widgets/web_constraint.dart,813,370d5949e3fc6f652d4c6e9aeaca14d74efe6598346c725954235c42e651d67d,first-party text / config,29,automated full-file read; targeted manual review (see report)
+health_platform/linux/.gitignore,19,d7bbeac6ba86e2d94d8ccc63a1a2fbbac5ee7467f52f75c168165412d6ac3b60,first-party text / config,1,automated full-file read; targeted manual review (see report)
+health_platform/linux/CMakeLists.txt,4896,de15aeb678201bc47aea4ed9b9922774067963839063047373efa19d4538cd3e,first-party text / config,128,automated full-file read; targeted manual review (see report)
+health_platform/linux/flutter/CMakeLists.txt,2903,4eb17836308c1cd53f6b2bb8edb3b7b30610bff3b1d9df7fecc9317f9109700c,first-party text / config,88,automated full-file read; targeted manual review (see report)
+health_platform/linux/flutter/generated_plugin_registrant.cc,434,c824516e905193619e6fdf309231e0da38a8ec9b94ad72f0bb96c68d8d285e22,first-party text / config,15,automated full-file read; targeted manual review (see report)
+health_platform/linux/flutter/generated_plugin_registrant.h,303,00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb,first-party text / config,15,automated full-file read; targeted manual review (see report)
+health_platform/linux/flutter/generated_plugins.cmake,760,973f4d18545f2477cf9ae544f79d8f26482ec223836bea0a95b853e21180b58b,first-party text / config,24,automated full-file read; targeted manual review (see report)
+health_platform/linux/runner/CMakeLists.txt,1000,81ecf2604c50f480c23d460b2ddf653ecd39df29cc5b2fe4913f1a59f008a5a7,first-party text / config,26,automated full-file read; targeted manual review (see report)
+health_platform/linux/runner/main.cc,186,905b4dfa4eab584c1eb6244899b7d5ef56d0bceaf3bffb5ea335ed7e0ba3c549,first-party text / config,6,automated full-file read; targeted manual review (see report)
+health_platform/linux/runner/my_application.cc,5617,9b5a5288fee60cc224432f315e98108b314c272f4a728117c7aefecae19e31b8,first-party text / config,148,automated full-file read; targeted manual review (see report)
+health_platform/linux/runner/my_application.h,472,880393cb82d7feaaa95d9acd6c2317749afae0e17ea5f5ee44b456bc081b5987,first-party text / config,21,automated full-file read; targeted manual review (see report)
+health_platform/macos/.gitignore,96,236a523a43625a2d63af3cd0f2ce8600a3668846f8cb278c1c7c5cbfd4aa4088,first-party text / config,7,automated full-file read; targeted manual review (see report)
+health_platform/macos/Flutter/Flutter-Debug.xcconfig,49,7e9b3ee3961b7d7718b418ceaed812a5f06a4e4cec894aae712a78e159c32ab0,first-party text / config,1,automated full-file read; targeted manual review (see report)
+health_platform/macos/Flutter/Flutter-Release.xcconfig,49,7e9b3ee3961b7d7718b418ceaed812a5f06a4e4cec894aae712a78e159c32ab0,first-party text / config,1,automated full-file read; targeted manual review (see report)
+health_platform/macos/Flutter/GeneratedPluginRegistrant.swift,371,81fa44948e3d5950dbae2ff9fbccfcf3a622e65116773380a53207851d4d7c57,first-party text / config,14,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner.xcodeproj/project.pbxproj,28671,4a25b1cfd792e2d9b1b6bd005bafbf74f3217f80af23dcd8c7d01d37f94c15b6,first-party text / config,729,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist,246,d557c2c32fc6258ec28981fa45dc847b76c9968beb90a2e26d13ef9c4ea45c30,first-party text / config,8,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme,4722,f1c4b339f76e1aa38de8f5a549fc818180ddb94762b3b2b05cd65d785ac7c4ed,first-party text / config,117,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner.xcworkspace/contents.xcworkspacedata,159,706a4c812f2a1e220e6785c27580020d58048e2ae4d30d1280f3c43344ce6b38,first-party text / config,7,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist,246,d557c2c32fc6258ec28981fa45dc847b76c9968beb90a2e26d13ef9c4ea45c30,first-party text / config,8,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/AppDelegate.swift,324,5b9cbdcb563ad8578a99b7c283958490e4af537322e9092fe1efbb3c29ab3e1b,first-party text / config,13,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json,1359,992ba63d183dfb8f8e3af38ac203d834d23c004da1417c438b4c5a3d7d1d7103,first-party text / config,68,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png,102994,6232e5815af17e25e0268b2fec7aea9e068cc92ec709e9605c2b31df4ff2a313,binary asset,,inventory only
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png,5680,15591f03f31313af6fd644ed0512106cc04365130b8b73244f1cfa6dddfb4400,binary asset,,inventory only
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png,520,cc6928b5adfc00dbf526192e2705dd9af641cdf20ab4c6c7ca7cd4936dca59f0,binary asset,,inventory only
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png,14142,416efd77cde932d42ef34168da24dd428a495b1f4f34bbbd125a18d2add186a2,binary asset,,inventory only
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png,1066,ae8c4458e41f1e28b1e851ed87d3268d4a0351ceea427fa2a84cc94ddfb6d4c5,binary asset,,inventory only
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png,36406,0a91c6c1bf242e54ee179e34629e9ef3e8a6d286c0fce01e302280a8be9277e6,binary asset,,inventory only
+health_platform/macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png,2218,6ad229623498e5f1277800db3ab7cb11faf85eb2569e1213f7d8e55003c07b42,binary asset,,inventory only
+health_platform/macos/Runner/Base.lproj/MainMenu.xib,24072,776c35481f6581f14148b90071558b25f6ce6262e771988985e9fe8d3e70a472,first-party text / config,343,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Configs/AppInfo.xcconfig,628,ac397e3ffa9ab8a519a0e383608856119259df8133a6bc1d5a9959c4a120425f,first-party text / config,14,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Configs/Debug.xcconfig,79,86be603022e2a385dd7884fce4cc29255676c3dda579d3d4a56c958bf1e57de0,first-party text / config,2,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Configs/Release.xcconfig,81,d1bf3f0349aadd5c58ee9d46c0ce4ce45467127c438936e9bb481d861d296565,first-party text / config,2,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Configs/Warnings.xcconfig,593,aa8ded4c14068cb05f51f5446509fe56805cf1e29961ad6d5a97233bb0632bc1,first-party text / config,13,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/DebugProfile.entitlements,360,b2aa41d03e18907d360b721b7bb3edb302897c8a3de98ec47b6665033fea0b0e,first-party text / config,12,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Info.plist,1092,047f9cb0f1122c04589483beaedbbe23492fdc8946b94e09bb13080736af4f93,first-party text / config,32,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/MainFlutterWindow.swift,403,8178ad756f958f986f794a8bb06e321a6630ceaaf8f235b3b4ae3936e415dc7c,first-party text / config,15,automated full-file read; targeted manual review (see report)
+health_platform/macos/Runner/Release.entitlements,248,c3b881c72aa4cca9cf50da6654c4d675dec929056692af46a6fbecd00aef5990,first-party text / config,8,automated full-file read; targeted manual review (see report)
+health_platform/macos/RunnerTests/RunnerTests.swift,302,8a0ff977c64ceac0750fffa48087988b7b4125d1b1c49019221e7fffb574423e,first-party text / config,12,automated full-file read; targeted manual review (see report)
+health_platform/pubspec.lock,21651,de897bc3170da968fc9ec6cf36b7f0eb4a2fcd7be5b16dc66c6574f4d0ead13c,first-party text / config,746,automated full-file read; targeted manual review (see report)
+health_platform/pubspec.yaml,4063,f35f960ad0af740c1ff6a19050da74795540c7483d9ec020a5fd9b6b5b872da8,first-party text / config,95,automated full-file read; targeted manual review (see report)
+health_platform/report_screenshots/01_login_screen_desktop.png,180318,4c3c904c15a08d2aa0be38ce64bf8280c6cde7cd45ea0d2b14a22fb36c4f98aa,binary asset,,inventory only
+health_platform/report_screenshots/01_login_screen_mobile.png,54228,177dc79382ddd90dc65e439b6c5588cabc5ef995b21892c8f6503aa652ac589c,binary asset,,inventory only
+health_platform/report_screenshots/02_signup_role_selection_desktop.png,197287,e26aff368b19e7669513b78cb013c2adea3c5f9c2bf11cc99d0fc37aecb845ac,binary asset,,inventory only
+health_platform/report_screenshots/02_signup_role_selection_mobile.png,64933,a668f7d6cdb38ae9474ef5ff436ecab804b883ac27c4e7897dda9b622487db0e,binary asset,,inventory only
+health_platform/report_screenshots/03_continue_as_screen_desktop.png,209766,3f9e9f006a935910b1ea95431feeb05fa67a3c1cb0189bcd957466a4f0ef0e69,binary asset,,inventory only
+health_platform/report_screenshots/03_continue_as_screen_mobile.png,67950,f3d5c9ec06fa0f9e85446e818763b41882b8d276c6a9caee9f847688b2811ac1,binary asset,,inventory only
+health_platform/report_screenshots/04_doctor_dashboard_desktop.png,162067,043ec2639e006daf6bb0de2f0d59899bc10ffead7a7d36248b593eaebe0e70fd,binary asset,,inventory only
+health_platform/report_screenshots/04_doctor_dashboard_mobile.png,79835,bd28f6f0d003c6115fb5dd6b02838d59c1b53a25e5cb0e66c365c70c83ab622f,binary asset,,inventory only
+health_platform/report_screenshots/04_patient_dashboard_desktop.png,68352,5df3dcabd2e3ce316243b5ea250fa874fa419f1c1bade01a55f5ee94f9e51943,binary asset,,inventory only
+health_platform/report_screenshots/04_patient_dashboard_mobile.png,48845,edbf44323b273342d7e62641942bc3ec87d827f0e32ec4c99cec02792d76f430,binary asset,,inventory only
+health_platform/report_screenshots/05_doctor_patient_search_desktop.png,90383,36be9fc4942888b7a4b7a2d0fb9c9ad82385c2469581ab4fdf7cc0d704c810a2,binary asset,,inventory only
+health_platform/report_screenshots/05_doctor_patient_search_mobile.png,66324,616bfca2723fec71df35690e7108a011d3f12b7f641e1b7c2c2292178f5367fc,binary asset,,inventory only
+health_platform/report_screenshots/05_patient_records_desktop.png,70863,09244d477e9be3e6bc0f64f153076cc744981085f87469cfa150774ca0dc6f96,binary asset,,inventory only
+health_platform/report_screenshots/05_patient_records_mobile.png,53281,5ddbd65e5f157f28dd273ba90bd55158cfdd39cce3fc831b18a70326e6df4fdb,binary asset,,inventory only
+health_platform/report_screenshots/06_doctor_patient_record_view_desktop.png,63624,f65104cf951bdd46444e11d742a6d2f669fd27cb9bf20ae8f6e723f565a4f541,binary asset,,inventory only
+health_platform/report_screenshots/06_doctor_patient_record_view_mobile.png,68537,f9145d5eb282e2fcd371e2789bfb5d2f60ad0307a6bb81083872ddbf0f8d16cb,binary asset,,inventory only
+health_platform/report_screenshots/06_patient_reports_desktop.png,59730,eefadf87d3450d2602822a77cc8b001e819934545d67c0ccc9738082250bbd67,binary asset,,inventory only
+health_platform/report_screenshots/06_patient_reports_mobile.png,42991,c51255b82c384e890341dc41e7c5e00e9d27feb5dcebe69819d46c8b7d231db4,binary asset,,inventory only
+health_platform/report_screenshots/07_doctor_add_diagnosis_desktop.png,55230,9f6eb94c8aae865dfbeafa26e320c35689cbf396680e09a49249714bc2de382f,binary asset,,inventory only
+health_platform/report_screenshots/07_doctor_add_diagnosis_mobile.png,45931,2a51803e98b19459220c42e95bf95e9055cc43ad012c056cd862251acb405776,binary asset,,inventory only
+health_platform/report_screenshots/07_patient_timeline_desktop.png,88114,8a1b2945601905650d634add95d2b343454f90817cc88ee2e64ed26ed126c298,binary asset,,inventory only
+health_platform/report_screenshots/07_patient_timeline_mobile.png,55802,243d7ff38e521f596290a4d77a98d1c99b4d4734ab5b57a2041a6eacd3532c99,binary asset,,inventory only
+health_platform/report_screenshots/08_lab_dashboard_desktop.png,80608,94c568f4f4198ab79295cc9a47ea5d39f67fa32b7f030b57d96e292b74f7899e,binary asset,,inventory only
+health_platform/report_screenshots/08_lab_dashboard_mobile.png,59317,5fb343e68d5518365a941326ba933c40e3db247d1d3354b7f07d4dfdc9ce7983,binary asset,,inventory only
+health_platform/report_screenshots/08_patient_family_desktop.png,57605,870102bfb046f8ab24507e174c5e55a4b6659946ee017a65397039e4b10d86b0,binary asset,,inventory only
+health_platform/report_screenshots/08_patient_family_mobile.png,44822,80f19de26534255554384b5bd2d0a47a28a7a8423a475dc615cc93440be2b247,binary asset,,inventory only
+health_platform/report_screenshots/09_lab_pending_reports_desktop.png,89844,165a5dbd129fbe043bd8fb5c70c1a5ebdf4c5b5b2bed76279bde31fc66d96503,binary asset,,inventory only
+health_platform/report_screenshots/09_lab_pending_reports_mobile.png,66223,8f6a6eb86d4e601412ff594be20b18e383d0f5d725256d674a534b42411d3d26,binary asset,,inventory only
+health_platform/report_screenshots/09_patient_emergency_desktop.png,54595,a28962e4143d3144851c0eabe3ad3d53d60b6d39fa462f702d2b9a5786acc9b5,binary asset,,inventory only
+health_platform/report_screenshots/09_patient_emergency_mobile.png,38728,2f6928ab00c8f847deaa3b5591a6d3d2b748f0c19e595c4cada001ca9470a34d,binary asset,,inventory only
+health_platform/report_screenshots/10_doctor_dashboard_desktop.png,162067,043ec2639e006daf6bb0de2f0d59899bc10ffead7a7d36248b593eaebe0e70fd,binary asset,,inventory only
+health_platform/report_screenshots/10_doctor_dashboard_mobile.png,79835,bd28f6f0d003c6115fb5dd6b02838d59c1b53a25e5cb0e66c365c70c83ab622f,binary asset,,inventory only
+health_platform/report_screenshots/10_lab_upload_report_desktop.png,84798,76c1a90fd6051c8183be259754de86efae9d3d405b687fcccc1cc34efe0be884,binary asset,,inventory only
+health_platform/report_screenshots/10_lab_upload_report_mobile.png,51942,a09e1b8ea3e294de6a28effd0c3ccf81ff17167bdd42b0e4bfe8b11e584fb540,binary asset,,inventory only
+health_platform/report_screenshots/11_doctor_patient_search_desktop.png,90383,36be9fc4942888b7a4b7a2d0fb9c9ad82385c2469581ab4fdf7cc0d704c810a2,binary asset,,inventory only
+health_platform/report_screenshots/11_doctor_patient_search_mobile.png,66324,616bfca2723fec71df35690e7108a011d3f12b7f641e1b7c2c2292178f5367fc,binary asset,,inventory only
+health_platform/report_screenshots/11_lab_integration_status_desktop.png,78082,fb7fa61b7601ecc03eeebaed0f1992fe44b68082e8f2aeca6906218d93735883,binary asset,,inventory only
+health_platform/report_screenshots/11_lab_integration_status_mobile.png,64330,977c104d1efff61189d397f0cc387ca34e708af241cff7c489a245b3bed099f8,binary asset,,inventory only
+health_platform/report_screenshots/12_doctor_patient_record_view_desktop.png,63624,f65104cf951bdd46444e11d742a6d2f669fd27cb9bf20ae8f6e723f565a4f541,binary asset,,inventory only
+health_platform/report_screenshots/12_doctor_patient_record_view_mobile.png,68537,f9145d5eb282e2fcd371e2789bfb5d2f60ad0307a6bb81083872ddbf0f8d16cb,binary asset,,inventory only
+health_platform/report_screenshots/12_hospital_dashboard_desktop.png,91284,2588a81849e317066ebc917bde8b41b440ec5594a26a07a3a25c68f55f1d3a56,binary asset,,inventory only
+health_platform/report_screenshots/12_hospital_dashboard_mobile.png,62207,6c2ec278aa25435063c0fe54842d68b6c400365d0d18442f9d0940d5f5c4e0ab,binary asset,,inventory only
+health_platform/report_screenshots/13_doctor_add_diagnosis_desktop.png,55230,9f6eb94c8aae865dfbeafa26e320c35689cbf396680e09a49249714bc2de382f,binary asset,,inventory only
+health_platform/report_screenshots/13_doctor_add_diagnosis_mobile.png,45931,2a51803e98b19459220c42e95bf95e9055cc43ad012c056cd862251acb405776,binary asset,,inventory only
+health_platform/report_screenshots/13_hospital_admissions_desktop.png,102619,83dafd494f589ba31c1ffe7d18e143fa57936004083c8cbdcf7451a74e28b87a,binary asset,,inventory only
+health_platform/report_screenshots/13_hospital_admissions_mobile.png,68629,b3d55cdde51d30717d5399e9cc216d7561e060ad3cac3fd607fe59316b99737e,binary asset,,inventory only
+health_platform/report_screenshots/14_hospital_discharge_summary_desktop.png,92381,7d3360166d1b888a5a4e727810fba7f98eed9136e9c0b67211f9c9b134684054,binary asset,,inventory only
+health_platform/report_screenshots/14_hospital_discharge_summary_mobile.png,68960,8e0bd4a41cdc19473f0c26d71d93fc2aab8d1aca4fb87ba766e0c67193ced1c6,binary asset,,inventory only
+health_platform/report_screenshots/14_lab_dashboard_desktop.png,80608,94c568f4f4198ab79295cc9a47ea5d39f67fa32b7f030b57d96e292b74f7899e,binary asset,,inventory only
+health_platform/report_screenshots/14_lab_dashboard_mobile.png,59317,5fb343e68d5518365a941326ba933c40e3db247d1d3354b7f07d4dfdc9ce7983,binary asset,,inventory only
+health_platform/report_screenshots/15_hospital_integration_status_desktop.png,73228,3ee9f08daaed2c73bccd2720a164cad15e8eae83bd771a4a6148f9e4bb241854,binary asset,,inventory only
+health_platform/report_screenshots/15_hospital_integration_status_mobile.png,60769,10b124d32a3db14875f7fef20fcc9d9250d00c229a79ff3210f48f2b2053cb9d,binary asset,,inventory only
+health_platform/report_screenshots/15_lab_pending_reports_desktop.png,89844,165a5dbd129fbe043bd8fb5c70c1a5ebdf4c5b5b2bed76279bde31fc66d96503,binary asset,,inventory only
+health_platform/report_screenshots/15_lab_pending_reports_mobile.png,66223,8f6a6eb86d4e601412ff594be20b18e383d0f5d725256d674a534b42411d3d26,binary asset,,inventory only
+health_platform/report_screenshots/16_lab_upload_report_desktop.png,84798,76c1a90fd6051c8183be259754de86efae9d3d405b687fcccc1cc34efe0be884,binary asset,,inventory only
+health_platform/report_screenshots/16_lab_upload_report_mobile.png,51942,a09e1b8ea3e294de6a28effd0c3ccf81ff17167bdd42b0e4bfe8b11e584fb540,binary asset,,inventory only
+health_platform/report_screenshots/17_lab_integration_status_desktop.png,78082,fb7fa61b7601ecc03eeebaed0f1992fe44b68082e8f2aeca6906218d93735883,binary asset,,inventory only
+health_platform/report_screenshots/17_lab_integration_status_mobile.png,64330,977c104d1efff61189d397f0cc387ca34e708af241cff7c489a245b3bed099f8,binary asset,,inventory only
+health_platform/report_screenshots/18_hospital_dashboard_desktop.png,91284,2588a81849e317066ebc917bde8b41b440ec5594a26a07a3a25c68f55f1d3a56,binary asset,,inventory only
+health_platform/report_screenshots/18_hospital_dashboard_mobile.png,62207,6c2ec278aa25435063c0fe54842d68b6c400365d0d18442f9d0940d5f5c4e0ab,binary asset,,inventory only
+health_platform/report_screenshots/19_hospital_admissions_desktop.png,102619,83dafd494f589ba31c1ffe7d18e143fa57936004083c8cbdcf7451a74e28b87a,binary asset,,inventory only
+health_platform/report_screenshots/19_hospital_admissions_mobile.png,68629,b3d55cdde51d30717d5399e9cc216d7561e060ad3cac3fd607fe59316b99737e,binary asset,,inventory only
+health_platform/report_screenshots/20_hospital_discharge_summary_desktop.png,92381,7d3360166d1b888a5a4e727810fba7f98eed9136e9c0b67211f9c9b134684054,binary asset,,inventory only
+health_platform/report_screenshots/20_hospital_discharge_summary_mobile.png,68960,8e0bd4a41cdc19473f0c26d71d93fc2aab8d1aca4fb87ba766e0c67193ced1c6,binary asset,,inventory only
+health_platform/report_screenshots/21_hospital_integration_status_desktop.png,73228,3ee9f08daaed2c73bccd2720a164cad15e8eae83bd771a4a6148f9e4bb241854,binary asset,,inventory only
+health_platform/report_screenshots/21_hospital_integration_status_mobile.png,60769,10b124d32a3db14875f7fef20fcc9d9250d00c229a79ff3210f48f2b2053cb9d,binary asset,,inventory only
+health_platform/test/widget_test.dart,421,0d51b3ab664f935950504b3286e7dea0e80c888c51b8e6ccef6fe0ad0bd17953,first-party text / config,14,automated full-file read; targeted manual review (see report)
+health_platform/web/favicon.png,917,7ab2525f4b86b65d3e4c70358a17e5a1aaf6f437f99cbcc046dad73d59bb9015,binary asset,,inventory only
+health_platform/web/icons/Icon-192.png,5292,3dce99077602f70421c1c6b2a240bc9b83d64d86681d45f2154143310c980be3,binary asset,,inventory only
+health_platform/web/icons/Icon-512.png,8252,baccb205ae45f0b421be1657259b4943ac40c95094ab877f3bcbe12cd544dcbe,binary asset,,inventory only
+health_platform/web/icons/Icon-maskable-192.png,5594,d2c842e22a9f4ec9d996b23373a905c88d9a203b220c5c151885ad621f974b5c,binary asset,,inventory only
+health_platform/web/icons/Icon-maskable-512.png,20998,6aee06cdcab6b2aef74b1734c4778f4421d2da100b0ff9e52b21b55240202929,binary asset,,inventory only
+health_platform/web/index.html,1581,8ec37115b5ce7b854bd7da2b9af05a79a3744837a4c8a116d794f967ca28055c,first-party text / config,46,automated full-file read; targeted manual review (see report)
+health_platform/web/manifest.json,961,d9eaef0229720c2675c0bc4dc71f451f6c269d55256c1518eea108c4128d20aa,first-party text / config,35,automated full-file read; targeted manual review (see report)
+health_platform/windows/.gitignore,308,955e3110cb16494ee76e1cd5df47e2c212309eb94a49a123fe87f718de413cb8,first-party text / config,17,automated full-file read; targeted manual review (see report)
+health_platform/windows/CMakeLists.txt,4274,18a9555f10fca59736ed03418d95847f8cb60b96e8e33018ff690b99a20032c3,first-party text / config,108,automated full-file read; targeted manual review (see report)
+health_platform/windows/flutter/CMakeLists.txt,3851,bd05e3268b2f246bcbafdb778165fe67a7bafdba04eb73599502563a67b8ae7e,first-party text / config,109,automated full-file read; targeted manual review (see report)
+health_platform/windows/flutter/generated_plugin_registrant.cc,324,a7527f0f96901d37a8bc68556978ed134f7af5ce22eb0afd911955d3baeac257,first-party text / config,14,automated full-file read; targeted manual review (see report)
+health_platform/windows/flutter/generated_plugin_registrant.h,302,dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a,first-party text / config,15,automated full-file read; targeted manual review (see report)
+health_platform/windows/flutter/generated_plugins.cmake,766,bb689654041af003955f4f293655d80adbe9592b3ac0635de18ff0823d0decc1,first-party text / config,24,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/CMakeLists.txt,1836,d765fdd05f63ad099e585a2cced0cbff13ec3229b7de68c8681b2107db850089,first-party text / config,40,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/Runner.rc,3176,8fbec849553aa79c8a186418264a62984b7c242b9d6d0b9b27d93d3c437c0ed5,binary asset,,inventory only
+health_platform/windows/runner/flutter_window.cpp,2193,d615eedc06ae37321e59c2c00c7687d1887dcd97904eb7225fafd8dcb5b83da6,first-party text / config,71,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/flutter_window.h,961,0252b804f5da380c7709cbe1daff2b8d18daf6c49d7e6dd43e5af3c99c19f56c,first-party text / config,33,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/main.cpp,1311,dc1799c3c14e7d70514fb8f8f59685416b891b37d1fa495ba449c97d2c1c9d95,first-party text / config,43,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/resource.h,448,d0e8bf7835468b4b6b1f8f0747f2e8f25c19841f2df2ac60aaa584ddae3aa7c6,first-party text / config,16,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/resources/app_icon.ico,33772,c098d3fc85cacff98b8e69811b48e9f0d852fcee278132d794411d978869cbf8,binary asset,,inventory only
+health_platform/windows/runner/runner.exe.manifest,616,639a56233fcd8cbcb8bbefcd93e4680ec2664f32d9acfb3d2ec1d8726a96e090,binary asset,,inventory only
+health_platform/windows/runner/utils.cpp,2237,a128b67b9f3c2579e2ecef5b0dde2c33f222a097cdfe5da2a3067c73d1485b39,first-party text / config,69,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/utils.h,691,832e246b6758253f89016fb0374b30791242e97ad950d27fc678b3d9feacfdc4,first-party text / config,19,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/win32_window.cpp,8822,4e4f4dcf8e86ea6e097562cb3476039e693449bd8045367538afee579c017511,first-party text / config,288,automated full-file read; targeted manual review (see report)
+health_platform/windows/runner/win32_window.h,3624,d154cf89ba85f820631a9b5bedacbe64fc5815e428fe6bc5da579ce649f69841,first-party text / config,102,automated full-file read; targeted manual review (see report)
+proof_appointments.png,46627,b746d92e60e37d36d49a75df68be1b277833988e1016deac9c3e0f9dca3e33f5,binary asset,,inventory only
+proof_appointments_clean.png,49332,7bc6bd4e6f732b16b909f5b03507a7aec3bae227be39952a9f7d64b1e41c2807,binary asset,,inventory only
+proof_chart_active_consent.png,54240,b56c5df354d170ff257d8efa1590857d02c31ce8fe9b56422b0c32417326812d,binary asset,,inventory only
+proof_doctor_dash.png,142679,78821f7a9ec09635f1c8062e6d47a9e75246b1873d4656bcb4f097ac0655be5a,binary asset,,inventory only
+proof_emergency_card.png,56942,c6716acf2eb3c40f450c85d41f69eb7d73a2b479efb85fd929f415adb7e1488d,binary asset,,inventory only
+proof_hospital_portal.png,67657,5c61453459559f49438c78ea49473bef5b6d8e388ca874bddb07e5ea0b86aca9,binary asset,,inventory only
+proof_lab_portal.png,67453,c3d8c7269ae7f264c97b4e30cfb6494371f678673b2310b82f9d405cbba24e72,binary asset,,inventory only
+proof_patient_dash.png,62274,ef76ba9ef2793bd367438b040ce33f710cd7d0d00c0953ae8743673e91fc9c80,binary asset,,inventory only
+run_hardcore_tests.py,16029,dc4f86bed64a4294b556380bcb384e988d5d92363ce99f4f538b53567f8128f2,first-party text / config,287,automated full-file read; targeted manual review (see report)
+screenshots/01_patient_dashboard.png,56433,30732693e5cee9f818be7a413998fb4fff908351173d0170191588649376c01d,binary asset,,inventory only
+screenshots/02_patient_records.png,62068,1ed7d644ff9284e0c7556cee414ac17aad95ff1fc0ee2470204cda8aa7fdcae3,binary asset,,inventory only
+screenshots/03_patient_reports.png,39207,f5d47fbacb31f1334a614a5ba969313e1ec5fd0a5240a1290580be177eb6544f,binary asset,,inventory only
+screenshots/04_patient_timeline.png,62753,8937eb1040aa2ce22df19df4c85f5ac5a5b305d65f0ec6560b2fd1097725a54c,binary asset,,inventory only
+screenshots/05_patient_emergency.png,56259,767636b2750928d346c9d556c6d4dd4b06656a9129cbb0affa899777fa701931,binary asset,,inventory only
+screenshots/06_doctor_dashboard.png,119170,45a7e96a5b76e7b56041c1f0da2a94ac5f61e9e11b9793359220192081365d3e,binary asset,,inventory only
+screenshots/07_doctor_patients.png,44639,4f26def695bea176b3d8f0ffc39720716e28e90f6af4c7bc447cde55c1cdfec7,binary asset,,inventory only
+screenshots/08_doctor_patient_chart.png,55644,980c4b62e9d3790e7838b504442edb27b604f5afb3722e459fd3f25bc8e76338,binary asset,,inventory only
+screenshots/09_doctor_add_diagnosis.png,49999,1d9cc63a0f5022a0e2c53b23e5f254c6a37bc4d6fc4cc0370ca1469347fe2009,binary asset,,inventory only
+screenshots/10_lab_portal.png,65593,046a25785c2273bdc44ca6036f2639850b58a1e20d1b4fb31213997c7051066f,binary asset,,inventory only
+screenshots/11_hospital_portal.png,67102,404bd25c856cd73982889e2a261280f6e502861a3d03c5c77fddfb71a0b5743c,binary asset,,inventory only
+src/components/AuthModal.jsx,6934,374f8f921f8f9e4cc150e54c52465740b08393ded57852daf57eacf5de88dd55,first-party text / config,151,automated full-file read; targeted manual review (see report)
+src/components/EmergencyCardModal.jsx,6218,2225a92b8248ab9208702244aa4a7e1b06a5d80ddb92a50025364b0dc03d8ddb,first-party text / config,110,automated full-file read; targeted manual review (see report)
+src/components/Header.jsx,2151,f8dd160969b19b25ad4f3c8cad42c6760fd2f2b8c5a0dd47aa6af3f6aedc16a9,first-party text / config,54,automated full-file read; targeted manual review (see report)
+system_flow_diagram.png,102163,c62bd1be7888985aab41352ef28ae70f1efc04fb561fa022f3364fd766127696,binary asset,,inventory only
+test_doctor_appointments.png,37568,d63e12b1fcec7e926bb3f355158f3308269a26b543693b73e906058fea2bb0ec,binary asset,,inventory only
+test_doctor_dash.png,142747,55df5ef1709642aa1c3e64cfbb4b9a5bdb7b06497786162d810a7174ef8dff40,binary asset,,inventory only
+test_patient_detail.png,54240,b56c5df354d170ff257d8efa1590857d02c31ce8fe9b56422b0c32417326812d,binary asset,,inventory only
+test_patient_search.png,80106,2892dd6eb6141dd0f7b79c08f29bc2274180acba30a3e243c7d504d3dbee7df6,binary asset,,inventory only
+test_pw.png,56808,d88687e102121d26c145ad05047d9543d4c3430080dee054abfa46ec973d6b0f,binary asset,,inventory only
+test_samples/batch_multi_patient_reports.csv,1335,70bd997c529ad6ef253a6b7929f451cea09d787312d25c2fdd053202bb1b30aa,first-party text / config,7,automated full-file read; targeted manual review (see report)
+test_samples/cbc_hemogram_test.csv,1770,bc36372321c43116c3848fd6930ce46e76bca17c6515f2bab2e929d568bd58bd,first-party text / config,9,automated full-file read; targeted manual review (see report)
+test_samples/comprehensive_clinical_lab_report.pdf,5582,99f9275fc05da0dbadb921a12b632222d58af60de119eabe429687c15bf14f53,PDF documentation,,text extracted: 1 pages; no visual/layout audit
+test_samples/new_clinical_lab_report.csv,3251,25e70a4693b2cbc30a00e0285c11ba9875137d7e848ad7b7989856cf003398ba,first-party text / config,15,automated full-file read; targeted manual review (see report)
+test_samples/single_patient_report.csv,1184,c44cff769963bcb59b1f195163a8efbd8367ff41a61ff41d2f8959a893b0493c,first-party text / config,6,automated full-file read; targeted manual review (see report)

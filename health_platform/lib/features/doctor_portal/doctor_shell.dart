@@ -81,6 +81,7 @@ class _DoctorShellState extends ConsumerState<DoctorShell> {
       titleSpacing: 16,
       title: const RoleContextSwitcher(accentColor: kDoctorAccent),
       actions: [
+        IconButton(onPressed:()=>context.push('/doctor/bookings'),icon:const Icon(Icons.calendar_month),tooltip:'Services, offers and bookings'),
         // Global Instant Search
         if (isWideScreen)
           GestureDetector(

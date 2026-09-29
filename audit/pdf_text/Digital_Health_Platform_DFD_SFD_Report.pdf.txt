@@ -1,0 +1,111 @@
+PAGE 1
+DIGITAL HEALTH PLATFORM
+ LEVEL 0 DFD, LEVEL 1 DFD & SYSTEM FLOW DIAGRAM (SFD)
+Platform Scope:
+Patient, Doctor, Diagnostic Lab & Hospital Inpatient Modules
+Security Standard:
+HIPAA / ABDM Compliant 24-Hour Clinical Consent Protocol
+Discovery Engine:
+Strict Email-Based Verification (Zero Public Directory Leak)
+Backend Stack:
+Django REST Framework, PostgreSQL / SQLite, JWT + SMTP OTP
+Frontend Stack:
+Flutter Web & Mobile Reactive State (Riverpod)
+Document Type:
+System Engineering Diagrams & Functional Specifications
+Executive Summary & Core Architectural Highlights
+This engineering report provides official visual diagrams and architectural models for the Digital Health Platform. The system
+decouples clinical roles while ensuring that sensitive medical history is accessible only with active, patient-consented
+time-bounded windows. Zero arbitrary directory listing prevents mass harvesting of doctor or patient accounts, upholding
+patient rights and HIPAA standards.
+
+
+PAGE 2
+1. Level 0 Data Flow Diagram (Context Level)
+The Level 0 Context Diagram establishes the global boundary of the Digital Health Platform. The central system (Process 0.0)
+interacts with four primary external entities (Patient, Doctor, Diagnostic Lab, Hospital Care) and an external SMTP notification
+service.
+External Entity
+Input Data Flows into System
+Output Data Flows to Entity
+Patient
+Credentials, OTP, Doctor Email Query, Consent Grant/Revocation
+Auth JWT, Verified Doctor Details, Prescriptions, Lab Reports
+Doctor
+Doctor Credentials, Patient Email Query, Diagnosis, Meds, Consent Action
+Auth JWT, Unlocked Clinical EMR Chart (24h Window)
+Diagnostic Lab
+Lab Tech Auth, Single Test Orders, Batch CSV Uploads
+Batch Parsing Status, Published EMR Record Confirmation
+Hospital Care
+Admin Auth, Inpatient Admission, Ward/Bed Assignment, Daily Vitals
+Real-Time Bed Occupancy Dashboard, Discharge Summary
+DIGITAL HEALTH RECORD PLATFORM — ARCHITECTURE SPECIFICATION
+Confidential — Healthcare Platform System Flow Diagrams
+Page 2 of 4
+
+
+PAGE 3
+2. Level 1 Data Flow Diagram (Subsystem Decomposition)
+The Level 1 DFD decomposes the central process into 6 specialized subprocesses and 5 centralized persistent data stores
+(D1 to D5). Strict email search rules guarantee that no entity can enumerate public clinical records without authorization.
+Process ID
+Subsystem Name
+Primary Data Inputs
+Target Data Store
+1.0
+Authentication & Identity
+Email, OTP, Role Profile Payload
+D1: Users & Role Profiles
+2.0
+Directory & Lookup
+Target Email Query (Doctor / Patient)
+D1: Read-Only Verification
+3.0
+Consent Protocol
+Requested Duration (24h/7d), Doctor ID
+D2: Consents & Access Timers
+4.0
+Clinical EMR & Rx
+Diagnosis, Drug Name, Dosage, Instructions
+D3: Prescriptions & Items
+5.0
+Diagnostic Testing
+Lab Order Form, Bulk CSV File
+D4: Diagnostic Lab Reports
+6.0
+Hospital Care
+Admission Code, Ward/Bed #, Daily Vitals
+D5: Inpatient Beds & Vitals
+DIGITAL HEALTH RECORD PLATFORM — ARCHITECTURE SPECIFICATION
+Confidential — Healthcare Platform System Flow Diagrams
+Page 3 of 4
+
+
+PAGE 4
+3. System Flow Diagram (SFD) — Operational & Decision Logic
+The System Flow Diagram details step-by-step branching logic, decision diamonds, database validation, and rollback
+operations across Authentication, Discovery, Consent Locking, and Prescription Delivery.
+Decision Check
+Evaluation Rule
+Success Path
+Failure / Rollback Path
+Valid 6-Digit OTP?
+Match against EmailOTP within 5 mins
+Issue JWT & Redirect to Role Portal
+Increment attempts; lock on 3 fails
+Record Exists in DB?
+Query User by email__iexact
+Render Verified Profile Badge
+Return 0 results; display error prompt
+Consent Approved?
+Check status='approved' & valid_until
+Unlock 24h Clinical History Chart
+Enforce Consent Required Lock Screen
+Valid CSV Ingestion?
+Validate email, headers, test values
+Store batch & publish to EMR
+Reject batch; display error report
+DIGITAL HEALTH RECORD PLATFORM — ARCHITECTURE SPECIFICATION
+Confidential — Healthcare Platform System Flow Diagrams
+Page 4 of 4

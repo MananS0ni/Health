@@ -1,3 +1,5 @@
+from django.utils import timezone
+from apps.doctor.models import ConsentRequest
 from rest_framework.test import APITestCase
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -34,6 +36,11 @@ class FullPortalIntegrationTests(APITestCase):
             role='lab_staff',
             roles=['lab_staff']
         )
+
+        for provider in (self.doctor, self.lab_staff):
+            provider.professional_verified = True
+            provider.save()
+            ConsentRequest.objects.create(doctor=provider, patient=self.patient, status='approved', valid_until=timezone.now()+timezone.timedelta(hours=1))
 
     def test_patient_medical_record_crud(self):
         """Test patient can add and list personal medical records."""

@@ -1,3 +1,5 @@
+import '../../core/network/api_client.dart';
+import '../../shared/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -19,7 +21,7 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
   void _showEditDoctorDialog() {
     final user = ref.read(userProvider);
     final docProfile = user.doctorProfile;
-    final specController = TextEditingController(text: docProfile?.specialization ?? 'General Physician');
+    final specController = TextEditingController(text: docProfile?.specialization ?? '');
     final clinicController = TextEditingController(text: docProfile?.clinicName ?? '');
     final regController = TextEditingController(text: docProfile?.registrationNumber ?? '');
 
@@ -76,15 +78,18 @@ class _DoctorProfileScreenState extends ConsumerState<DoctorProfileScreen> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(dialogCtx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Doctor practice profile updated successfully.'),
-                  backgroundColor: Color(0xFF059669),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+            onPressed: () async {
+              try {
+                final result=await ApiClient().postData('/auth/register-profile/',{'full_name':user.fullName,'role':'doctor','registration_number':regController.text.trim(),'specialization':specController.text.trim(),'clinic_name':clinicController.text.trim()});
+                final data=Map<String,dynamic>.from(result['user']);
+                ApiClient().professionalVerified=data['professional_verified']==true;
+                ref.read(authStateProvider.notifier).updateCurrentUser(User.fromJson(data));
+                if(!dialogCtx.mounted)return;
+                Navigator.pop(dialogCtx);
+                if(!mounted)return;
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Credentials saved for administrator review.')));
+                context.go('/dashboard');
+              }catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Not saved: $e')));}
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kDoctorAccent,

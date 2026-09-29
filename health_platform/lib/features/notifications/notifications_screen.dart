@@ -17,7 +17,25 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 }
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
-  ListStatus _viewStatus = ListStatus.content;
+  ListStatus _viewStatus = ListStatus.loading;
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_load);
+  }
+  Future<void> _load() async {
+    try {
+      await ref.read(notificationsProvider.notifier).fetch();
+      if (mounted) setState(() => _viewStatus = ListStatus.content);
+    } catch (_) {
+      if (mounted) setState(() => _viewStatus = ListStatus.error);
+    }
+  }
+  Future<void> _markAll() async {
+    try { await ref.read(notificationsProvider.notifier).markAllAsRead(); }
+    catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString()))); }
+  }
+
 
   IconData _iconForType(String type) {
     switch (type) {
@@ -49,8 +67,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     }
   }
 
-  void _handleNotificationTap(NotificationItem item) {
-    ref.read(notificationsProvider.notifier).markAsRead(item.id);
+  Future<void> _handleNotificationTap(NotificationItem item) async {
+    try { await ref.read(notificationsProvider.notifier).markAsRead(item.id); }
+    catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString()))); return; }
+    if (!mounted) return;
 
     switch (item.type) {
       case 'lab_report':
@@ -60,10 +80,17 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         context.go('/records');
         break;
       case 'admission':
-        context.go('/hospital/admissions');
+      case 'discharge':
+        context.go('/records');
         break;
       case 'appointment':
-        context.go('/doctor/appointments');
+        context.go('/care');
+        break;
+      case 'consent':
+        context.go('/dashboard');
+        break;
+      case 'referral':
+        context.go('/care');
         break;
       default:
         break;
@@ -97,9 +124,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         actions: [
           if (notifications.isNotEmpty)
             TextButton(
-              onPressed: () {
-                ref.read(notificationsProvider.notifier).markAllAsRead();
-              },
+              onPressed: _markAll,
               child: const Text(
                 'Mark all read',
                 style: TextStyle(fontSize: 12, color: AppColors.primary),
@@ -114,12 +139,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // State Toggle Toolbar
-              ListStatusSelector(
-                currentStatus: _viewStatus,
-                onStatusChanged: (status) => setState(() => _viewStatus = status),
-              ),
-
               Expanded(
                 child: AppListState(
                   status: _viewStatus == ListStatus.content && notifications.isEmpty
@@ -128,7 +147,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   emptyMessage: 'No notifications yet',
                   emptyIcon: Icons.notifications_none_rounded,
                   errorMessage: 'Failed to load notifications stream.',
-                  onRetry: () => setState(() => _viewStatus = ListStatus.content),
+                  onRetry: _load,
                   child: ListView.builder(
                     itemCount: notifications.length,
                     itemBuilder: (context, index) {

@@ -16,5 +16,5 @@ urlpatterns = [
     path('family/<str:member_id>/', FamilyMemberDetailView.as_view(), name='family-detail'),
     path('vitals/', HealthVitalsView.as_view(), name='health-vitals'),
     path('consents/', PatientConsentListView.as_view(), name='patient-consents'),
-    path('consents/<str:consent_id>/action/', PatientConsentActionView.as_view(), name='patient-consent-action'),
+    path('consents/<uuid:consent_id>/action/', PatientConsentActionView.as_view(), name='patient-consent-action'),
 ]

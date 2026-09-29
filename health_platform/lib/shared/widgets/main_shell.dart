@@ -51,6 +51,12 @@ class _MainShellState extends ConsumerState<MainShell> {
     });
   }
 
+  @override
+  void didUpdateWidget(MainShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) _currentIndex = widget.initialIndex;
+  }
+
   void _onTabSelected(int index) {
     setState(() => _currentIndex = index);
   }
@@ -68,6 +74,8 @@ class _MainShellState extends ConsumerState<MainShell> {
       titleSpacing: 16,
       title: const RoleContextSwitcher(),
       actions: [
+        IconButton(onPressed:()=>context.push('/demo'),icon:const Icon(Icons.help_outline),tooltip:'Guided walkthrough'),
+        IconButton(onPressed:()=>context.push('/care'),icon:const Icon(Icons.calendar_month),tooltip:'Find care and book'),
         // Global Instant Search
         if (isWideScreen)
           GestureDetector(

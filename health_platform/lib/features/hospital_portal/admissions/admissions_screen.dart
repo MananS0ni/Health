@@ -29,11 +29,11 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
     final patientIdController = TextEditingController();
     final ageController = TextEditingController();
     final bedController = TextEditingController();
-    final doctorController = TextEditingController(text: 'Dr. ');
+    final doctorController = TextEditingController();
     final diagnosisController = TextEditingController();
 
     String ward = 'General Ward';
-    String gender = 'Male';
+    String gender = '';
     String status = 'Admitted';
     bool isSearchingPatient = false;
     bool isSubmitting = false;
@@ -211,8 +211,8 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
                                 DropdownButtonFormField<String>(
                                   initialValue: gender,
                                   decoration: _inputDec(''),
-                                  items: ['Male', 'Female', 'Other']
-                                      .map((g) => DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(fontSize: 12))))
+                                  items: ['', 'Male', 'Female', 'Other']
+                                      .map((g) => DropdownMenuItem(value: g, child: Text(g.isEmpty ? 'Unknown / not provided' : g, style: const TextStyle(fontSize: 12))))
                                       .toList(),
                                   onChanged: (v) => gender = v!,
                                 ),
@@ -272,7 +272,7 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
                       const SizedBox(height: 4),
                       TextFormField(
                         controller: diagnosisController,
-                        decoration: _inputDec('e.g. Acute Appendicitis / High Fever Observation'),
+                        decoration: _inputDec('Enter the diagnosis from the responsible clinician'),
                         validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                       ),
                     ],
@@ -294,7 +294,7 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
                           final newAdmission = {
                             'patient_identifier': patientIdController.text.trim(),
                             'patient_name': nameController.text.trim(),
-                            'age': int.tryParse(ageController.text.trim()) ?? 30,
+                            'age': int.tryParse(ageController.text.trim()),
                             'gender': gender,
                             'ward': ward,
                             'bed_no': bedController.text.trim().toUpperCase(),
@@ -382,7 +382,7 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(admission['patient_name'] ?? 'Patient', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('${admission['gender']} • ${admission['age']} yrs • ID: ${admission['patient_id'] ?? "PAT-LOCAL"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text('${admission['gender']} • ${admission['age']} yrs • ID: ${admission['patient_id'] ?? "PAT-UNKNOWN"}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                         const SizedBox(height: 4),
                         AppBadge(text: admission['status'] ?? 'Admitted', type: isCritical ? AppBadgeType.error : AppBadgeType.neutral, isSmall: true),
                       ],
@@ -564,7 +564,7 @@ class _AdmissionsScreenState extends ConsumerState<AdmissionsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Patient ID: ${adm['patient_id'] ?? "PAT-LOCAL"} • ${adm['age']} yrs • ${adm['gender']}',
+                              'Patient ID: ${adm['patient_id'] ?? "PAT-UNKNOWN"} • ${adm['age']} yrs • ${adm['gender']}',
                               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                             ),
                             const SizedBox(height: 4),

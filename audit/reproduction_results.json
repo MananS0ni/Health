@@ -1,0 +1,152 @@
+[
+  {
+    "finding": "Anonymous header impersonation reads profile",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Anonymous header impersonation changes profile",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Anonymous global search reads private records",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Anonymous admin user directory",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Anonymous admin verification mutation",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Anonymous approval of arbitrary consent",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Anonymous doctor impersonation unlocks chart",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Locked chart exposes allergies",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "Register existing patient grants doctor consent",
+    "reproduced": true,
+    "observed": {
+      "status": 201
+    }
+  },
+  {
+    "finding": "Patient can publish lab report with fabricated values",
+    "reproduced": true,
+    "observed": {
+      "status": 201,
+      "parameters": 5
+    }
+  },
+  {
+    "finding": "Patient self-assigns admin role",
+    "reproduced": true,
+    "observed": {
+      "status": 200,
+      "role": "admin"
+    }
+  },
+  {
+    "finding": "Multi-role doctor receives patient appointment list",
+    "reproduced": true,
+    "observed": {
+      "status": 200,
+      "returned": 0
+    }
+  },
+  {
+    "finding": "Invalid appointment patient silently becomes doctor",
+    "reproduced": true,
+    "observed": {
+      "status": 201
+    }
+  },
+  {
+    "finding": "Admission patient UUID ignored and ordinary user admitted patient",
+    "reproduced": true,
+    "observed": {
+      "status": 201
+    }
+  },
+  {
+    "finding": "Duplicate beds when default ward omitted",
+    "reproduced": true,
+    "observed": {
+      "status": 201
+    }
+  },
+  {
+    "finding": "Repeated publish creates duplicate reports",
+    "reproduced": true,
+    "observed": {
+      "reports": 2
+    }
+  },
+  {
+    "finding": "CSV low flag recorded as normal",
+    "reproduced": true,
+    "observed": {
+      "status": "Normal"
+    }
+  },
+  {
+    "finding": "Client emergency endpoint does not exist",
+    "reproduced": true,
+    "observed": {
+      "status": 404
+    }
+  },
+  {
+    "finding": "Patient profile serializer omits current medications",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "DEBUG OTP exposed in response",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  },
+  {
+    "finding": "OTP accepts admin role and overwrites verification decision",
+    "reproduced": true,
+    "observed": {
+      "status": 200
+    }
+  }
+]

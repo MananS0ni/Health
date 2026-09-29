@@ -41,6 +41,7 @@ class _OtpEntryScreenState extends ConsumerState<OtpEntryScreen> {
       setState(() {
         if (_resendTimer > 0) {
           _resendTimer--;
+          _canResend = _resendTimer == 0;
         } else {
           _canResend = true;
           keepGoing = false;

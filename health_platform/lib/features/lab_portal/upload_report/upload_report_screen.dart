@@ -40,7 +40,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   String _selectedTest = 'Complete Blood Count (CBC)';
   String _selectedCategory = 'Hematology';
   String? _attachedFileName;
-  int _attachedFileSizeKb = 148;
+  int _attachedFileSizeKb = 0;
   bool _isCustomFile = false;
   Uint8List? _attachedFileBytes;
   List<Map<String, dynamic>>? _customExtractedParameters;
@@ -53,77 +53,27 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
   Map<String, dynamic>? _submissionResult;
 
   final Map<String, Map<String, dynamic>> _presetTests = {
-    'Complete Blood Count (CBC)': {
-      'category': 'Hematology',
-      'sample_file': 'CBC_Automated_Hemogram_Report.pdf',
-      'size_kb': 142,
-      'preview': [
-        {'name': 'Hemoglobin', 'value': '14.2 g/dL', 'range': '13.0 - 17.0', 'flag': 'Normal'},
-        {'name': 'RBC Count', 'value': '4.85 mil/uL', 'range': '4.50 - 5.90', 'flag': 'Normal'},
-        {'name': 'Total WBC Count', 'value': '7,100 /cumm', 'range': '4,000 - 11,000', 'flag': 'Normal'},
-        {'name': 'Platelet Count', 'value': '240,000 /cumm', 'range': '150,000 - 450,000', 'flag': 'Normal'},
-        {'name': 'Packed Cell Volume (PCV)', 'value': '42.8 %', 'range': '40.0 - 50.0', 'flag': 'Normal'},
-      ],
-    },
-    'Lipid Profile Panel': {
-      'category': 'Biochemistry',
-      'sample_file': 'Lipid_Profile_Serum_Panel.pdf',
-      'size_kb': 186,
-      'preview': [
-        {'name': 'Total Cholesterol', 'value': '194 mg/dL', 'range': '< 200', 'flag': 'Normal'},
-        {'name': 'HDL (Good Cholesterol)', 'value': '53 mg/dL', 'range': '> 40', 'flag': 'Normal'},
-        {'name': 'LDL (Bad Cholesterol)', 'value': '112 mg/dL', 'range': '< 100', 'flag': 'High'},
-        {'name': 'Triglycerides', 'value': '142 mg/dL', 'range': '< 150', 'flag': 'Normal'},
-      ],
-    },
-    'HbA1c & Fasting Glucose': {
-      'category': 'Biochemistry',
-      'sample_file': 'Glycemic_Index_HbA1c_Report.pdf',
-      'size_kb': 118,
-      'preview': [
-        {'name': 'Fasting Blood Glucose', 'value': '95 mg/dL', 'range': '70 - 100', 'flag': 'Normal'},
-        {'name': 'HbA1c (Glycated Hb)', 'value': '5.5 %', 'range': '< 5.7', 'flag': 'Normal'},
-        {'name': 'Est. Average Glucose', 'value': '111 mg/dL', 'range': '90 - 120', 'flag': 'Normal'},
-      ],
-    },
-    'Thyroid Function Panel': {
-      'category': 'Endocrinology',
-      'sample_file': 'Thyroid_Stimulating_Hormone_Panel.pdf',
-      'size_kb': 124,
-      'preview': [
-        {'name': 'TSH (Ultrasensitive)', 'value': '2.40 uIU/mL', 'range': '0.35 - 4.94', 'flag': 'Normal'},
-        {'name': 'Free T3', 'value': '3.10 pg/mL', 'range': '1.71 - 3.71', 'flag': 'Normal'},
-        {'name': 'Free T4', 'value': '1.15 ng/dL', 'range': '0.70 - 1.48', 'flag': 'Normal'},
-      ],
-    },
-    'Liver Function Test (LFT)': {
-      'category': 'Biochemistry',
-      'sample_file': 'Hepatic_Profile_LFT_Screen.pdf',
-      'size_kb': 155,
-      'preview': [
-        {'name': 'SGOT / AST', 'value': '28 U/L', 'range': '10 - 40', 'flag': 'Normal'},
-        {'name': 'SGPT / ALT', 'value': '32 U/L', 'range': '7 - 56', 'flag': 'Normal'},
-        {'name': 'Serum Bilirubin Total', 'value': '0.80 mg/dL', 'range': '0.2 - 1.2', 'flag': 'Normal'},
-        {'name': 'Alkaline Phosphatase', 'value': '84 U/L', 'range': '44 - 147', 'flag': 'Normal'},
-      ],
-    },
+    'Complete Blood Count (CBC)': {'category':'Hematology'},
+    'Lipid Profile Panel': {'category':'Biochemistry'},
+    'HbA1c & Fasting Glucose': {'category':'Biochemistry'},
+    'Thyroid Function Panel': {'category':'Endocrinology'},
+    'Liver Function Test (LFT)': {'category':'Biochemistry'},
   };
 
   @override
   void initState() {
     super.initState();
-    _doctorController.text = 'Dr. Dhruv Patel';
-    _summaryController.text = 'Automated diagnostic analysis completed. Verified parameters mapped to digital health locker.';
+    _doctorController.text = '';
+    _summaryController.text = '';
 
     _selectedTest = widget.test ?? 'Complete Blood Count (CBC)';
     final preset = _presetTests[_selectedTest];
     if (preset != null) {
       _selectedCategory = preset['category'] as String;
-      _attachedFileName = preset['sample_file'] as String;
-      _attachedFileSizeKb = preset['size_kb'] as int;
+
     } else {
       _selectedCategory = widget.category ?? 'Hematology';
-      _attachedFileName = 'Certified_Diagnostic_Report.pdf';
+      _attachedFileName = null;
     }
 
     _initTargetPatient();
@@ -153,7 +103,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
             _patientNameController.text = p['full_name'] ?? '';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Found Verified Patient: ${p['full_name']} (${p['patient_id']})'),
+                content: Text('Found patient account: ${p['full_name']} (${p['patient_id']})'),
                 backgroundColor: kLabAccent,
                 duration: const Duration(seconds: 2),
               ),
@@ -180,8 +130,8 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
       if (preset != null) {
         _selectedCategory = preset['category'] as String;
         if (!_isCustomFile) {
-          _attachedFileName = preset['sample_file'] as String;
-          _attachedFileSizeKb = preset['size_kb'] as int;
+          _attachedFileName = null;
+          _attachedFileSizeKb = 0;
         }
       }
     });
@@ -257,9 +207,8 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
         final isAbn = ['high', 'low', 'abnormal', 'critical', 'positive', 'true', '1'].contains(rawStatus.toLowerCase());
         final flag = rawStatus.isNotEmpty ? rawStatus : (isAbn ? 'High' : 'Normal');
 
-        final displayVal = val.isNotEmpty
-            ? (unit.isNotEmpty && !val.contains(unit) ? '$val $unit' : val)
-            : (flag.isNotEmpty ? flag : 'Completed');
+        final displayVal = val.isNotEmpty ? val : '';
+        if (val.isEmpty) continue;
 
         parsed.add({
           'name': param,
@@ -375,6 +324,10 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
       return;
     }
 
+    if (_attachedFileBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Choose the real laboratory report or results file before publishing.')));
+      return;
+    }
     setState(() => _isSubmitting = true);
 
     try {
@@ -387,7 +340,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
         category: _selectedCategory,
         summary: _summaryController.text.trim(),
         doctorName: _doctorController.text.trim(),
-        fileName: _attachedFileName ?? 'Certified_Lab_Report.pdf',
+        fileName: _attachedFileName ?? '',
         fileBytes: _attachedFileBytes,
         parameters: _customExtractedParameters,
       );
@@ -664,7 +617,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Quick Test Presets (Auto-Configures Parameters & Reference Ranges):',
+            'Choose the test name. Enter only values measured by the laboratory, or attach the original report:',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 8),
@@ -730,7 +683,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                       Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 13),
                       SizedBox(width: 4),
                       Text(
-                        'Device File Ready',
+                        'Selected real file',
                         style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                       ),
                     ],
@@ -769,7 +722,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    _attachedFileName ?? 'Click to Browse Device File (PDF / CSV)',
+                    _attachedFileName ?? 'No laboratory file selected',
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                   ),
@@ -777,7 +730,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                   Text(
                     hasRealBytes
                         ? 'Size: $_attachedFileSizeKb KB • Actual Device File Loaded in Memory • Ready for Server Upload'
-                        : 'Size: $_attachedFileSizeKb KB • Click anywhere here to select a real file from your PC',
+                        : 'Select the original laboratory PDF or CSV before publishing.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 11,
@@ -794,7 +747,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                         onPressed: _pickRealFile,
                         icon: const Icon(Icons.folder_open_rounded, size: 16),
                         label: Text(
-                          hasRealBytes ? 'Change Selected File...' : 'Browse Device File (Real PDF)...',
+                          hasRealBytes ? 'Change Selected File...' : 'Browse for a real report',
                           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -811,13 +764,12 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                               _isCustomFile = false;
                               _attachedFileBytes = null;
                               _customExtractedParameters = null;
-                              final preset = _presetTests[_selectedTest];
-                              _attachedFileName = preset?['sample_file'] ?? 'CBC_Automated_Hemogram_Report.pdf';
-                              _attachedFileSizeKb = preset?['size_kb'] ?? 142;
+                                                  _attachedFileName = null;
+                              _attachedFileSizeKb = 0;
                             });
                           },
                           icon: const Icon(Icons.close_rounded, size: 16),
-                          label: const Text('Reset to Standard Sample', style: TextStyle(fontSize: 12)),
+                          label: const Text('Remove file', style: TextStyle(fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: AppColors.textSecondary,
@@ -825,54 +777,7 @@ class _UploadReportScreenState extends ConsumerState<UploadReportScreen> {
                             side: const BorderSide(color: AppColors.border),
                           ),
                         ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          const sampleCsv = '''patient_id,patient_name,test_name,test_category,sample_collected_date,report_date,result_value,unit,reference_range,result_status,lab_name,lab_technician,report_file_name,notes
-HLTH-2026-00147,Rahul Mehta,Complete Blood Count (CBC),Hematology,2026-09-20,2026-09-21,Normal,,Normal,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00147_CBC_20260921.pdf,
-HLTH-2026-00147,Rahul Mehta,Fasting Blood Sugar,Biochemistry,2026-09-20,2026-09-21,118,mg/dL,70-100,High,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00147_FBS_20260921.pdf,Slightly elevated; recommend follow-up
-HLTH-2026-00289,Ananya Patel,Lipid Profile,Biochemistry,2026-09-18,2026-09-19,210,mg/dL,<200,High,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00289_LIPID_20260919.pdf,Total cholesterol
-HLTH-2026-00289,Ananya Patel,Thyroid Panel (TSH),Endocrinology,2026-09-18,2026-09-19,2.4,mIU/L,0.4-4.0,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00289_TSH_20260919.pdf,
-HLTH-2026-00312,Vikram Nair,Urinalysis,Pathology,2026-09-22,2026-09-22,Normal,,Normal,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00312_URINE_20260922.pdf,
-HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnormality detected,,,Normal,Sunrise Diagnostics,Dr. Priya Shah,HLTH-2026-00312_XRAY_20260923.pdf,Reviewed by radiologist''';
-                          final bytes = Uint8List.fromList(utf8.encode(sampleCsv));
-                          final extractedParams = _parseCsvReport(bytes);
-                          setState(() {
-                            _isCustomFile = true;
-                            _attachedFileName = 'lab_reports_template.csv';
-                            _attachedFileSizeKb = (bytes.length / 1024).round().clamp(1, 9999);
-                            _attachedFileBytes = bytes;
-                            _customExtractedParameters = extractedParams;
-                            final first = extractedParams.first;
-                            if (first['test_name']?.toString().isNotEmpty == true) {
-                              _selectedTest = first['test_name'];
-                            }
-                            if (first['category']?.toString().isNotEmpty == true) {
-                              _selectedCategory = first['category'];
-                            }
-                            if (first['doctor']?.toString().isNotEmpty == true) {
-                              _doctorController.text = first['doctor'];
-                            }
-                            if (first['notes']?.toString().isNotEmpty == true) {
-                              _summaryController.text = first['notes'];
-                            }
-                          });
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Loaded ${extractedParams.length} clinical parameters from template. Target patient remains as selected.'),
-                              backgroundColor: kLabAccent,
-                              duration: const Duration(seconds: 3),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.table_view_rounded, size: 16),
-                        label: const Text('Load Sample CSV Template', style: TextStyle(fontSize: 12)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEFF6FF),
-                          foregroundColor: const Color(0xFF1D4ED8),
-                          elevation: 0,
-                          side: const BorderSide(color: Color(0xFFBFDBFE)),
-                        ),
-                      ),
+
                     ],
                   ),
                 ],
@@ -907,15 +812,15 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
               Row(
                 children: [
                   Icon(
-                    hasCustom ? Icons.verified_rounded : Icons.auto_awesome_rounded,
-                    color: hasCustom ? kLabAccent : const Color(0xFF2563EB),
+                    hasCustom ? Icons.fact_check_outlined : Icons.pending_outlined,
+                    color: hasCustom ? kLabAccent : AppColors.textSecondary,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     hasCustom
-                        ? '4. Verified Extracted Parameters from File'
-                        : '4. Auto-Extracted Clinical Parameters (Zero Typing)',
+                        ? '4. CSV values read from selected file'
+                        : '4. No results loaded yet',
                     style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                 ],
@@ -923,9 +828,9 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: hasCustom ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                  color: hasCustom ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: hasCustom ? const Color(0xFF86EFAC) : const Color(0xFFBFDBFE)),
+                  border: Border.all(color: hasCustom ? const Color(0xFF86EFAC) : AppColors.border),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -937,11 +842,11 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
                     Text(
                       hasCustom
                           ? '${previewList.length} Extracted from File'
-                          : '${previewList.length} Parameters Ready',
+                          : 'Select a real report first',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: hasCustom ? const Color(0xFF16A34A) : const Color(0xFF1D4ED8),
+                        color: hasCustom ? const Color(0xFF16A34A) : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -1096,7 +1001,7 @@ HLTH-2026-00312,Vikram Nair,Chest X-Ray,Radiology,2026-09-22,2026-09-23,No abnor
                 children: [
                   _successRow('Test Name:', _selectedTest),
                   const SizedBox(height: 6),
-                  _successRow('Attached Document:', _attachedFileName ?? 'Certified_Report.pdf'),
+                  _successRow('Attached Document:', _attachedFileName ?? 'Uploaded report'),
                   const SizedBox(height: 6),
                   _successRow('Report Status:', _submissionResult?['status'] ?? 'Normal'),
                   const SizedBox(height: 6),

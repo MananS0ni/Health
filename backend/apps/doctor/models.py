@@ -65,10 +65,9 @@ class ConsentRequest(models.Model):
     def is_active(self):
         if self.status != 'approved':
             return False
-        if self.valid_until and timezone.now() > self.valid_until:
+        if not self.valid_until or timezone.now() >= self.valid_until:
             return False
         return True
 
     def __str__(self):
         return f"Consent from {self.patient.email} to Dr. {self.doctor.full_name or self.doctor.email} ({self.status})"
-

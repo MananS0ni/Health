@@ -1,3 +1,5 @@
+import re
+from django.core import mail
 from rest_framework.test import APITestCase
 from rest_framework import status
 from apps.accounts.models import User, EmailOTP, Role
@@ -6,7 +8,7 @@ from apps.accounts.models import User, EmailOTP, Role
 class AuthFlowTests(APITestCase):
     def test_complete_auth_flow(self):
         # 1. Request OTP
-        resp = self.client.post('/api/auth/request-otp/', {'email': 'dr.patel@health.com'}, format='json')
+        resp = self.client.post('/api/auth/request-otp/', {'email': 'dr.patel@health.com', 'mode': 'signup'}, format='json')
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         self.assertTrue(resp.json()['success'])
 
@@ -16,7 +18,7 @@ class AuthFlowTests(APITestCase):
         # 2. Verify OTP
         resp_verify = self.client.post('/api/auth/verify-otp/', {
             'email': 'dr.patel@health.com',
-            'otp': otp_obj.otp
+            'full_name': 'Test Account', 'otp': re.search(r'\b\d{6}\b', mail.outbox[-1].body).group()
         }, format='json')
         self.assertEqual(resp_verify.status_code, status.HTTP_200_OK)
         self.assertTrue(resp_verify.json()['success'])
@@ -41,5 +43,7 @@ class AuthFlowTests(APITestCase):
         self.assertEqual(resp_me.status_code, status.HTTP_200_OK)
         user_data = resp_me.json()['user']
         self.assertEqual(user_data['full_name'], 'Dr. Max Patel')
-        self.assertEqual(user_data['role'], 'doctor')
+        self.assertEqual(user_data['role'], 'patient')
+        self.assertEqual(user_data['pending_roles'], ['doctor'])
+        self.assertFalse(user_data['professional_verified'])
         self.assertEqual(user_data['doctor_profile']['specialization'], 'Cardiology')

@@ -28,3 +28,10 @@ test_*.png
 test_pw.png
 capture_*.js
 capture_all.ps1
+
+# Signing keys, backups and isolated test uploads
+**/key.properties
+*.jks
+*.keystore
+backups/
+audit/test_media/

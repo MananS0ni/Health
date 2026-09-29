@@ -73,8 +73,18 @@ class _AdminPortalScreenState extends ConsumerState<AdminPortalScreen> with Sing
   }
 
   Future<void> _toggleUserVerification(String userId, String userName) async {
+    final reason = TextEditingController();
+    final current = _usersList.firstWhere((u) => u['id'] == userId);
+    final decision = await showDialog<bool>(context:context,builder:(ctx) => AlertDialog(
+      title:Text(current['is_verified'] == true ? 'Revoke professional approval' : 'Approve professional credentials'),
+      content:TextField(controller:reason,decoration:const InputDecoration(labelText:'Review reason and evidence')),
+      actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),TextButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Save decision'))],
+    ));
+    final reviewReason = reason.text.trim();
+    reason.dispose();
+    if (decision != true || reviewReason.isEmpty) return;
     try {
-      final res = await ApiClient().toggleUserVerification(userId);
+      final res = await ApiClient().toggleUserVerification(userId, verified:current['is_verified'] != true, reason:reviewReason);
       if (res['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

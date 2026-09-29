@@ -1,0 +1,149 @@
+PAGE 1
+METRO CARE DIAGNOSTICS & RESEARCH CENTER
+ ACCORD # NABL-2026-MC
+ ISO 15189:2022 Certified
+Plot 42, Health City Avenue, Medical District  Tel: +91 22 2847 9000  contact@metrocarelab.com
+ Verified Digital Laboratory EHR
+Patient Name:
+Sample Record
+Patient ID:
+PAT-2026-99999
+Age / Gender:
+34 Yrs / Male
+Sample Collected:
+25-Sep-2026 08:30 AM
+Referred By:
+Dr. Siddharth Rao (MD, FACP)
+Report Released:
+25-Sep-2026 02:45 PM
+Sample Type:
+EDTA Whole Blood & Plasma
+Lab Order Barcode:
+ORD-2026-78419
+TEST PARAMETER
+OBSERVED VALUE
+UNIT
+REFERENCE INTERVAL
+FLAG
+HEMATOLOGY (COMPLETE BLOOD COUNT)
+Hemoglobin (Hb)
+11.2
+g/dL
+13.0 - 17.0
+ [LOW]
+Total Leukocyte Count (WBC)
+7,400
+/uL
+4,000 - 11,000
+ [NORMAL]
+Platelet Count
+260,000
+/uL
+150,000 - 450,000
+ [NORMAL]
+RBC Count
+4.10
+mil/uL
+4.50 - 5.90
+ [LOW]
+Packed Cell Volume (PCV)
+35.4
+%
+40.0 - 50.0
+ [LOW]
+Mean Corpuscular Volume (MCV)
+78.0
+fL
+80.0 - 100.0
+ [LOW]
+BIOCHEMISTRY & METABOLIC PANEL
+Fasting Blood Glucose
+108
+mg/dL
+70 - 100
+ [HIGH]
+HbA1c (Glycated Hemoglobin)
+6.8
+%
+4.0 - 5.6
+ [HIGH]
+Estimated Avg Glucose (eAG)
+148
+mg/dL
+90 - 120
+ [HIGH]
+LIPID PROFILE
+Total Cholesterol
+225
+mg/dL
+125 - 200
+ [HIGH]
+HDL Cholesterol (Good)
+44
+mg/dL
+40 - 60
+ [NORMAL]
+LDL Cholesterol (Bad)
+142
+mg/dL
+< 100
+ [HIGH]
+Serum Triglycerides
+195
+mg/dL
+< 150
+ [HIGH]
+RENAL & ELECTROLYTES
+Serum Creatinine
+1.05
+mg/dL
+0.70 - 1.30
+ [NORMAL]
+Blood Urea Nitrogen (BUN)
+16.0
+mg/dL
+7.0 - 20.0
+ [NORMAL]
+Serum Uric Acid
+5.8
+mg/dL
+3.5 - 7.2
+ [NORMAL]
+HEPATIC & ENDOCRINE PANEL
+SGPT / ALT
+32
+U/L
+7 - 56
+ [NORMAL]
+SGOT / AST
+28
+U/L
+10 - 40
+ [NORMAL]
+TSH (Ultrasensitive)
+2.45
+uIU/mL
+0.40 - 4.50
+ [NORMAL]
+IMMUNOLOGY & VITAMINS
+Vitamin D (25-Hydroxy)
+18.2
+ng/mL
+30.0 - 100.0
+ [LOW]
+Vitamin B12 (Cyanocobalamin)
+485
+pg/mL
+200 - 900
+ [NORMAL]
+CLINICAL INTERPRETATION & NOTES:  Glycemic: Fasting blood glucose (108 mg/dL) & HbA1c (6.8%) indicate impaired fasting glycemia/prediabetic state.  Lipids: Mixed
+dyslipidemia (elevated Total Chol 225 mg/dL, LDL 142 mg/dL, Triglycerides 195 mg/dL).  Hematology: Hemoglobin 11.2 g/dL, PCV 35.4%, MCV 78 fL suggest mild microcytosis. 
+Vitamins: Vitamin D (25-OH) 18.2 ng/mL reflects deficiency. Supplementation & dietary follow-up advised.
+Medical Technologist
+Kavita Sharma, B.Sc MLT
+Verified By Biochemist
+Dr. Siddharth Rao, MD
+ Chief Pathologist
+Dr. Priya Shah, MD (Path)
+Electronically Verified - No Physical Signature Required
+ End of Complete Diagnostic Report

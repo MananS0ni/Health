@@ -284,4 +284,6 @@ def run_tests():
         json.dump(results, f, indent=2)
 
 if __name__ == '__main__':
+    if os.environ.get('CONFIRM_MUTATING_HEALTH_TESTS') != 'YES':
+        raise SystemExit('This legacy integration script mutates its configured database. Use isolated manage.py tests instead. Set CONFIRM_MUTATING_HEALTH_TESTS=YES only with a disposable database.')
     run_tests()

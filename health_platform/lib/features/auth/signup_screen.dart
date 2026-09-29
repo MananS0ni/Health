@@ -46,7 +46,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   // Patient Medical & Emergency fields
   final _dobController = TextEditingController();
   String _gender = 'Male';
-  String _bloodGroup = 'O+';
+  String _bloodGroup = '';
   final _allergiesController = TextEditingController();
   final _medicalConditionsController = TextEditingController();
   final _medicationsController = TextEditingController();
@@ -74,7 +74,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _empIdController = TextEditingController();
 
   bool _termsAccepted = false;
-  bool _isLoading = false;
+
 
   bool get _isDoctor => _selectedRoles.contains('doctor');
   bool get _isLabStaff => _selectedRoles.contains('lab_staff');
@@ -114,7 +114,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+
 
     final isDoc = _selectedRoles.contains('doctor');
     final isLab = _selectedRoles.contains('lab_staff');
@@ -185,6 +185,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
+    ref.listen(authStateProvider, (previous, next) {
+      if (next.error != null && next.error != previous?.error) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(next.error!)));
+    });
 
     if (authState.otpSent) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -368,7 +371,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           initialValue: _bloodGroup,
                           decoration: _dec(''),
                           items: const [
-                            DropdownMenuItem(value: 'A+', child: Text('A+')),
+                            DropdownMenuItem(value: '', child: Text('Unknown / not recorded')),
+                                DropdownMenuItem(value: 'A+', child: Text('A+')),
                             DropdownMenuItem(value: 'A-', child: Text('A-')),
                             DropdownMenuItem(value: 'B+', child: Text('B+')),
                             DropdownMenuItem(value: 'B-', child: Text('B-')),
@@ -646,7 +650,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           height: 46,
                           child: ElevatedButton(
                             onPressed:
-                                (_isLoading || authState.isLoading)
+                                authState.isLoading
                                     ? null
                                     : _handleCreateAccount,
                             style: ElevatedButton.styleFrom(
@@ -657,7 +661,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 borderRadius: BorderRadius.circular(9),
                               ),
                             ),
-                            child: (_isLoading || authState.isLoading)
+                            child: authState.isLoading
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,

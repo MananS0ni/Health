@@ -240,7 +240,7 @@ class User {
     final computedPid = json['patient_id'] as String? ??
         (rawId.isNotEmpty
             ? 'PAT-${rawId.replaceAll('-', '').padRight(6).substring(0, 6).toUpperCase()}'
-            : 'PAT-LOCAL');
+            : 'PAT-UNKNOWN');
 
     final labProf = json['lab_profile'] != null
         ? LabProfile.fromJson(json['lab_profile'])

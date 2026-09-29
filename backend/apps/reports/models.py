@@ -16,6 +16,8 @@ class MedicalRecord(models.Model):
     doctor_name = models.CharField(max_length=150, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     file_url = models.FileField(upload_to='records/', blank=True, null=True)
+    source = models.CharField(max_length=20, default='unknown', choices=[('unknown','Legacy / unknown source'),('patient','Patient supplied'),('professional','Professional authored')])
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -33,9 +35,11 @@ class LabReport(models.Model):
     report_date = models.DateField(default=timezone.localdate)
     facility_name = models.CharField(max_length=200, default='Diagnostic Lab')
     doctor_name = models.CharField(max_length=150, blank=True, null=True)
-    status = models.CharField(max_length=50, default='Normal')  # Normal, Abnormal, Critical, Pending
+    status = models.CharField(max_length=50, default='Pending review')  # Normal, Abnormal, Critical, Pending
     summary = models.TextField(blank=True, null=True)
     file_url = models.FileField(upload_to='reports/', blank=True, null=True)
+    source = models.CharField(max_length=20, default='unknown', choices=[('unknown','Legacy / unknown source'),('patient','Patient supplied'),('professional','Professional authored')])
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='+')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

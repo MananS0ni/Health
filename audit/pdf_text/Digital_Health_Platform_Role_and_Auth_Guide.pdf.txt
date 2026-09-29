@@ -1,0 +1,144 @@
+PAGE 1
+DIGITAL HEALTH RECORD PLATFORM
+System Architecture, Multi-Role Login & Access
+Guide
+Comprehensive technical reference for Patient, Doctor, Diagnostic Lab, and Hospital workflows.
+PROJECT: Digital Health Platform
+AUTH METHOD: Free Email SMTP OTP
+TECH STACK: Django / DRF + PostgreSQL
+CONSTRAINTS: Zero ABHA / Zero Docker (Native venv)
+1. Core Architectural Pillars
+ Zero External ABHA / ABDM Dependency: The platform operates 100% independently as your private digital health record
+cloud. There is no government API integration, no ABDM sandboxing, and no compliance delay.
+ 100% Free Email SMTP Authentication: No paid SMS gateways (Twilio, MSG91, Fast2SMS). The Django backend
+dispatches secure, time-limited (5-min) 6-digit OTP codes straight to the user's email inbox using Gmail App Password or
+custom SMTP.
+ Direct Native Execution (No Docker): Backends runs natively with Python venv and standard local PostgreSQL/SQLite,
+enabling fast debugging, simple deployment, and zero virtualization overhead.
+ Frontend-First Alignment: The database models and endpoints directly mirror the state and models of the live Flutter
+application.
+2. Multi-Role Comparison & Differentiation Matrix
+A single, clean login page accepts any registered email address. The user's role in the database governs their credentials, data
+accessibility, and automatically directs them to their customized portal:
+Role
+Primary Purpose
+Signup Credentials
+Landing Portal
+Patient
+Personal & family health locker, review lab
+test parameters, monitor vitals, access
+emergency medical card.
+Full Name, Email, Gender, Blood
+Group (optional).
+Patient Dashboard
+/dashboard
+Doctor
+Review patient directory, clinical chart
+history, allergy warnings, enter primary
+diagnosis, issue digital prescriptions (Rx).
+Full Name, Email, Medical Council
+Reg No., Specialization,
+Clinic/Hospital.
+Doctor Portal
+/doctor
+Diagnostic Lab
+Manage incoming diagnostic test order
+queue, input observed parameter values,
+attach report PDFs, auto-notify patients.
+Lab Name, Email, Lab
+Registration / License No.,
+Address, Incharge Name.
+Lab Portal
+/lab
+Hospital Care
+Monitor inpatient ward bed occupancy
+(ICU, General, Private), admit emergency
+patients, finalize discharge summaries.
+Hospital Name, Email, Hospital
+Reg ID, Wards / Departments, Staff
+Name.
+Hospital Portal
+/hospital
+Confidential — Prepared for Manan Soni & Team | Free Email SMTP & Native Backend
+Page 1 of 3
+
+
+PAGE 2
+3. Detailed Portal Breakdown & Capabilities
+■ Patient Portal Capabilities
+ Health Vitals Tracker: Records Blood Pressure (systolic/diastolic), Heart Rate, Fasting Sugar, and BMI with status tags.
+ Medical Records Locker: Categorized repository for past prescriptions, consultation summaries, and medical history.
+ Lab Reports Table: Diagnostic parameter viewing (e.g. HbA1c, Lipid panel) showing measured values and reference
+ranges.
+ Chronological Health Timeline: Vertical timeline showing all medical interactions, visits, and hospital admissions across
+time.
+ Family Health Profiles: Dedicated dependents management for children and elderly parents without requiring separate
+phone accounts.
+ Instant Emergency Card: Rapid one-tap emergency card displaying Blood Group, Allergies (e.g. Penicillin), and
+Emergency Contacts.
+■ Doctor Portal Capabilities
+ Appointment Queue: Daily schedule showing booked patients, appointment time slots, and consultation statuses.
+ EMR Directory Search: Live search across patient records by name, email, or system-generated Patient ID.
+ Clinical Chart View: Full review of patient vitals trends, prior prescriptions, and diagnostic lab reports.
+ Prominent Allergy Warnings: High-visibility warning chips alerting the clinician to severe drug allergies before
+prescribing.
+ Digital Prescription Generator: Fast medicine entry with dosage (e.g. 1-0-1), frequency, and duration (e.g. 14 Days).
+ Instant Locker Sync: Saved diagnoses and prescriptions automatically appear in the patient's mobile app timeline.
+■ Diagnostic Laboratory Portal
+ Pending Test Order Queue: Filterable by discipline (Biochemistry, Endocrinology, Cardiology, Diabetology, Nephrology).
+ Structured Parameter Entry: Input observed numerical values, units (mg/dL, cells/mcL), and biological reference
+intervals.
+ Report PDF Upload: Ability to attach certified lab report PDFs alongside structured parameters.
+ Automated Publishing: Submitting test results immediately unlocks the report in the patient's personal locker.
+■ Hospital Inpatient Care Portal
+ Ward Bed Occupancy: Real-time bed occupancy stats across General Wards, ICU, Private, and Semi-Private rooms.
+ Inpatient Admission Intake: Bed allocation, attending physician assignment, and primary admission diagnosis recording.
+ Discharge Summary Flow: Formulate finalized discharge documentation with treatment summary, instructions, and
+follow-up date.
+4. Authentication Architecture: Free Email SMTP OTP
+Instead of paid SMS gateways, authentication uses a standard email OTP mechanism powered by free Gmail SMTP (or
+custom SMTP):
+Step
+Action
+Backend Logic
+1
+User Enters Email
+Frontend validates email format and sends request to /api/auth/request-otp/.
+2
+Generate 6-Digit OTP
+Django generates a cryptographically random 6-digit code with a 5-minute expiration
+timestamp.
+3
+Dispatch SMTP Email
+Django sends HTML email directly to the user's inbox using free SMTP settings.
+4
+User Enters OTP
+Flutter app accepts 6 digits and submits to /api/auth/verify-otp/.
+5
+Verify & Issue JWT
+If code is valid, backend generates JWT access & refresh tokens.
+6
+Role-Based Redirection
+Existing users immediately land on their role dashboard; new users complete role
+registration.
+Digital Health Record Platform — Architecture, Roles & Auth Guide
+Confidential — Prepared for Manan Soni & Team | Free Email SMTP & Native Backend
+Page 2 of 3
+
+
+PAGE 3
+5. Industry Benchmarks & References
+ Practo (practo.com): Patients browse records and book tests on practo.com; doctors log into Practo Pro (Ray) for digital
+clinic EMR and prescriptions.
+ Eka Care (eka.care): Consumer app serves as a digital health locker; Eka Doctor provides clinicians with digital prescription
+pads.
+ Apollo 24|7 (apollo247.com): Patient app displays Apollo records and lab tests; hospital doctors access internal HIS
+systems.
+6. Next Implementation Steps
+Step 1: Configure SMTP credentials (email address + 16-character Google App Password) in Django settings.py.
+Step 2: Create Django accounts app with custom User model, roles, and OTP generation logic.
+Step 3: Build /api/auth/request-otp/ and /api/auth/verify-otp/ endpoints.
+Step 4: Wire the Flutter signup_screen.dart and otp_entry_screen.dart to the live endpoints.
+Digital Health Record Platform — Architecture, Roles & Auth Guide
+Confidential — Prepared for Manan Soni & Team | Free Email SMTP & Native Backend
+Page 3 of 3

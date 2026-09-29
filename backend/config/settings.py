@@ -3,6 +3,7 @@ Django settings for Digital Health Record Platform.
 """
 
 import os
+from django.core.exceptions import ImproperlyConfigured
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -14,11 +15,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-health-platform-key-dev')
+SECRET_KEY = os.getenv('SECRET_KEY', '')
 
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1')
+DEBUG = os.getenv('DEBUG', 'False').lower() in ('true', '1')
+if not SECRET_KEY:
+    raise ImproperlyConfigured('Set SECRET_KEY in the environment.')
+if not DEBUG and (SECRET_KEY.startswith('django-insecure-') or len(SECRET_KEY) < 50):
+    raise ImproperlyConfigured('Production requires a strong random SECRET_KEY of at least 50 characters.')
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+if not DEBUG and '*' in ALLOWED_HOSTS:
+    raise ImproperlyConfigured('Production ALLOWED_HOSTS must be explicit.')
 
 # Application definition
 INSTALLED_APPS = [
@@ -32,6 +39,7 @@ INSTALLED_APPS = [
     # Third-party packages
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 
     # Internal apps
@@ -40,6 +48,7 @@ INSTALLED_APPS = [
     'apps.reports',
     'apps.doctor',
     'apps.hospital',
+    'apps.care',
     'apps.lab',
 ]
 
@@ -81,6 +90,8 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3' if os.getenv('DB_ENGINE', '').find('sqlite') != -1 or not os.getenv('DB_NAME') else os.getenv('DB_NAME'),
     }
 }
+if DATABASES['default']['ENGINE'] != 'django.db.backends.sqlite3':
+    DATABASES['default'].update({key: os.getenv('DB_' + key, '') for key in ('USER', 'PASSWORD', 'HOST', 'PORT')})
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
@@ -113,16 +124,17 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_RATES': {'otp_send': '5/hour', 'otp_verify': '30/hour'},
 }
 
 # SimpleJWT Configuration
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': False,
+    'BLACKLIST_AFTER_ROTATION': True,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
@@ -149,3 +161,13 @@ if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+EMAIL_TIMEOUT = 15
+if not DEBUG and EMAIL_BACKEND.endswith('console.EmailBackend'):
+    raise ImproperlyConfigured('Configure SMTP delivery before using production authentication.')
+SECURE_SSL_REDIRECT = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024

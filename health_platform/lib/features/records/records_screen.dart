@@ -11,7 +11,6 @@ import '../../shared/widgets/app_list_state.dart';
 import '../../shared/widgets/web_constraint.dart';
 import '../../core/config/providers.dart';
 import '../../core/network/api_client.dart';
-import '../../shared/models/medical_record.dart';
 
 class RecordsScreen extends ConsumerStatefulWidget {
   const RecordsScreen({super.key});
@@ -41,6 +40,9 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
     String selectedType = 'prescription';
     String? attachedFileName;
     int? attachedFileSizeKb;
+    List<int>? attachedBytes;
+    bool saving = false;
+    DateTime recordDate = DateTime.now();
 
     showModalBottomSheet(
       context: context,
@@ -143,7 +145,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            attachedFileName != null ? '$attachedFileName ($attachedFileSizeKb KB)' : 'Attach PDF File (e.g. Lab report, discharge summary)',
+                            attachedFileName != null ? '$attachedFileName ($attachedFileSizeKb KB)' : 'Attach an old report (PDF, image or Word; max 10 MB)',
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: attachedFileName != null ? FontWeight.w600 : FontWeight.normal,
@@ -154,16 +156,17 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                         ),
                         TextButton.icon(
                           icon: const Icon(Icons.upload_file_rounded, size: 16),
-                          label: Text(attachedFileName != null ? 'Change' : 'Upload PDF'),
+                          label: Text(attachedFileName != null ? 'Change' : 'Choose file'),
                           onPressed: () async {
                             final file = await FilePicker.pickFile(
                               type: FileType.custom,
-                              allowedExtensions: ['pdf'],
+                              allowedExtensions: ['pdf','jpg','jpeg','png','doc','docx'],
                             );
                             if (file != null) {
                               final bytes = await file.readAsBytes();
                               final size = await file.length() ?? bytes.length;
                               setModalState(() {
+                                attachedBytes = bytes;
                                 attachedFileName = file.name;
                                 attachedFileSizeKb = (size / 1024).round();
                               });
@@ -174,37 +177,33 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  TextButton.icon(onPressed: saving ? null : () async {
+                    final selected = await showDatePicker(context:context, initialDate:recordDate, firstDate:DateTime(1900), lastDate:DateTime.now());
+                    if (selected != null && context.mounted) setModalState(() => recordDate = selected);
+                  }, icon:const Icon(Icons.calendar_today), label:Text('Report date: ${recordDate.toIso8601String().split('T').first}')),
+                  const Text('Patient-uploaded document; not verified by a professional.'),
                   AppButton(
-                    text: 'Save Record',
-                    onPressed: () {
+                    text: saving ? 'Saving…' : 'Save Record',
+                    onPressed: saving ? null : () async {
                       if (titleController.text.trim().isEmpty) return;
-                      final now = DateTime.now();
-                      final dateStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-                      final newRecord = MedicalRecord(
-                        recordId: 'rec_${now.millisecondsSinceEpoch}',
-                        patientId: 'patient_self',
-                        title: titleController.text.trim(),
-                        recordType: selectedType,
-                        recordDate: dateStr,
-                        facilityName: facilityController.text.trim().isNotEmpty
-                            ? facilityController.text.trim()
-                            : null,
-                        doctorName: doctorController.text.trim().isNotEmpty
-                            ? doctorController.text.trim()
-                            : null,
-                        description: notesController.text.trim().isNotEmpty
-                            ? notesController.text.trim()
-                            : null,
-                        attachments: attachedFileName != null ? [attachedFileName!] : null,
-                      );
-                      ref.read(recordsProvider.notifier).addRecord(newRecord);
-                      Navigator.pop(modalContext);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Medical record added successfully.'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+                      setModalState(() => saving = true);
+                      try {
+                        final fields = <String,String>{
+                          'title':titleController.text.trim(), 'record_type':selectedType,
+                          'record_date':recordDate.toIso8601String().split('T').first,
+                          'facility_name':facilityController.text.trim(),
+                          'doctor_name':doctorController.text.trim(), 'description':notesController.text.trim(),
+                        };
+                        if (attachedBytes != null) {
+                          await ApiClient().uploadDocument('/reports/records/',fields,attachedFileName!,attachedBytes!,field:'file_url');
+                        } else { await ApiClient().createRecord(fields); }
+                        await ref.read(recordsProvider.notifier).fetchRecords();
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Medical record saved.')));
+                        Navigator.pop(modalContext);
+                      } catch (e) {
+                        if (context.mounted) {setModalState(() => saving = false); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Not saved: $e')));}
+                      }
                     },
                     isFullWidth: true,
                   ),
@@ -372,7 +371,8 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                                 label: const Text('Revoke', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
                                 onPressed: () async {
                                   Navigator.pop(modalContext);
-                                  await ref.read(patientConsentsProvider.notifier).actionConsent(consentId, 'revoke');
+                                  try { await ref.read(patientConsentsProvider.notifier).actionConsent(consentId, 'revoke'); }
+                                  catch(e){if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Consent was not changed: $e')));return;}
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -521,7 +521,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          record.title,
+                                          '${record.title}\n${record.sourceLabel}',
                                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                                         ),
                                         const SizedBox(height: 2),
@@ -770,7 +770,7 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Certified File Attached to this Health Record',
+                                'File attached · source shown in record details',
                                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
                               ),
                             ),
@@ -780,8 +780,8 @@ class _RecordsScreenState extends ConsumerState<RecordsScreen> {
                       const SizedBox(height: AppSpacing.sm),
                       AppButton(
                         text: 'Open Attached Document',
-                        onPressed: () {
-                          final fullUrl = ApiClient.resolveUrl(record.attachments?.first);
+                        onPressed: () async {
+                          final fullUrl = await ApiClient().documentUrl(record.attachments!.first);
                           launchUrl(Uri.parse(fullUrl), mode: LaunchMode.externalApplication);
                         },
                         isFullWidth: true,

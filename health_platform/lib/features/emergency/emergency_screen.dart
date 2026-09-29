@@ -1,3 +1,4 @@
+import '../../core/network/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,7 +101,7 @@ class EmergencyScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
                 AppButton(
                   text: 'Save Emergency Details',
-                  onPressed: () {
+                  onPressed: () async {
                     final allergiesList = allergyController.text
                         .split(',')
                         .map((s) => s.trim())
@@ -112,6 +113,13 @@ class EmergencyScreen extends ConsumerWidget {
                         .where((s) => s.isNotEmpty)
                         .toList();
 
+                    try {
+                      await ApiClient().patchData('/patients/me/',{'blood_group':bloodGroupController.text.trim(),'allergies':allergiesList,'medical_conditions':conditionsList,'emergency_contact_name':contactNameController.text.trim(),'emergency_contact_phone':contactPhoneController.text.trim()});
+                    } catch(e) {
+                      if(context.mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('Not saved: $e')));
+                      return;
+                    }
+                    if(!modalContext.mounted || !context.mounted)return;
                     final updatedUser = user.copyWith(
                       bloodGroup: bloodGroupController.text.trim().isNotEmpty
                           ? bloodGroupController.text.trim()

@@ -1,3 +1,7 @@
+from django.db import connection
+from .permissions import IsPlatformAdmin, PROFESSIONAL_ROLES
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
@@ -14,7 +18,7 @@ class AdminPortalOverviewView(APIView):
     GET /api/admin-portal/overview/
     Returns high-level system metrics and health parameters for the Admin Portal.
     """
-    permission_classes = [permissions.AllowAny]  # For local/demo administration
+    permission_classes = [IsPlatformAdmin]  # For local/demo administration
 
     def get(self, request):
         total_patients = User.objects.filter(role=Role.PATIENT).count()
@@ -29,13 +33,13 @@ class AdminPortalOverviewView(APIView):
 
         active_admissions = InpatientAdmission.objects.filter(status='Admitted').count()
         total_admissions = InpatientAdmission.objects.count()
-        pending_verifications = User.objects.filter(is_verified=False).exclude(role=Role.PATIENT).count()
+        pending_verifications = User.objects.filter(professional_verified=False).exclude(pending_roles=[]).count()
 
         # Recent system activity
         recent_records = MedicalRecord.objects.select_related('patient').order_by('-created_at')[:8]
         activity_stream = []
         for r in recent_records:
-            pid = f"PAT-{str(r.patient.id)[:6].upper()}" if r.patient else "PAT-UNKNOWN"
+            pid = f"PAT-{str(r.patient.id).upper()}" if r.patient else "PAT-UNKNOWN"
             activity_stream.append({
                 'title': r.title,
                 'type': r.record_type,
@@ -62,8 +66,8 @@ class AdminPortalOverviewView(APIView):
             },
             'engine_status': {
                 'backend': 'ONLINE',
-                'database': 'POSTGRESQL_READY',
-                'ingestion_pipeline': 'OPERATIONAL',
+                'database': connection.vendor.upper(),
+                'ingestion_pipeline': 'MANUAL_UPLOAD_ONLY',
                 'consent_engine': 'ACTIVE',
             },
             'recent_activity': activity_stream,
@@ -75,7 +79,7 @@ class AdminPortalUsersView(APIView):
     GET /api/admin-portal/users/?role=&q=
     Returns all registered platform users with search and role filtering.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsPlatformAdmin]
 
     def get(self, request):
         role_filter = request.query_params.get('role', '').strip().lower()
@@ -103,7 +107,9 @@ class AdminPortalUsersView(APIView):
                 'email': u.email,
                 'phone_number': u.phone_number or '',
                 'role': u.role,
-                'is_verified': u.is_verified,
+                'is_verified': u.professional_verified,
+                'email_verified': u.is_verified,
+                'pending_roles': u.pending_roles,
                 'created_at': u.created_at.strftime('%Y-%m-%d %H:%M') if u.created_at else '',
             })
 
@@ -119,19 +125,36 @@ class AdminPortalToggleVerifyView(APIView):
     POST /api/admin-portal/users/<str:user_id>/toggle-verify/
     Toggles the is_verified credential status of any healthcare user or facility.
     """
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsPlatformAdmin]
 
     def post(self, request, user_id):
-        user = User.objects.filter(id=user_id).first()
-        if not user:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        user.is_verified = not user.is_verified
-        user.save(update_fields=['is_verified'])
-
-        return Response({
-            'success': True,
-            'user_id': str(user.id),
-            'is_verified': user.is_verified,
-            'message': f"Provider {user.full_name or user.email} verification updated to {user.is_verified}.",
-        }, status=status.HTTP_200_OK)
+        if not isinstance(request.data.get('verified'), bool):
+            return Response({'error': 'Supply verified: true or false and a review reason.'}, status=400)
+        reason = str(request.data.get('reason', '')).strip()
+        if not reason:
+            return Response({'error': 'Review reason is required.'}, status=400)
+        with transaction.atomic():
+            user = get_object_or_404(User.objects.select_for_update(), pk=user_id)
+            if not request.data['verified']:
+                user.professional_verified = False
+            else:
+                user.professional_verified = True
+            if user.professional_verified:
+                approved = set(user.pending_roles or []) & PROFESSIONAL_ROLES
+                if not approved:
+                    approved = ({user.role} | set(user.roles or [])) & PROFESSIONAL_ROLES
+                if not approved:
+                    return Response({'error': 'No professional role to approve.'}, status=400)
+                required = {'doctor':('registration_number','specialization'),'lab':('license_number',),'hospital':('registration_id',)}
+                for role in approved:
+                    profile = getattr(user, {'doctor':'doctor_profile','lab':'lab_profile','hospital':'hospital_profile'}[role], None)
+                    if profile is None or any(not str(getattr(profile, field, '') or '').strip() for field in required[role]):
+                        return Response({'error': f'Complete the required {role} credentials before approval.'}, status=400)
+                user.roles = sorted({'patient'} | approved)
+                user.role = sorted(approved)[0]
+                user.pending_roles = []
+            user.save()
+            from django.contrib.admin.models import LogEntry, CHANGE
+            from django.contrib.contenttypes.models import ContentType
+            LogEntry.objects.log_actions(user_id=request.user.pk, queryset=User.objects.filter(pk=user.pk), action_flag=CHANGE, change_message='Credential review: '+reason)
+        return Response({'success': True, 'user_id': str(user.pk), 'is_verified': user.professional_verified, 'message': 'Credential review saved.'})

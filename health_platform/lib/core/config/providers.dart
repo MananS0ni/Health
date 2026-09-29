@@ -1,3 +1,4 @@
+import '../../features/notifications/notifications_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../network/api_client.dart';
 import '../../shared/models/user.dart';
@@ -194,12 +195,10 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(
       phoneNumber: phoneNumber,
       loginMode: LoginMode.phone,
-      isLoading: true,
-      clearError: true,
+      isLoading: false,
+      otpSent: false,
+      error: 'Phone OTP is not configured. Please verify using email.',
     );
-    Future.delayed(const Duration(milliseconds: 600), () {
-      state = state.copyWith(isLoading: false, otpSent: true);
-    });
   }
 
   Future<void> sendOtpByEmail(String email, {String mode = 'login'}) async {
@@ -262,34 +261,8 @@ class AuthNotifier extends Notifier<AuthState> {
         final userData = res['user'] as Map<String, dynamic>?;
         final baseUser = userData != null ? User.fromJson(userData) : null;
 
-        // Ensure all registered roles and sub-profiles are present
-        final effectiveRoles = baseUser != null && baseUser.roles.length > 1
-            ? baseUser.roles
-            : (state.pendingRoles.isNotEmpty ? state.pendingRoles : (baseUser?.roles ?? ['patient']));
-
-        final verifiedUser = (baseUser ??
-            User(
-              id: 'usr_${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
-              fullName: state.pendingFullName ?? state.email!,
-              email: state.email,
-              phoneNumber: state.phoneNumber ?? '',
-              roles: effectiveRoles,
-              isVerified: true,
-            )).copyWith(
-          roles: effectiveRoles,
-          doctorProfile: baseUser?.doctorProfile ?? state.pendingDoctorProfile,
-          labProfile: baseUser?.labProfile ?? state.pendingLabProfile,
-          hospitalProfile: baseUser?.hospitalProfile ?? state.pendingHospitalProfile,
-          orgProfile: baseUser?.orgProfile ?? state.pendingOrgProfile,
-          bloodGroup: baseUser?.bloodGroup ?? state.pendingBloodGroup,
-          dateOfBirth: baseUser?.dateOfBirth ?? state.pendingDateOfBirth,
-          gender: baseUser?.gender ?? state.pendingGender,
-          allergies: baseUser?.allergies.isNotEmpty == true ? baseUser!.allergies : (state.pendingAllergies ?? []),
-          medicalConditions: baseUser?.medicalConditions.isNotEmpty == true ? baseUser!.medicalConditions : (state.pendingMedicalConditions ?? []),
-          currentMedications: baseUser?.currentMedications.isNotEmpty == true ? baseUser!.currentMedications : (state.pendingCurrentMedications ?? []),
-          emergencyContactName: baseUser?.emergencyContactName ?? state.pendingEmergencyContactName,
-          emergencyContactPhone: baseUser?.emergencyContactPhone ?? state.pendingEmergencyContactPhone,
-        );
+        if (baseUser == null) throw Exception('Server returned no account.');
+        final verifiedUser = baseUser;
 
         state = state.copyWith(
           isLoading: false,
@@ -316,31 +289,7 @@ class AuthNotifier extends Notifier<AuthState> {
         );
       }
     } else {
-      // Phone / Fallback offline mode
-      await Future.delayed(const Duration(milliseconds: 600));
-      final enteredName = state.pendingFullName != null && state.pendingFullName!.trim().isNotEmpty
-          ? state.pendingFullName!.trim()
-          : (state.phoneNumber != null && state.phoneNumber!.isNotEmpty
-              ? 'User ${state.phoneNumber}'
-              : 'User');
-
-      final realUser = User(
-        id: 'usr_${DateTime.now().millisecondsSinceEpoch.toString().substring(6)}',
-        fullName: enteredName,
-        phoneNumber: state.phoneNumber ?? '',
-        email: state.email,
-        roles: state.pendingRoles.isNotEmpty ? state.pendingRoles : ['patient'],
-        isVerified: true,
-        doctorProfile: state.pendingDoctorProfile,
-        orgProfile: state.pendingOrgProfile,
-        bloodGroup: state.pendingBloodGroup,
-      );
-
-      state = state.copyWith(
-        isLoading: false,
-        isAuthenticated: true,
-        user: realUser,
-      );
+      state = state.copyWith(isLoading:false, error:'Email verification is required.');
     }
   }
 
@@ -363,6 +312,8 @@ class AuthNotifier extends Notifier<AuthState> {
     ref.read(hospitalAdmissionsProvider.notifier).reset();
     ref.read(patientConsentsProvider.notifier).reset();
     ref.read(doctorIncomingRequestsProvider.notifier).reset();
+    ref.read(notificationsProvider.notifier).clearAll();
+    ref.read(activeRoleProvider.notifier).setRole('patient');
     state = AuthState.initial();
   }
 
@@ -400,34 +351,7 @@ final activeRoleProvider = NotifierProvider<ActiveRoleNotifier, String>(
 // ─────────────────────────────────────────────────────────────
 
 final userProvider = Provider<User>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final User user;
-  if (authState.user != null) {
-    user = authState.user!;
-  } else {
-    final activeRole = ref.watch(activeRoleProvider);
-    if (activeRole == 'doctor') {
-      user = const User(
-        id: 'ab948105-1d21-4e60-9a86-d09884364c73',
-        fullName: 'Dr. Rana Parthil',
-        email: '23ci2020115@gmail.com',
-        phoneNumber: '+91 98765 12345',
-        roles: ['doctor'],
-        isVerified: true,
-      );
-    } else {
-      user = const User(
-        id: '4726a2de-10aa-4765-b19c-bcaf30b827b9',
-        fullName: 'Manan Soni',
-        email: 'manansoni2905@gmail.com',
-        phoneNumber: '+91 98765 43210',
-        roles: ['patient', 'doctor', 'hospital', 'lab', 'admin'],
-        isVerified: true,
-      );
-    }
-  }
-  ApiClient().currentUserEmail = user.email;
-  return user;
+  return ref.watch(authStateProvider).user ?? const User(id:'',fullName:'',phoneNumber:'',roles:[]);
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -445,14 +369,13 @@ class RecordsNotifier extends Notifier<List<MedicalRecord>> {
   Future<void> fetchRecords() async {
     try {
       final list = await ApiClient().getRecords();
-      if (list.isNotEmpty) {
+      if (ref.mounted) {
         state = list.map((item) => MedicalRecord.fromJson(item as Map<String, dynamic>)).toList();
       }
     } catch (_) {}
   }
 
   Future<void> addRecord(MedicalRecord record) async {
-    state = [record, ...state];
     try {
       await ApiClient().createRecord({
         'title': record.title,
@@ -463,11 +386,12 @@ class RecordsNotifier extends Notifier<List<MedicalRecord>> {
         'description': record.description,
       });
       await fetchRecords();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
-  void deleteRecord(String recordId) {
-    state = state.where((r) => r.recordId != recordId).toList();
+  Future<void> deleteRecord(String recordId) async {
+    await ApiClient().deleteData('/reports/records/$recordId/');
+    await fetchRecords();
   }
 
   void reset() => state = [];
@@ -488,22 +412,22 @@ class ReportsNotifier extends Notifier<List<LabReport>> {
   Future<void> fetchReports() async {
     try {
       final list = await ApiClient().getLabReports();
-      if (list.isNotEmpty) {
+      if (ref.mounted) {
         state = list.map((item) => LabReport.fromJson(item as Map<String, dynamic>)).toList();
       }
     } catch (_) {}
   }
 
   Future<void> addReport(LabReport report) async {
-    state = [report, ...state];
     try {
       await ApiClient().createLabReport(report.toJson());
       await fetchReports();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
-  void deleteReport(String reportId) {
-    state = state.where((r) => r.reportId != reportId).toList();
+  Future<void> deleteReport(String reportId) async {
+    await ApiClient().deleteData('/reports/lab-reports/$reportId/');
+    await fetchReports();
   }
 
   void reset() => state = [];
@@ -524,7 +448,7 @@ class TimelineNotifier extends Notifier<List<TimelineEvent>> {
   Future<void> fetchTimeline() async {
     try {
       final list = await ApiClient().getTimeline();
-      if (list.isNotEmpty) {
+      if (ref.mounted) {
         state = list.map((item) => TimelineEvent.fromJson(item as Map<String, dynamic>)).toList();
       }
     } catch (_) {}
@@ -552,14 +476,13 @@ class FamilyMembersNotifier extends Notifier<List<FamilyMember>> {
   Future<void> fetchMembers() async {
     try {
       final list = await ApiClient().getFamilyMembers();
-      if (list.isNotEmpty) {
+      if (ref.mounted) {
         state = list.map((item) => FamilyMember.fromJson(item as Map<String, dynamic>)).toList();
       }
     } catch (_) {}
   }
 
   Future<void> addMember(FamilyMember member) async {
-    state = [...state, member];
     try {
       await ApiClient().createFamilyMember({
         'full_name': member.fullName,
@@ -569,15 +492,14 @@ class FamilyMembersNotifier extends Notifier<List<FamilyMember>> {
         'blood_group': member.bloodGroup,
       });
       await fetchMembers();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
   Future<void> removeMember(String id) async {
-    state = state.where((m) => m.memberId != id).toList();
     try {
       await ApiClient().deleteFamilyMember(id);
       await fetchMembers();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
   void reset() => state = [];
@@ -599,22 +521,22 @@ class AppointmentsNotifier extends Notifier<List<Map<String, dynamic>>> {
   Future<void> fetchAppointments() async {
     try {
       final list = await ApiClient().getAppointments();
-      if (list.isNotEmpty) {
+      if (ref.mounted) {
         state = list.cast<Map<String, dynamic>>();
       }
     } catch (_) {}
   }
 
   Future<void> addAppointment(Map<String, dynamic> appointment) async {
-    state = [appointment, ...state];
     try {
       await ApiClient().createAppointment(appointment);
       await fetchAppointments();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
-  void cancelAppointment(String id) {
-    state = state.where((apt) => apt['id']?.toString() != id && apt['appointment_id'] != id).toList();
+  Future<void> cancelAppointment(String id) async {
+    await ApiClient().postData('/doctor/appointments/$id/action/',{'action':'cancel'});
+    await fetchAppointments();
   }
 
   void reset() => state = [];
@@ -685,7 +607,7 @@ class PatientConsentsNotifier extends Notifier<List<Map<String, dynamic>>> {
     try {
       await ApiClient().actionPatientConsent(consentId: consentId, action: action);
       await fetchConsents();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
   void reset() => state = [];
@@ -742,8 +664,8 @@ class DoctorAppointmentsNotifier extends Notifier<List<Map<String, dynamic>>> {
 
   Future<void> fetchAppointments() async {
     try {
-      final list = await ApiClient().getAppointments();
-      if (list.isNotEmpty) {
+      final list = await ApiClient().getAppointments(context:'doctor');
+      if (ref.mounted) {
         state = list.cast<Map<String, dynamic>>();
       }
     } catch (_) {}
@@ -853,27 +775,25 @@ class LabPendingReportsNotifier extends Notifier<List<Map<String, dynamic>>> {
   Future<void> fetchOrders() async {
     try {
       final list = await ApiClient().getLabOrders();
-      if (list.isNotEmpty) {
+      if (ref.mounted) {
         state = list.cast<Map<String, dynamic>>();
       }
     } catch (_) {}
   }
 
   Future<void> addPendingTest(Map<String, dynamic> test) async {
-    state = [test, ...state];
     try {
       await ApiClient().createLabOrder(test);
       await fetchOrders();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
   Future<void> completeTest(String testId, [Map<String, dynamic>? publishPayload]) async {
-    state = state.where((t) => t['id']?.toString() != testId && t['order_id'] != testId && t['test_id'] != testId).toList();
     if (publishPayload != null) {
       try {
         await ApiClient().publishLabReport(testId, publishPayload);
         await fetchOrders();
-      } catch (_) {}
+      } catch (_) { rethrow; }
     }
   }
 
@@ -899,26 +819,24 @@ class HospitalAdmissionsNotifier extends Notifier<List<Map<String, dynamic>>> {
   Future<void> fetchAdmissions() async {
     try {
       final list = await ApiClient().getAdmissions();
-      if (list.isNotEmpty) {
+      if (ref.mounted) {
         state = list.cast<Map<String, dynamic>>();
       }
     } catch (_) {}
   }
 
   Future<void> addAdmission(Map<String, dynamic> admission) async {
-    state = [admission, ...state];
     try {
       await ApiClient().admitPatient(admission);
       await fetchAdmissions();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
   Future<void> dischargePatient(String admissionId, [String? notes]) async {
-    state = state.where((a) => a['id']?.toString() != admissionId && a['admission_id'] != admissionId).toList();
     try {
-      await ApiClient().dischargePatient(admissionId, {'discharge_notes': notes ?? 'Patient discharged in stable condition.'});
+      await ApiClient().dischargePatient(admissionId, {'discharge_notes': notes ?? ''});
       await fetchAdmissions();
-    } catch (_) {}
+    } catch (_) { rethrow; }
   }
 
   void reset() => state = [];

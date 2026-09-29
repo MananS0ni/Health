@@ -1,0 +1,974 @@
+[
+  {
+    "id": "S01",
+    "severity": "Critical",
+    "title": "Anonymous callers can read and change patient data",
+    "evidence": "Reproduced: anonymous GET and PATCH to patients/me with X-User-Email return 200. Patient and report views use AllowAny, accept caller-supplied identity, and fall back to a specific account or the first user.",
+    "consequence": "Medical profiles, records, timelines, vitals, and family operations are exposed. Missing identity can select someone else rather than fail closed.",
+    "fix": "Require authenticated users by default. Resolve self-service identity only from request.user. Remove header, query, body, and demo-account identity fallbacks. Authorize every object operation.",
+    "acceptance": "Anonymous calls return 401/403; user A cannot read or modify B using any header or parameter; empty databases return controlled errors.",
+    "sources": [
+      {
+        "path": "backend/apps/patients/views.py",
+        "line": 14
+      },
+      {
+        "path": "backend/apps/reports/views.py",
+        "line": 12
+      }
+    ]
+  },
+  {
+    "id": "S02",
+    "severity": "Critical",
+    "title": "Admin APIs expose users and verification controls publicly",
+    "evidence": "Reproduced: anonymous user listing and verification toggle both return 200. All three admin portal views explicitly use AllowAny.",
+    "consequence": "Anyone can enumerate account identifiers/contact details and change verification status. Overview also reveals recent clinical activity.",
+    "fix": "Require a server-managed admin permission. Use an explicit desired verification state, approval reason, and audit event instead of an unaudited toggle.",
+    "acceptance": "Anonymous and ordinary authenticated users cannot call any admin endpoint; admin changes record actor, target, time, and reason.",
+    "sources": [
+      {
+        "path": "backend/apps/accounts/admin_views.py",
+        "line": 12
+      },
+      {
+        "path": "backend/apps/accounts/admin_views.py",
+        "line": 117
+      }
+    ]
+  },
+  {
+    "id": "S03",
+    "severity": "Critical",
+    "title": "Search and locked charts leak clinical information",
+    "evidence": "Reproduced: anonymous global search returns a private record. A chart without consent still returns allergies. Global search scopes only authenticated patient-role users; patient directory search matches substrings and includes clinical details.",
+    "consequence": "Consent-protected records can be discovered via alternate endpoints. Providing a nonempty query is not an authorization rule.",
+    "fix": "Apply the same owner/clinical-consent policy to search, chart metadata, exports, and files. Return minimal directory identity data and scope provider discovery to its legitimate workflow.",
+    "acceptance": "Searching a known private title as anonymous/unrelated user produces no clinical results; a denied chart contains no sensitive fields.",
+    "sources": [
+      {
+        "path": "backend/apps/reports/views.py",
+        "line": 128
+      },
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 140
+      },
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 384
+      }
+    ]
+  },
+  {
+    "id": "S04",
+    "severity": "Critical",
+    "title": "An anonymous caller can approve consent and impersonate its doctor",
+    "evidence": "Reproduced: posting approve to doctor/incoming-requests/<id>/action activates consent without authentication; supplying the doctor email then unlocks the chart. The action lookup is not scoped to any actor. resolve_current_doctor prioritizes the header even over an authenticated user.",
+    "consequence": "The patient approval boundary is bypassed. A doctor can approve its own outgoing request; an unrelated caller can act on a known request.",
+    "fix": "Separate provider request creation from patient approval. Only the patient or authorized guardian may grant consent. Bind provider identity to authentication and enforce actor/transition checks.",
+    "acceptance": "Provider, unrelated user, and anonymous approval attempts fail; only the correct patient can approve; forged email headers never change the actor.",
+    "sources": [
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 63
+      },
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 534
+      }
+    ]
+  },
+  {
+    "id": "S05",
+    "severity": "Critical",
+    "title": "Registering an existing patient silently grants chart access",
+    "evidence": "Reproduced: doctor registration with an existing patient email updates that account and creates approved 24-hour consent. The registration endpoint itself permits anonymous access.",
+    "consequence": "Knowing an email can be sufficient to overwrite demographics and bypass patient consent, even after revocation.",
+    "fix": "Do not update or grant access to existing accounts through walk-in registration. Separate unclaimed patient records, identity matching, invitation, and patient-approved access.",
+    "acceptance": "Re-registering an existing email never changes its identity or consent; revoked consent stays revoked until the patient grants a new request.",
+    "sources": [
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 204
+      },
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 244
+      }
+    ]
+  },
+  {
+    "id": "S06",
+    "severity": "Critical",
+    "title": "Users can grant themselves professional and admin roles",
+    "evidence": "Reproduced: a patient can submit role=admin to register-profile. OTP verification also accepts roles=[admin]. Login sets is_verified=True, overriding a prior verification decision.",
+    "consequence": "Account ownership verification is confused with professional credential approval. Admin role assignment here is application-role escalation; it does not by itself set Django is_superuser.",
+    "fix": "Use a server-owned role/membership table and credential approval lifecycle. Separate email_verified_at from professional_verification_status. Reject admin/professional role grants in public profile and login payloads.",
+    "acceptance": "All privilege changes require authorized approval; re-login cannot change role grants or professional approval; invalid role strings fail validation.",
+    "sources": [
+      {
+        "path": "backend/apps/accounts/views.py",
+        "line": 178
+      },
+      {
+        "path": "backend/apps/accounts/views.py",
+        "line": 303
+      },
+      {
+        "path": "backend/apps/accounts/serializers.py",
+        "line": 14
+      }
+    ]
+  },
+  {
+    "id": "S07",
+    "severity": "High",
+    "title": "OTP secrets, abuse controls, and consumption need hardening",
+    "evidence": "Reproduced dev_otp in a DEBUG response. Source also prints every OTP, stores plaintext OTPs, uses random.randint, has no configured throttles/attempt limit, and reads then consumes without an atomic guard.",
+    "consequence": "With DEBUG exposed, inbox possession can be bypassed. Otherwise logs/admin/database readers see active credentials; guessing, mail abuse, and concurrent reuse are insufficiently controlled. Concurrent reuse was not load-tested.",
+    "fix": "Remove OTP responses and secret logging; use a cryptographic generator, keyed storage, per-account and per-origin limits, attempt budgets, and atomic one-time consumption. Validate the complete operation before consuming the code. Use a real delivery backend in production.",
+    "acceptance": "No response/log contains the code; exhausted attempts are rejected; simultaneous verification yields at most one success; delivery failure is reported accurately.",
+    "sources": [
+      {
+        "path": "backend/apps/accounts/models.py",
+        "line": 107
+      },
+      {
+        "path": "backend/apps/accounts/views.py",
+        "line": 67
+      },
+      {
+        "path": "backend/apps/accounts/views.py",
+        "line": 126
+      },
+      {
+        "path": "backend/config/settings.py",
+        "line": 111
+      }
+    ]
+  },
+  {
+    "id": "S08",
+    "severity": "High",
+    "title": "Lab and hospital endpoints accept any authenticated account",
+    "evidence": "Reproduced: an ordinary patient publishes a lab report for another patient and creates a hospital admission. These endpoints check IsAuthenticated but no professional role, credential, organization membership, or patient relationship.",
+    "consequence": "A signed-in patient can impersonate a care provider and inject clinical records. The lab/hospital owner filters on reads are useful but do not authorize who may become that owner.",
+    "fix": "Add verified professional permissions and organization membership checks; authorize the selected patient/order/encounter. Preserve a distinct self-uploaded, unverified document workflow for patients.",
+    "acceptance": "A patient token is denied provider writes; providers cannot operate on another organization's orders/admissions.",
+    "sources": [
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 295
+      },
+      {
+        "path": "backend/apps/hospital/views.py",
+        "line": 11
+      }
+    ]
+  },
+  {
+    "id": "S09",
+    "severity": "High",
+    "title": "Uploaded medical files have no access-controlled delivery path",
+    "evidence": "Source: DEBUG media routing serves MEDIA_ROOT directly; serializers expose FileField URLs; clients open those URLs externally. There is no download authorization layer or explicit content/size validation on these upload paths.",
+    "consequence": "A known media URL remains usable without owner/consent checks in the current development configuration. Uploading arbitrary content and large files expands exposure. Production reverse-proxy/storage behavior was not available to inspect.",
+    "fix": "Use private storage plus authorized streaming or short-lived signed downloads after access checks. Restrict content, size and allowed formats, quarantine/scan uploads, and serve untrusted content from an isolated origin.",
+    "acceptance": "Anonymous/unrelated downloads fail; revoked consent cannot mint new links; oversized and disallowed files are rejected before publication.",
+    "sources": [
+      {
+        "path": "backend/config/urls.py",
+        "line": 42
+      },
+      {
+        "path": "backend/apps/reports/models.py",
+        "line": 18
+      },
+      {
+        "path": "health_platform/lib/features/reports/reports_screen.dart",
+        "line": 381
+      }
+    ]
+  },
+  {
+    "id": "S10",
+    "severity": "High",
+    "title": "Development security settings are the default deployment posture",
+    "evidence": "check --deploy produced six warnings: HSTS, HTTPS redirect, weak/insecure secret, secure session cookie, secure CSRF cookie, and DEBUG. Source defaults include a public secret, wildcard hosts, AllowAny, and unrestricted credentialed CORS.",
+    "consequence": "Deployment without overrides exposes debug behavior and weak signing configuration. CORS broadens browser access to already-open APIs; it is not an authentication substitute. JWT signing uses Django SECRET_KEY by default unless overridden.",
+    "fix": "Separate local/production settings; require secrets with no production fallback, explicit hosts/origins, HTTPS configuration and secure cookies. Rotate deployed known keys and invalidate affected tokens.",
+    "acceptance": "Production fails to boot without required secrets and passes reviewed deployment checks; an unapproved origin is rejected.",
+    "sources": [
+      {
+        "path": "backend/config/settings.py",
+        "line": 17
+      },
+      {
+        "path": "backend/config/settings.py",
+        "line": 132
+      }
+    ]
+  },
+  {
+    "id": "S11",
+    "severity": "High",
+    "title": "Client networking is hardcoded to plaintext local addresses",
+    "evidence": "Source: web always selects http://127.0.0.1:8000 before reading BACKEND_URL; non-web falls back to a private Wi-Fi IP. Android explicitly permits cleartext traffic.",
+    "consequence": "A hosted web app contacts the visitor's own computer, and tokens/health data use plaintext HTTP in the configured flows. Environment overrides do not work for web.",
+    "fix": "Read an explicit validated API origin for every platform; prefer a same-origin HTTPS API on web. Keep HTTP exemptions in development-only configuration.",
+    "acceptance": "A release build reaches the configured HTTPS server on another machine; no production request uses loopback/private demo addresses.",
+    "sources": [
+      {
+        "path": "health_platform/lib/core/network/api_client.dart",
+        "line": 7
+      },
+      {
+        "path": "health_platform/android/app/src/main/AndroidManifest.xml",
+        "line": 13
+      }
+    ]
+  },
+  {
+    "id": "S12",
+    "severity": "High",
+    "title": "Session expiration and logout are incomplete",
+    "evidence": "Source: access tokens last seven days; refresh tokens are issued but there is no refresh URL/client refresh flow. Logout only clears memory; no blacklist app or server logout exists. Client auth is not restored from a validated session on restart.",
+    "consequence": "A copied access token can remain usable after UI logout. Sessions disappear on reload, and eventual expiry becomes silent empty/error behavior.",
+    "fix": "Implement short-lived access, refresh rotation/revocation, explicit session lifecycle, and centralized 401 handling. Decide browser/native secure session storage deliberately; add server-side session invalidation if immediate access-token logout is required.",
+    "acceptance": "Expiry refreshes once or signs out cleanly; revoked refresh tokens fail; logout semantics are documented and tested across devices.",
+    "sources": [
+      {
+        "path": "backend/config/settings.py",
+        "line": 121
+      },
+      {
+        "path": "backend/apps/accounts/urls.py",
+        "line": 4
+      },
+      {
+        "path": "health_platform/lib/core/network/api_client.dart",
+        "line": 631
+      }
+    ]
+  },
+  {
+    "id": "L01",
+    "severity": "Critical",
+    "title": "Lab uploads fabricate clinical measurements",
+    "evidence": "Reproduced: a CBC upload without any file or parameters creates five hardcoded measurements. PDF/image contents are not parsed. The fallback includes preset normal values and a summary claiming verified extraction.",
+    "consequence": "Invented data is stored as a patient's diagnostic result. Frontend preset filenames/previews also imply an attached report even when there are no bytes.",
+    "fix": "Remove clinical-data fallbacks from production. Store attachments as unparsed/pending review; require explicit verified parameters or a validated extraction pipeline with provenance and human review before publishing.",
+    "acceptance": "A blank/unparsed upload never creates measurements or a Normal/Verified claim; every published value traces to a source and approving actor.",
+    "sources": [
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 426
+      },
+      {
+        "path": "health_platform/lib/features/lab_portal/upload_report/upload_report_screen.dart",
+        "line": 55
+      }
+    ]
+  },
+  {
+    "id": "L02",
+    "severity": "High",
+    "title": "Patient matching can silently select the wrong person",
+    "evidence": "Source: several resolvers accept UUID prefixes, substring names/email matches, or choose the first result. PAT codes use only six UUID hex digits without a uniqueness constraint. PAT- yields an empty prefix that matches any UUID.",
+    "consequence": "Reports, appointments, and admissions can be attached to another person. CSV direct upload deliberately assigns every row to the selected patient, including rows identifying different people.",
+    "fix": "Use exact immutable identifiers with database uniqueness. Treat display names as search-only. Require an explicit match confirmation; reject ambiguous/empty identifiers and cross-patient rows in a single-patient upload.",
+    "acceptance": "Two similar names or colliding display codes never auto-resolve; PAT- is invalid; mixed-patient CSV input is rejected or safely routed as an explicit batch.",
+    "sources": [
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 16
+      },
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 113
+      },
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 327
+      },
+      {
+        "path": "backend/apps/hospital/views.py",
+        "line": 39
+      }
+    ]
+  },
+  {
+    "id": "L03",
+    "severity": "Critical",
+    "title": "Batch reports attach the complete multi-patient CSV to each patient",
+    "evidence": "Source: batch-upload passes the original uploaded_file into process_lab_csv_data. Every generated LabReport and MedicalRecord stores that same full document as its attachment.",
+    "consequence": "Even after API authorization is repaired, a patient downloading their legitimate attachment may receive other patients' rows from the batch.",
+    "fix": "Retain original batches in provider-only storage. Generate per-patient artifacts or attach no patient-visible source until split and verified.",
+    "acceptance": "A batch containing patients A and B produces an A download containing no B identifiers or results.",
+    "sources": [
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 246
+      },
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 169
+      }
+    ]
+  },
+  {
+    "id": "L04",
+    "severity": "High",
+    "title": "CSV normalization loses clinical meaning and import boundaries",
+    "evidence": "Reproduced: status=low is stored Normal. Source additionally ignores override_test_name/category, groups by patient and test name alone, defaults dates to today, duplicates units into values, and silently catches direct CSV exceptions before creating a fallback report.",
+    "consequence": "Abnormal low results are misclassified; repeated specimens can merge; imported dates/categories can be lost; malformed uploads may publish partial or unrelated fallback results. CSV response also hardcodes status=Normal.",
+    "fix": "Define a validated import schema with specimen/order identifiers and collection/report dates. Normalize high/low/critical explicitly, preserve raw data, preview row errors, and reject malformed imports without fallback publication.",
+    "acceptance": "Fixtures cover low/critical, two specimens of one test, dates, quoted CSV fields, invalid rows, and form overrides; returned status matches persisted results.",
+    "sources": [
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 153
+      },
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 159
+      },
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 386
+      }
+    ]
+  },
+  {
+    "id": "L05",
+    "severity": "High",
+    "title": "Multi-record clinical writes are not atomic or idempotent",
+    "evidence": "Reproduced: publishing one order twice creates two reports. Source has no transactions around report/parameter/order updates, prescription/medicine/locker sync, or admission/discharge sync. Repeated discharge also appends summaries.",
+    "consequence": "Retries or partial failures can create duplicates, incomplete prescriptions, mismatched status, or a discharged stay without its summary.",
+    "fix": "Create domain services using transaction.atomic, enforce valid status transitions, link canonical records to their source order/encounter, and use idempotency keys/unique constraints. Handle storage changes and notifications after commit.",
+    "acceptance": "Repeat requests return the same result; injected mid-operation failures leave no partial clinical state.",
+    "sources": [
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 33
+      },
+      {
+        "path": "backend/apps/doctor/serializers.py",
+        "line": 33
+      },
+      {
+        "path": "backend/apps/hospital/views.py",
+        "line": 88
+      }
+    ]
+  },
+  {
+    "id": "L06",
+    "severity": "High",
+    "title": "Hospital admission linkage and bed allocation are unreliable",
+    "evidence": "Reproduced: a supplied patient UUID in the patient field is overridden with None when name lookup does not match. Omitting ward bypasses the occupancy check but saves the model's default ward; two admissions can take the same bed. There is also a check-then-save concurrency race.",
+    "consequence": "An admission can lose its intended patient link and fail locker synchronization; beds can be double-booked.",
+    "fix": "Validate identifiers through one serializer; honor patient or reject conflicting fields. Resolve defaults before checking occupancy and enforce one active occupancy per organization/bed transactionally.",
+    "acceptance": "UUID-only linkage is retained; two same-bed requests, including simultaneous requests and omitted/default wards, cannot both succeed.",
+    "sources": [
+      {
+        "path": "backend/apps/hospital/views.py",
+        "line": 29
+      },
+      {
+        "path": "backend/apps/hospital/views.py",
+        "line": 50
+      },
+      {
+        "path": "backend/apps/hospital/models.py",
+        "line": 16
+      }
+    ]
+  },
+  {
+    "id": "L07",
+    "severity": "High",
+    "title": "Appointment ownership changes with role combination or invalid input",
+    "evidence": "Reproduced: a doctor with roles=[doctor,patient] receives their personal patient appointments rather than booked doctor visits. An unknown patient identifier creates an appointment with the doctor as patient. patient_email also permits querying another patient's bookings.",
+    "consequence": "Normal multi-role doctors see an empty/wrong schedule, and mistyped patients silently become the wrong appointment owner.",
+    "fix": "Separate doctor and patient appointment resources or authorize an explicit context. Reject unresolved patients; enforce provider/patient scope and use validated date/time fields with booking-conflict rules.",
+    "acceptance": "A multi-role doctor sees the correct lists in both portals; unknown patients return 400/404; unrelated patient_email queries are denied.",
+    "sources": [
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 114
+      },
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 130
+      },
+      {
+        "path": "backend/apps/doctor/models.py",
+        "line": 14
+      }
+    ]
+  },
+  {
+    "id": "L08",
+    "severity": "Medium",
+    "title": "Clinical chart and prescription sync omit relevant data",
+    "evidence": "Source: the chart returns prescriptions, lab reports, and vitals but never MedicalRecord, so general notes/admission/discharge summaries are absent. Prescription locker descriptions include medicine names but omit dosage/duration/instructions. The UI follow-up date is never submitted.",
+    "consequence": "The advertised unified chart and patient-facing prescription record are incomplete.",
+    "fix": "Represent encounters and prescriptions canonically; include authorized document types and structured medication instructions. Persist follow-up dates or remove the unused field.",
+    "acceptance": "A consented chart shows admission/discharge records; patient prescription detail includes every medication instruction; follow-up survives reload.",
+    "sources": [
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 361
+      },
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 327
+      },
+      {
+        "path": "health_platform/lib/features/doctor_portal/add_diagnosis_screen.dart",
+        "line": 31
+      }
+    ]
+  },
+  {
+    "id": "L09",
+    "severity": "Medium",
+    "title": "Profile and clinical schemas permit inconsistent data",
+    "evidence": "Reproduced: patients/me omits current_medications even though the model/auth response contains it. Birth dates are strings and the doctor flow stores values such as 54 yrs; JSON medical lists and several status fields are weakly validated. Approved consent with no expiry is treated as active indefinitely.",
+    "consequence": "Age calculations, medication editing, expiry expectations, and downstream integrations cannot rely on one consistent contract.",
+    "fix": "Use typed dates and enums, structured list validation, explicit unknown values, and clear timezone semantics. Expose medications consistently. Require expiry for time-limited consent and preserve consent history rather than overwriting it.",
+    "acceptance": "Invalid dates/statuses/list types are rejected; medication PATCH round-trips; approved time-limited consent always has an expiry.",
+    "sources": [
+      {
+        "path": "backend/apps/patients/serializers.py",
+        "line": 5
+      },
+      {
+        "path": "backend/apps/patients/models.py",
+        "line": 12
+      },
+      {
+        "path": "backend/apps/doctor/models.py",
+        "line": 65
+      }
+    ]
+  },
+  {
+    "id": "F01",
+    "severity": "High",
+    "title": "Client error handling reports failed writes as successful",
+    "evidence": "Source: many API mutations decode JSON without checking HTTP status; notifiers optimistically mutate and swallow exceptions. AddDiagnosis marks submitted after a rejected response. Discharge sets submitted=true even in catch.",
+    "consequence": "Users can believe a prescription, admission, consent decision, or discharge was saved when it was rejected or the server was unavailable.",
+    "fix": "Centralize typed response/error handling and timeouts. Await writes, show actual errors, reconcile or roll back optimistic changes, and only display success after persisted confirmation.",
+    "acceptance": "403, 400, 500, timeout, and invalid JSON never produce a success state; retry does not duplicate records.",
+    "sources": [
+      {
+        "path": "health_platform/lib/core/network/api_client.dart",
+        "line": 312
+      },
+      {
+        "path": "health_platform/lib/features/hospital_portal/discharge_summary/discharge_summary_screen.dart",
+        "line": 90
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 908
+      }
+    ]
+  },
+  {
+    "id": "F02",
+    "severity": "High",
+    "title": "Profile and emergency edit buttons do not persist their promises",
+    "evidence": "Source: settings, doctor-profile and hospital-profile Save handlers only close dialogs and show success. Emergency edits change AuthNotifier memory only. API emergency helpers point at an absent /patients/emergency-card/ route (404 reproduced).",
+    "consequence": "Emergency information reverts after re-login/reload, and professional/profile edits are discarded entirely.",
+    "fix": "Implement authorized profile PATCH flows, connect UI forms, await persistence, and refresh the canonical user. Use patients/me consistently or implement and test the intended emergency resource.",
+    "acceptance": "Edit, reload, and sign in on another device show the saved values; backend validation errors remain visible.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/settings/settings_screen.dart",
+        "line": 66
+      },
+      {
+        "path": "health_platform/lib/features/doctor_portal/doctor_profile_screen.dart",
+        "line": 83
+      },
+      {
+        "path": "health_platform/lib/features/hospital_portal/hospital_profile_screen.dart",
+        "line": 79
+      },
+      {
+        "path": "health_platform/lib/features/emergency/emergency_screen.dart",
+        "line": 128
+      }
+    ]
+  },
+  {
+    "id": "F03",
+    "severity": "High",
+    "title": "Patient record upload discards file bytes and report entry drops findings",
+    "evidence": "Source: record picker reads bytes but retains only filename/size; addRecord sends JSON without a file. Patient report form collects key findings but creates a LabReport without summary or parameters.",
+    "consequence": "A successful-looking medical upload loses its attachment; entered findings disappear from saved reports.",
+    "fix": "Use multipart uploads and persist the returned file identity; map all submitted report fields and remove unsupported inputs until implemented.",
+    "acceptance": "Upload and reload yield byte-identical downloads; all entered findings are present in the stored report.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/records/records_screen.dart",
+        "line": 164
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 454
+      },
+      {
+        "path": "health_platform/lib/features/reports/reports_screen.dart",
+        "line": 124
+      }
+    ]
+  },
+  {
+    "id": "F04",
+    "severity": "Medium",
+    "title": "Delete and appointment cancellation only alter memory",
+    "evidence": "Source: deleteRecord, deleteReport, and cancelAppointment only filter provider lists. Matching backend detail-delete/cancel endpoints do not exist.",
+    "consequence": "Items reappear on refresh and the user has no durable cancellation/deletion result.",
+    "fix": "Implement authorized, audited lifecycle endpoints; for clinical records consider amendment/withdrawal rather than destructive deletion. Await server confirmation.",
+    "acceptance": "Cancellation persists after reload and releases its slot; deletion/withdrawal behavior is explicit and auditable.",
+    "sources": [
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 469
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 505
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 616
+      }
+    ]
+  },
+  {
+    "id": "F05",
+    "severity": "High",
+    "title": "Queued lab orders are disconnected from the upload workflow",
+    "evidence": "Source: pending rows navigate with order/patient/test/category query parameters, but the router constructs a LabShell without reading them; its UploadReportScreen has no arguments. The upload handler calls direct upload and never uses widget.orderId or publishes/completes the queued order. New queue entries also omit patient linkage.",
+    "consequence": "Patient/test context is lost, orders remain pending, and reports can be created independently of the selected order.",
+    "fix": "Route to an order-backed upload screen using immutable order ID; fetch and authorize order context; require patient linkage and publish through one order-aware transaction.",
+    "acceptance": "Selecting a pending order preserves its exact patient/test, publishes once, completes that order, and removes it from pending counts.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/lab_portal/pending_reports/pending_reports_screen.dart",
+        "line": 259
+      },
+      {
+        "path": "health_platform/lib/core/config/router.dart",
+        "line": 120
+      },
+      {
+        "path": "health_platform/lib/features/lab_portal/upload_report/upload_report_screen.dart",
+        "line": 366
+      }
+    ]
+  },
+  {
+    "id": "F06",
+    "severity": "Medium",
+    "title": "Some routes select nonexistent or incorrect screens",
+    "evidence": "Source: /lab/integration uses initialIndex=3 but LabShell has only three screens (0-2). /hospital/integration selects HospitalProfileScreen. MainShell and LabShell also initialize the index only in initState, unlike HospitalShell's didUpdateWidget handling.",
+    "consequence": "The lab integration route has no valid selected child; hospital integration shows a profile. Same-widget route changes may retain an old tab. These route effects were source-reviewed, not device-tested.",
+    "fix": "Use explicit routes for screens and one navigation source of truth; wire or remove obsolete integration routes; handle parameter changes and guard route indices.",
+    "acceptance": "Every registered deep link renders its intended screen; browser back/forward and tab links stay synchronized.",
+    "sources": [
+      {
+        "path": "health_platform/lib/core/config/router.dart",
+        "line": 124
+      },
+      {
+        "path": "health_platform/lib/features/lab_portal/lab_shell.dart",
+        "line": 32
+      },
+      {
+        "path": "health_platform/lib/features/hospital_portal/hospital_shell.dart",
+        "line": 33
+      },
+      {
+        "path": "health_platform/lib/shared/widgets/main_shell.dart",
+        "line": 46
+      }
+    ]
+  },
+  {
+    "id": "F07",
+    "severity": "Medium",
+    "title": "OTP resend timer never enables resend at zero",
+    "evidence": "Source: the timer decrements 1 to 0 and returns false. _canResend is set only in the else branch on a subsequent iteration, which never happens.",
+    "consequence": "Users whose OTP is delayed/expired cannot use the resend control normally.",
+    "fix": "Set canResend when the decrement reaches zero; use a cancellable timer and clear stale OTP/pending-registration state when beginning a new flow.",
+    "acceptance": "A fake-clock widget test advances 30 seconds, finds resend enabled, resends once, and verifies the timer resets.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/auth/otp_entry_screen.dart",
+        "line": 36
+      }
+    ]
+  },
+  {
+    "id": "F08",
+    "severity": "High",
+    "title": "Provider caches can remain stale or cross session boundaries",
+    "evidence": "Source: many fetches update state only for nonempty lists; asynchronous requests are not bound to an auth/session generation. Logout resets caches but pending requests can complete later. Notifications/active role are not reset with the other providers.",
+    "consequence": "An empty server result leaves old data on screen; slow responses can repopulate a signed-out or different-user session. The race is inferred from source, not concurrency-tested.",
+    "fix": "Key caches to authenticated user/context; cancel or discard stale responses; assign empty results; invalidate all user-scoped providers on logout; distinguish loading/error/empty states.",
+    "acceptance": "Delay user A's response until after user B signs in; it is discarded. Empty responses clear data, and logout clears notifications and active role.",
+    "sources": [
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 448
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 351
+      }
+    ]
+  },
+  {
+    "id": "F09",
+    "severity": "High",
+    "title": "Unauthenticated UI has privileged demo identity and offline login fallback",
+    "evidence": "Source: userProvider creates a named fallback user with patient/doctor/hospital/lab/admin roles and writes its email into the API singleton. Router has no auth/role redirect. The phone/fallback verification path accepts any six characters locally; the visible login screen currently uses email.",
+    "consequence": "Direct routes appear signed in and can activate the backend identity fallbacks. Dormant mock authentication is unsafe to retain in the production path.",
+    "fix": "Return no user until a server-validated session exists; remove offline verification/demo identity from release code; add route guards and server permission enforcement.",
+    "acceptance": "Every protected deep link redirects signed-out users; no credential-free path creates a verified user; role menus reflect server grants.",
+    "sources": [
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 402
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 319
+      },
+      {
+        "path": "health_platform/lib/core/config/router.dart",
+        "line": 19
+      }
+    ]
+  },
+  {
+    "id": "F10",
+    "severity": "Medium",
+    "title": "Notifications, integration status, and operational metrics are placeholders",
+    "evidence": "Source: notifications build returns fixed clinical messages. Lab/hospital integration screens show ONLINE and HL7/FHIR labels without connectors. Admin returns constant engine health; healthSummary ignores recorded vitals. Hospital counts include discharged stays; pending lab queries include completed orders.",
+    "consequence": "Users see events and system health that are not measured, and operational queues/counts are misleading.",
+    "fix": "Drive status from real health probes and filtered server aggregates. Persist user-scoped notifications and delivery outcomes. Label integrations unavailable until implemented; connect vitals to the summary.",
+    "acceptance": "A fresh account has no fictional notifications; disconnecting a gateway changes status; completed/discharged items are excluded from active queues.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/notifications/notifications_provider.dart",
+        "line": 41
+      },
+      {
+        "path": "backend/apps/accounts/admin_views.py",
+        "line": 65
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 700
+      },
+      {
+        "path": "backend/apps/lab/views.py",
+        "line": 18
+      },
+      {
+        "path": "backend/apps/hospital/views.py",
+        "line": 19
+      }
+    ]
+  },
+  {
+    "id": "F11",
+    "severity": "Medium",
+    "title": "Family linking does not actually link a patient account",
+    "evidence": "Source: UI accepts a patient ID/email and says linked, but addMember sends only demographics. FamilyMember has no linked-user foreign key or guardian authorization relationship; total_records is a mutable counter.",
+    "consequence": "The feature creates an address-book-like dependent profile, not authorized access to another patient's records.",
+    "fix": "Either describe it accurately as a local dependent profile or implement verified guardian/delegate relationships with explicit scopes and consent. Derive record counts from actual relationships.",
+    "acceptance": "Linking requires the defined consent/guardian process and resolves an exact account; counts reflect accessible records.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/family/family_screen.dart",
+        "line": 187
+      },
+      {
+        "path": "health_platform/lib/core/config/providers.dart",
+        "line": 561
+      },
+      {
+        "path": "backend/apps/patients/models.py",
+        "line": 45
+      }
+    ]
+  },
+  {
+    "id": "F12",
+    "severity": "High",
+    "title": "Forms silently default unknown clinical facts",
+    "evidence": "Source: signup defaults blood group to O+, family form defaults B+, admission model defaults age 35 and Male, and discharge narrative is prefilled with stable/normal findings.",
+    "consequence": "Skipping a field can turn an assumption into recorded clinical information. This compounds the fabricated-lab issue.",
+    "fix": "Default clinical values to unknown/unrecorded. Require deliberate confirmation for relevant clinical assertions and record author/source/time.",
+    "acceptance": "Submitting untouched optional fields stores unknown, never an invented blood group, age, or clinical observation.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/auth/signup_screen.dart",
+        "line": 49
+      },
+      {
+        "path": "health_platform/lib/features/family/family_screen.dart",
+        "line": 28
+      },
+      {
+        "path": "backend/apps/hospital/models.py",
+        "line": 14
+      },
+      {
+        "path": "health_platform/lib/features/hospital_portal/discharge_summary/discharge_summary_screen.dart",
+        "line": 39
+      }
+    ]
+  },
+  {
+    "id": "F13",
+    "severity": "Medium",
+    "title": "Asynchronous search and upload state can reuse stale results",
+    "evidence": "Source: global/patient search does not debounce or discard older responses. Picking CSV sets _customExtractedParameters; picking a subsequent non-CSV file does not clear it. File picking calls setState after awaits without an initial mounted check.",
+    "consequence": "Search results may belong to an earlier query, and an uploaded PDF can inherit a previously selected CSV's parameters. Closing the screen during picking can trigger disposed-state errors.",
+    "fix": "Use request sequence IDs/cancellation, reset dependent fields atomically whenever a file or target patient changes, and check mounted after async work.",
+    "acceptance": "Reverse response order leaves the latest search visible; CSV-to-PDF selection clears old parameters; closing a picker screen is safe.",
+    "sources": [
+      {
+        "path": "health_platform/lib/shared/widgets/global_search_dialog.dart",
+        "line": 38
+      },
+      {
+        "path": "health_platform/lib/features/lab_portal/upload_report/upload_report_screen.dart",
+        "line": 312
+      }
+    ]
+  },
+  {
+    "id": "F14",
+    "severity": "Medium",
+    "title": "Signup remains stuck after a failed OTP request",
+    "evidence": "Source: SignupScreen sets its private _isLoading flag true before starting registration and never resets it. The submit button is disabled when either that flag or authState.isLoading is true; this screen does not display authState.error.",
+    "consequence": "An existing-email rejection, SMTP failure or network error can leave the form indefinitely disabled without explaining the failure.",
+    "fix": "Use one asynchronous auth loading state, await registration/send completion, reset in finally, and render the server error next to the form.",
+    "acceptance": "Simulate an existing email and a network failure: the error appears and the corrected form can be submitted again without restarting the app.",
+    "sources": [
+      {
+        "path": "health_platform/lib/features/auth/signup_screen.dart",
+        "line": 117
+      },
+      {
+        "path": "health_platform/lib/features/auth/signup_screen.dart",
+        "line": 649
+      }
+    ]
+  },
+  {
+    "id": "T01",
+    "severity": "Medium",
+    "title": "PostgreSQL readiness is not implemented by the current settings",
+    "evidence": "Source: DATABASES configures only ENGINE and NAME, without application-level USER/PASSWORD/HOST/PORT or a URL parser. Local deployment is SQLite; no PostgreSQL test was run.",
+    "consequence": "Changing the advertised engine is not a complete ordinary remote PostgreSQL setup. PostgreSQL-specific behavior, concurrency, and deployment remain unverified.",
+    "fix": "Provide explicit tested database configuration, a redacted env example, migrations/backup procedures, and PostgreSQL CI coverage before claiming support.",
+    "acceptance": "A clean environment can connect, migrate, run the permission suite, and restore a backup using documented configuration.",
+    "sources": [
+      {
+        "path": "backend/config/settings.py",
+        "line": 78
+      }
+    ]
+  },
+  {
+    "id": "T02",
+    "severity": "High",
+    "title": "Tests do not validate the security boundaries and currently fail",
+    "evidence": "Executed: Django discovers 12 tests; 8 pass and 4 fail. Two auth tests assume unknown-email login creates an account; two prescription tests omit required consent. Four app tests.py files are stubs. Flutter has one passing smoke test.",
+    "consequence": "Existing tests do not establish privacy, authorization, correct uploads, persistence, or end-to-end safety. force_authenticate bypasses real login behavior in many tests.",
+    "fix": "Update obsolete fixtures to the intended contract without weakening security. Add anonymous/wrong-role/wrong-owner/expired-consent tests, actual token tests, import validation, idempotency and critical UI persistence tests to CI.",
+    "acceptance": "All existing tests pass for the intended behavior; every critical finding has a regression test that fails before the fix and passes afterward.",
+    "sources": [
+      {
+        "path": "backend/apps/accounts/test_full_system.py",
+        "line": 40
+      },
+      {
+        "path": "backend/apps/reports/tests.py",
+        "line": 94
+      },
+      {
+        "path": "health_platform/test/widget_test.dart",
+        "line": 8
+      }
+    ]
+  },
+  {
+    "id": "T03",
+    "severity": "High",
+    "title": "Generated audit reports hardcode success and production-readiness claims",
+    "evidence": "Source: report builders insert 12/12 Passed, 27/27 and ZERO DEFECTS text directly. Current fresh test results contradict those claims. The PDF titled 30Page contains 10 pages.",
+    "consequence": "Screenshots and old generated documents can give false assurance about security and functionality. No claim of encryption/compliance should be treated as established by those reports.",
+    "fix": "Generate verification documents only from timestamped test artifacts tied to a commit/configuration. Separate implemented, demonstrated, tested, planned and independently assessed capabilities.",
+    "acceptance": "A failing test produces a failing report and nonzero verification status; no static production-ready badge overrides results.",
+    "sources": [
+      {
+        "path": "backend/generate_pdf_report.py",
+        "line": 192
+      },
+      {
+        "path": "generate_hardcore_testing_report_pdf.py",
+        "line": 317
+      }
+    ]
+  },
+  {
+    "id": "T04",
+    "severity": "High",
+    "title": "Demo utilities can destroy data or use known administrator credentials",
+    "evidence": "Source: reset_and_seed_clean_db deletes operational tables, users and media and creates a superuser with a fixed password. run_hardcore_tests uses the configured real database and writes records; inspect_db prints recent OTPs. These utilities were not executed.",
+    "consequence": "An operator can irreversibly destroy data or leave a known-credential administrator by running a seemingly convenient setup/test script.",
+    "fix": "Replace with explicit development-only management commands, separate database settings, environment guards and synthetic credentials; isolate all tests and stop printing OTPs.",
+    "acceptance": "Reset/seed refuse production settings, tests never touch live DB/media, and seeded credentials cannot persist in a release environment.",
+    "sources": [
+      {
+        "path": "backend/reset_and_seed_clean_db.py",
+        "line": 17
+      },
+      {
+        "path": "backend/reset_and_seed_clean_db.py",
+        "line": 64
+      },
+      {
+        "path": "run_hardcore_tests.py",
+        "line": 9
+      },
+      {
+        "path": "backend/inspect_db.py",
+        "line": 20
+      }
+    ]
+  },
+  {
+    "id": "T05",
+    "severity": "Medium",
+    "title": "Schema lacks organization membership, clinical provenance, and access audit history",
+    "evidence": "Source: labs/hospitals are user accounts; clinical author/facility names are strings; report source-order and record-source links are absent. ConsentRequest is mutable with no unique actor pair or immutable grant/revocation history. General clinical read/write audit events are absent.",
+    "consequence": "Shared staff workflows, reliable attribution, duplicate prevention, amendment history and access investigations are difficult. Django admin logging does not cover these API operations.",
+    "fix": "Introduce Organization, Membership, verified Credential, Encounter, versioned clinical documents, source order/report references, and immutable access/consent events. Normalize roles and derive patient display identifiers safely.",
+    "acceptance": "Two staff members in one organization share only authorized resources; every clinical change/download/consent action has attributable provenance.",
+    "sources": [
+      {
+        "path": "backend/apps/accounts/models.py",
+        "line": 74
+      },
+      {
+        "path": "backend/apps/reports/models.py",
+        "line": 9
+      },
+      {
+        "path": "backend/apps/doctor/models.py",
+        "line": 52
+      }
+    ]
+  },
+  {
+    "id": "T06",
+    "severity": "Medium",
+    "title": "Queries and polling will scale poorly",
+    "evidence": "Source: patient matching scans User.objects.all in Python; serializers access relations per item; most lists have no pagination. Patient dashboard polls three endpoints every three seconds, including while retained in an IndexedStack.",
+    "consequence": "Latency, database load and bandwidth grow with records and concurrent sessions; errors may still look like empty lists.",
+    "fix": "Move exact matching/filtering to indexed DB queries, use select_related/prefetch_related, paginate, and add measured query budgets. Poll only visible authenticated views with backoff, or introduce event delivery after correctness is established.",
+    "acceptance": "Representative large fixtures stay within documented query/latency budgets; hidden/signed-out screens stop polling.",
+    "sources": [
+      {
+        "path": "backend/apps/doctor/views.py",
+        "line": 157
+      },
+      {
+        "path": "backend/apps/reports/serializers.py",
+        "line": 12
+      },
+      {
+        "path": "health_platform/lib/features/dashboard/dashboard_screen.dart",
+        "line": 33
+      }
+    ]
+  },
+  {
+    "id": "T07",
+    "severity": "Medium",
+    "title": "Release platform configuration remains development-oriented",
+    "evidence": "Source: Android release uses debug signing. iOS has no explicit policy for the configured HTTP endpoint. macOS sandbox release entitlements omit network client access. Native app behavior was not built or device-tested.",
+    "consequence": "Distribution identity and networking can fail outside local development. Several Android sensitive permissions are declared without a demonstrated need in the current flows.",
+    "fix": "Configure production signing securely, HTTPS, required platform network entitlements and minimal permissions; test each supported platform. Do not advertise untested targets as ready.",
+    "acceptance": "Signed release builds authenticate/upload/download on real target devices under release security policies.",
+    "sources": [
+      {
+        "path": "health_platform/android/app/build.gradle.kts",
+        "line": 32
+      },
+      {
+        "path": "health_platform/ios/Runner/Info.plist",
+        "line": 4
+      },
+      {
+        "path": "health_platform/macos/Runner/Release.entitlements",
+        "line": 5
+      }
+    ]
+  },
+  {
+    "id": "T08",
+    "severity": "Medium",
+    "title": "Build/dependency documentation is insufficient for reproducible releases",
+    "evidence": "Source: Python dependencies mostly have unbounded upper versions and no lock; PDF generation dependencies such as reportlab are installed locally but absent from requirements.txt. Flutter has a lockfile, but README is the starter template. No project CI/deployment manifest was found in the surveyed source.",
+    "consequence": "Another machine may install different dependencies or fail report generation; dependency vulnerabilities and release behavior are not continuously checked.",
+    "fix": "Lock production/dev dependencies, separate document-generation extras, add a real setup/env/API README and CI checks. Audit installed/locked versions using a maintained advisory scanner before release.",
+    "acceptance": "A clean checkout can install deterministically and run the same checks. Advisory scanning is recorded; no unsupported CVE-free claim is made.",
+    "sources": [
+      {
+        "path": "backend/requirements.txt",
+        "line": 1
+      },
+      {
+        "path": "health_platform/README.md",
+        "line": 3
+      },
+      {
+        "path": "health_platform/pubspec.yaml",
+        "line": 30
+      }
+    ]
+  },
+  {
+    "id": "T09",
+    "severity": "Low",
+    "title": "Legacy/demo artifacts obscure the supported product",
+    "evidence": "Source: src/components contains three React components but no React app manifest/entry point in the surveyed project. Its OTP is simulated. mock_data, screenshot/capture utilities, root PDF generators and multiple overlapping reports coexist with the live Flutter app.",
+    "consequence": "Maintainers can edit the wrong frontend or mistake mock demonstrations for working functionality. Binary screenshots are historical evidence, not executable verification.",
+    "fix": "Document Flutter as the supported client; archive legacy React/demo assets, move scripts/docs/test fixtures into clear folders, and label generated artifacts with source commit and date.",
+    "acceptance": "The root README explains every top-level directory and one documented path runs the supported app and tests.",
+    "sources": [
+      {
+        "path": "src/components/AuthModal.jsx",
+        "line": 24
+      },
+      {
+        "path": "health_platform/lib/mock_data/mock_user.dart",
+        "line": 1
+      }
+    ]
+  }
+]

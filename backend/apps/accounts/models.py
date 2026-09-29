@@ -1,5 +1,7 @@
 import uuid
-import random
+import secrets
+from django.contrib.auth.hashers import make_password
+from django.db.models.functions import Lower
 from datetime import timedelta
 from django.db import models
 from django.utils import timezone
@@ -18,7 +20,7 @@ class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('Email address is required')
-        email = self.normalize_email(email)
+        email = email.strip().lower()
         user = self.model(email=email, **extra_fields)
         if password:
             user.set_password(password)
@@ -47,6 +49,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_verified = models.BooleanField(default=False)
+    professional_verified = models.BooleanField(default=False)
+    pending_roles = models.JSONField(default=list, blank=True)
+    notification_preferences = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(Lower('email'), name='accounts_email_case_unique')]
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -95,7 +103,9 @@ class HospitalProfile(models.Model):
 
 class EmailOTP(models.Model):
     email = models.EmailField(db_index=True)
-    otp = models.CharField(max_length=6)
+    otp = models.CharField(max_length=128)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    purpose = models.CharField(max_length=10, default='login')
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
     is_used = models.BooleanField(default=False)
@@ -104,16 +114,19 @@ class EmailOTP(models.Model):
         ordering = ['-created_at']
 
     @classmethod
-    def generate_otp(cls, email: str, validity_minutes: int = 5):
-        code = str(random.randint(100000, 999999))
+    def generate_otp(cls, email: str, validity_minutes: int = 5, purpose='login'):
+        code = str(secrets.randbelow(900000) + 100000)
         expires = timezone.now() + timedelta(minutes=validity_minutes)
         # Invalidate old unused OTPs for this email
         cls.objects.filter(email=email.lower().strip(), is_used=False).update(is_used=True)
-        return cls.objects.create(
+        record = cls.objects.create(
             email=email.lower().strip(),
-            otp=code,
-            expires_at=expires
+            otp=make_password(code),
+            expires_at=expires,
+            purpose=purpose,
         )
+        record.code = code  # Transient: only the delivery code may use this value.
+        return record
 
     def is_valid(self) -> bool:
-        return not self.is_used and timezone.now() <= self.expires_at
+        return not self.is_used and self.attempts < 5 and timezone.now() <= self.expires_at

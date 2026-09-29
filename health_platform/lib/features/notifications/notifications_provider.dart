@@ -1,3 +1,4 @@
+import '../../core/network/api_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NotificationItem {
@@ -38,57 +39,21 @@ class NotificationItem {
 
 class NotificationsNotifier extends Notifier<List<NotificationItem>> {
   @override
-  List<NotificationItem> build() {
-    return [
-      const NotificationItem(
-        id: 'notif_001',
-        message: 'Your Complete Blood Count (CBC) lab report is ready for viewing.',
-        read: false,
-        createdAt: '10 mins ago',
-        type: 'lab_report',
-        refId: 'REP001',
-      ),
-      const NotificationItem(
-        id: 'notif_002',
-        message: 'Dr. Max Patel added a new prescription & diagnosis for Acute Pharyngitis.',
-        read: false,
-        createdAt: '1 hour ago',
-        type: 'prescription',
-        refId: 'REC001',
-      ),
-      const NotificationItem(
-        id: 'notif_003',
-        message: 'Inpatient Admission updated: Ward B-104 (General Male Ward).',
-        read: true,
-        createdAt: 'Yesterday',
-        type: 'admission',
-        refId: 'ADM001',
-      ),
-      const NotificationItem(
-        id: 'notif_004',
-        message: 'Reminder: Upcoming appointment with Dr. S. K. Gupta tomorrow at 10:00 AM.',
-        read: true,
-        createdAt: '2 days ago',
-        type: 'appointment',
-        refId: 'APT001',
-      ),
-    ];
-  }
+  List<NotificationItem> build() => [];
 
-  void markAsRead(String id) {
-    state = [
-      for (final item in state)
-        if (item.id == id) item.copyWith(read: true) else item
-    ];
+  Future<void> fetch() async {
+    final rows = await ApiClient().getList('/care/notifications/');
+    if (!ref.mounted) return;
+    state = rows.map((r) => NotificationItem(id:r['id'].toString(),message:r['message'],read:r['read'],createdAt:DateTime.parse(r['created_at']).toLocal().toString(),type:r['type'],refId:r['ref_id'])).toList();
   }
-
-  void markAllAsRead() {
-    state = [for (final item in state) item.copyWith(read: true)];
+  Future<void> markAsRead(String id) async {
+    await ApiClient().patchData('/care/notifications/', {'id':int.parse(id)});
+    if (ref.mounted) state = [for(final item in state) if(item.id==id) item.copyWith(read:true) else item];
   }
-
-  void clearAll() {
-    state = [];
+  Future<void> markAllAsRead() async {
+    for (final item in state.where((n) => !n.read).toList()) { await markAsRead(item.id); }
   }
+  void clearAll() => state=[];
 }
 
 final notificationsProvider =

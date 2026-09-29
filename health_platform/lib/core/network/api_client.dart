@@ -2,16 +2,22 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-class ApiClient {
+class ApiClient extends ChangeNotifier {
   // Uses local host on web, and PC's Wi-Fi IP on mobile devices for wireless connectivity
   static String get hostServerUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000';
+    const configured = String.fromEnvironment('BACKEND_URL');
+    if (configured.isNotEmpty) {
+      final uri=Uri.parse(configured);
+      if (!kDebugMode && uri.scheme != 'https') throw StateError('Release BACKEND_URL must use HTTPS.');
+      return configured.replaceFirst(RegExp(r'/$'), '');
     }
-    // PC Wi-Fi IP address reachable by mobile devices on the same Wi-Fi
-    const envUrl = String.fromEnvironment('BACKEND_URL');
-    if (envUrl.isNotEmpty) return envUrl;
-    return 'http://10.134.152.191:8000';
+    if (kIsWeb) {
+      if (kDebugMode) return 'http://127.0.0.1:8000';
+      if (Uri.base.scheme != 'https') throw StateError('Release website must be served over HTTPS.');
+      return Uri.base.origin;
+    }
+    if (kDebugMode) return 'http://10.0.2.2:8000';
+    throw StateError('Configure an HTTPS BACKEND_URL for a mobile release.');
   }
 
   static String get baseUrl => '$hostServerUrl/api';
@@ -30,12 +36,62 @@ class ApiClient {
   String? accessToken;
   String? refreshToken;
   String? currentUserEmail;
+  List<String> currentRoles = [];
+  bool professionalVerified = false;
+  int sessionVersion = 0;
+  Future<bool>? _refreshing;
+  late final http.Client _client = _CheckedClient(this);
+
+  Future<bool> refreshSession() => _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+  Future<bool> _refresh() async {
+    final version = sessionVersion;
+    final refresh = refreshToken;
+    if (refresh == null) return false;
+    try {
+      final response = await http.post(Uri.parse('$baseUrl/auth/refresh/'), headers: {'Content-Type':'application/json'}, body: jsonEncode({'refresh':refresh})).timeout(const Duration(seconds:20));
+      if (response.statusCode != 200 || version != sessionVersion) return false;
+      final data = jsonDecode(response.body);
+      accessToken = data['access'];
+      refreshToken = data['refresh'] ?? refresh;
+      return true;
+    } catch (_) { return false; }
+  }
+
+  Future<Map<String,dynamic>> getData(String path) async {
+    final response = await _client.get(Uri.parse('$baseUrl$path'), headers:headers);
+    return Map<String,dynamic>.from(jsonDecode(response.body));
+  }
+  Future<void> deleteData(String path) async { await _client.delete(Uri.parse('$baseUrl$path'),headers:headers); }
+  Future<List<Map<String,dynamic>>> getList(String path) async {
+    final response = await _client.get(Uri.parse('$baseUrl$path'), headers:headers);
+    return (jsonDecode(response.body) as List).map((e) => Map<String,dynamic>.from(e)).toList();
+  }
+  Future<Map<String,dynamic>> postData(String path, Map<String,dynamic> body) async {
+    final response = await _client.post(Uri.parse('$baseUrl$path'), headers:headers, body:jsonEncode(body));
+    return Map<String,dynamic>.from(jsonDecode(response.body));
+  }
+  Future<Map<String,dynamic>> patchData(String path, Map<String,dynamic> body) async {
+    final response = await _client.patch(Uri.parse('$baseUrl$path'), headers:headers, body:jsonEncode(body));
+    return Map<String,dynamic>.from(jsonDecode(response.body));
+  }
+  Future<String> documentUrl(String path) async {
+    final response = await _client.get(Uri.parse(resolveUrl(path)), headers:headers);
+    return jsonDecode(response.body)['url'] as String;
+  }
+  Future<Map<String,dynamic>> uploadDocument(String path, Map<String,String> fields, String name, List<int> bytes, {String field='file'}) async {
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
+    if (accessToken != null) request.headers['Authorization'] = 'Bearer $accessToken';
+    request.fields.addAll(fields);
+    request.files.add(http.MultipartFile.fromBytes(field, bytes, filename:name));
+    final response = await http.Response.fromStream(await _client.send(request));
+    return Map<String,dynamic>.from(jsonDecode(response.body));
+  }
+
 
   Map<String, String> get headers => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         if (accessToken != null) 'Authorization': 'Bearer $accessToken',
-        if (currentUserEmail != null && currentUserEmail!.isNotEmpty) 'X-User-Email': currentUserEmail!,
       };
 
   // ── Auth & OTP ──
@@ -44,7 +100,7 @@ class ApiClient {
     required String role,
     String mode = 'login',
   }) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/auth/request-otp/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'role': role, 'mode': mode}),
@@ -126,7 +182,7 @@ class ApiClient {
     if (emergencyContactPhone != null && emergencyContactPhone.isNotEmpty) {
       payload['emergency_contact_phone'] = emergencyContactPhone;
     }
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/auth/verify-otp/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(payload),
@@ -136,6 +192,10 @@ class ApiClient {
       if (data['tokens'] != null) {
         accessToken = data['tokens']['access'];
         refreshToken = data['tokens']['refresh'];
+        currentRoles = List<String>.from(data['user']['roles'] ?? ['patient']);
+        professionalVerified = data['user']['professional_verified'] == true;
+        sessionVersion++;
+        notifyListeners();
       }
       return data;
     }
@@ -143,7 +203,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> registerProfile(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/auth/register-profile/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -157,7 +217,7 @@ class ApiClient {
 
   // ── Medical Records & Reports ──
   Future<List<dynamic>> getRecords() async {
-    final response = await http.get(Uri.parse('$baseUrl/reports/records/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/reports/records/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -167,7 +227,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> createRecord(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/reports/records/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -176,7 +236,7 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getLabReports() async {
-    final response = await http.get(Uri.parse('$baseUrl/reports/lab-reports/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/reports/lab-reports/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -186,7 +246,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> createLabReport(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/reports/lab-reports/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -195,7 +255,7 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getTimeline() async {
-    final response = await http.get(Uri.parse('$baseUrl/reports/timeline/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/reports/timeline/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -206,7 +266,7 @@ class ApiClient {
 
   // ── Patients & Vitals ──
   Future<List<dynamic>> getFamilyMembers() async {
-    final response = await http.get(Uri.parse('$baseUrl/patients/family/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/patients/family/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -216,7 +276,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> createFamilyMember(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/patients/family/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -225,7 +285,7 @@ class ApiClient {
   }
 
   Future<bool> deleteFamilyMember(String memberId) async {
-    final response = await http.delete(
+    final response = await _client.delete(
       Uri.parse('$baseUrl/patients/family/$memberId/'),
       headers: headers,
     );
@@ -233,7 +293,7 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getVitals() async {
-    final response = await http.get(Uri.parse('$baseUrl/patients/vitals/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/patients/vitals/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -243,7 +303,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> createVital(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/patients/vitals/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -252,14 +312,14 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> getEmergencyCard() async {
-    final response = await http.get(Uri.parse('$baseUrl/patients/emergency-card/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/patients/me/'), headers: headers);
     if (response.statusCode == 200) return jsonDecode(response.body);
     return {};
   }
 
   Future<Map<String, dynamic>> updateEmergencyCard(Map<String, dynamic> payload) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/patients/emergency-card/'),
+    final response = await _client.patch(
+      Uri.parse('$baseUrl/patients/me/'),
       headers: headers,
       body: jsonEncode(payload),
     );
@@ -267,8 +327,8 @@ class ApiClient {
   }
 
   // ── Doctor Portal ──
-  Future<List<dynamic>> getAppointments() async {
-    final response = await http.get(Uri.parse('$baseUrl/doctor/appointments/'), headers: headers);
+  Future<List<dynamic>> getAppointments({String context = 'patient'}) async {
+    final response = await _client.get(Uri.parse('$baseUrl/doctor/appointments/?context=$context'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -278,7 +338,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> createAppointment(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/doctor/appointments/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -289,7 +349,7 @@ class ApiClient {
   Future<List<dynamic>> searchPatients(String query) async {
     final cleanQuery = query.trim();
     if (cleanQuery.isEmpty) return [];
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl/doctor/patients/?q=${Uri.encodeComponent(cleanQuery)}&email=${Uri.encodeComponent(cleanQuery)}'),
       headers: headers,
     );
@@ -301,7 +361,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> registerDoctorPatient(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/doctor/patients/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -310,7 +370,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> createPrescription(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/doctor/prescriptions/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -319,7 +379,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> getDoctorPatientChart(String patientId) async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl/doctor/patients/$patientId/chart/'),
       headers: headers,
     );
@@ -333,7 +393,7 @@ class ApiClient {
     final cleanQuery = query.trim();
     if (cleanQuery.isEmpty) return [];
     final url = '$baseUrl/doctor/directory/?q=${Uri.encodeComponent(cleanQuery)}&email=${Uri.encodeComponent(cleanQuery)}';
-    final response = await http.get(Uri.parse(url), headers: headers);
+    final response = await _client.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -343,7 +403,7 @@ class ApiClient {
 
   // ── Lab Portal ──
   Future<List<dynamic>> getLabOrders() async {
-    final response = await http.get(Uri.parse('$baseUrl/lab/orders/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/lab/orders/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -353,7 +413,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> createLabOrder(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/lab/orders/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -362,7 +422,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> publishLabReport(String orderId, Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/lab/orders/$orderId/publish/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -372,7 +432,7 @@ class ApiClient {
 
   Future<List<dynamic>> getLabPatients([String? query]) async {
     final qStr = (query != null && query.trim().isNotEmpty) ? '?q=${Uri.encodeComponent(query.trim())}' : '';
-    final response = await http.get(Uri.parse('$baseUrl/lab/patients/$qStr'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/lab/patients/$qStr'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -397,9 +457,6 @@ class ApiClient {
       if (accessToken != null) {
         request.headers['Authorization'] = 'Bearer $accessToken';
       }
-      if (currentUserEmail != null && currentUserEmail!.isNotEmpty) {
-        request.headers['X-User-Email'] = currentUserEmail!;
-      }
       request.fields['patient_identifier'] = patientIdentifier;
       if (patientName != null) request.fields['patient_name'] = patientName;
       request.fields['test_name'] = testName;
@@ -418,7 +475,7 @@ class ApiClient {
         ),
       );
 
-      final streamed = await request.send();
+      final streamed = await _client.send(request);
       final resp = await http.Response.fromStream(streamed);
       final data = jsonDecode(resp.body);
       if (resp.statusCode >= 200 && resp.statusCode < 300) {
@@ -426,7 +483,7 @@ class ApiClient {
       }
       throw Exception(data['error'] ?? 'Upload failed (${resp.statusCode})');
     } else {
-      final response = await http.post(
+      final response = await _client.post(
         Uri.parse('$baseUrl/lab/upload-report/'),
         headers: headers,
         body: jsonEncode({
@@ -449,7 +506,7 @@ class ApiClient {
 
   // ── Hospital Portal ──
   Future<List<dynamic>> getAdmissions() async {
-    final response = await http.get(Uri.parse('$baseUrl/hospital/admissions/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/hospital/admissions/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -459,7 +516,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> admitPatient(Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/hospital/admissions/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -468,7 +525,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> dischargePatient(String admissionId, Map<String, dynamic> payload) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/hospital/admissions/$admissionId/discharge/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -477,7 +534,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> uploadLabBatchCsv({required String csvText}) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/lab/batch-upload/'),
       headers: headers,
       body: jsonEncode({'csv_text': csvText}),
@@ -491,7 +548,7 @@ class ApiClient {
 
   // ── Consent Flow ──
   Future<Map<String, dynamic>> requestDoctorConsent({required String patientId, String? purpose}) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/doctor/consent/request/'),
       headers: headers,
       body: jsonEncode({
@@ -512,7 +569,7 @@ class ApiClient {
   }
 
   Future<List<dynamic>> getPatientConsents() async {
-    final response = await http.get(Uri.parse('$baseUrl/patients/consents/'), headers: headers);
+    final response = await _client.get(Uri.parse('$baseUrl/patients/consents/'), headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is List) return data;
@@ -522,7 +579,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> actionPatientConsent({required String consentId, required String action}) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/patients/consents/$consentId/action/'),
       headers: headers,
       body: jsonEncode({'action': action}),
@@ -535,7 +592,7 @@ class ApiClient {
     if (doctorEmail != null) payload['doctor_email'] = doctorEmail;
     if (doctorId != null) payload['doctor_id'] = doctorId;
 
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/patients/consents/'),
       headers: headers,
       body: jsonEncode(payload),
@@ -549,7 +606,7 @@ class ApiClient {
 
   // ── Global Search ──
   Future<Map<String, dynamic>> searchGlobal(String query) async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl/search/?q=${Uri.encodeComponent(query)}'),
       headers: headers,
     );
@@ -562,7 +619,7 @@ class ApiClient {
   // ── Doctor Incoming Patient Requests ──
   Future<List<dynamic>> getDoctorIncomingRequests() async {
     try {
-      final response = await http.get(
+      final response = await _client.get(
         Uri.parse('$baseUrl/doctor/incoming-requests/'),
         headers: headers,
       );
@@ -579,7 +636,7 @@ class ApiClient {
     required String consentId,
     required String action,
   }) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/doctor/incoming-requests/$consentId/action/'),
       headers: headers,
       body: jsonEncode({'action': action}),
@@ -593,7 +650,7 @@ class ApiClient {
 
   // ── Admin Portal ──
   Future<Map<String, dynamic>> getAdminOverview() async {
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl/admin-portal/overview/'),
       headers: headers,
     );
@@ -612,7 +669,7 @@ class ApiClient {
       params['q'] = query;
     }
     final uri = Uri.parse('$baseUrl/admin-portal/users/').replace(queryParameters: params.isNotEmpty ? params : null);
-    final response = await http.get(uri, headers: headers);
+    final response = await _client.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data is Map && data['users'] is List) return data['users'];
@@ -620,17 +677,66 @@ class ApiClient {
     return [];
   }
 
-  Future<Map<String, dynamic>> toggleUserVerification(String userId) async {
-    final response = await http.post(
+  Future<Map<String, dynamic>> toggleUserVerification(String userId, {required bool verified, required String reason}) async {
+    final response = await _client.post(
       Uri.parse('$baseUrl/admin-portal/users/$userId/toggle-verify/'),
       headers: headers,
+      body:jsonEncode({'verified':verified, 'reason':reason}),
     );
     return jsonDecode(response.body);
   }
 
   void logout() {
+    final oldAccess = accessToken;
+    final oldRefresh = refreshToken;
+    if (oldAccess != null && oldRefresh != null) {
+      http.post(Uri.parse('$baseUrl/auth/logout/'), headers:{'Content-Type':'application/json','Authorization':'Bearer $oldAccess'}, body:jsonEncode({'refresh':oldRefresh})).timeout(const Duration(seconds:10)).catchError((_) => http.Response('', 503));
+    }
+    sessionVersion++;
+    currentRoles = [];
+    professionalVerified = false;
     accessToken = null;
     refreshToken = null;
     currentUserEmail = null;
+    notifyListeners();
+  }
+}
+
+
+class _CheckedClient extends http.BaseClient {
+  final ApiClient owner;
+  final http.Client transport = http.Client();
+  _CheckedClient(this.owner);
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest original) async {
+    final version = owner.sessionVersion;
+    final authenticated = original.headers.containsKey('Authorization');
+    final bytes = await original.finalize().toBytes();
+    Future<http.StreamedResponse> transmit() {
+      final request = http.Request(original.method, original.url)..headers.addAll(original.headers)..bodyBytes = bytes;
+      if (authenticated && owner.accessToken != null) request.headers['Authorization'] = 'Bearer ${owner.accessToken}';
+      return transport.send(request).timeout(const Duration(seconds:30));
+    }
+    var response = await transmit();
+    if (response.statusCode == 401 && authenticated) {
+      await response.stream.drain<void>();
+      if (await owner.refreshSession()) {
+        response = await transmit();
+      } else {
+        if (version == owner.sessionVersion) owner.logout();
+        throw Exception('Your session expired. Please sign in again.');
+      }
+    }
+    if (authenticated && version != owner.sessionVersion) {
+      await response.stream.drain<void>();
+      throw Exception('Session changed; stale response discarded.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = await response.stream.bytesToString();
+      String message = 'Request failed (${response.statusCode}).';
+      try { final data=jsonDecode(body); message=(data is Map ? data['error'] ?? data['detail'] ?? data : data).toString(); } catch (_) {}
+      throw Exception(message);
+    }
+    return response;
   }
 }
