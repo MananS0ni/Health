@@ -28,7 +28,7 @@ class RequestOTPView(APIView):
         email, mode = serializer.validated_data['email'], serializer.validated_data['mode']
         user = User.objects.filter(email__iexact=email).first()
         if mode == 'login' and (not user or not user.is_active):
-            return Response({'error': 'Account unavailable. Please register or contact support.'}, status=400)
+            return Response({'error': "Account does not exist. Please create an account first."}, status=400)
         if mode == 'signup' and user:
             return Response({'error': 'An account with this email already exists. Please sign in.'}, status=400)
         if EmailOTP.objects.filter(email=email, created_at__gt=timezone.now()-timezone.timedelta(seconds=60)).exists():
@@ -64,7 +64,7 @@ class VerifyOTPView(APIView):
         if user and not user.is_active:
             return Response({'error': 'Account unavailable.'}, status=403)
         if not user and (otp.purpose != 'signup' or not data.get('full_name')):
-            return Response({'error': 'Please complete signup first.'}, status=400)
+            return Response({'error': "Account does not exist. Please create an account first."}, status=400)
         if not EmailOTP.objects.filter(pk=otp.pk, is_used=False, attempts__lt=5, expires_at__gt=timezone.now()).update(is_used=True):
             return Response({'error': 'Code already used or expired.'}, status=400)
         created = user is None
